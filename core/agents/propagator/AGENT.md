@@ -33,10 +33,10 @@ Classifica ogni scoperta:
 
 | Tipo | Descrizione | Esempio |
 |------|-------------|---------|
-| `condition` | Nuova condizione o aggiornamento | apnea ostruttiva sospetta |
-| `correlation` | Correlazione confermata | apnea → HRV basso |
-| `hypothesis` | Ipotesi da verificare | dupilumab potrebbe migliorare apnea |
-| `protocol` | Nuovo protocollo o modifica | no CrossFit 48h post-donazione |
+| `condition` | Nuova condizione o aggiornamento | carenza vitamina D rilevata |
+| `correlation` | Correlazione confermata | cena tardi → sonno frammentato |
+| `hypothesis` | Ipotesi da verificare | il magnesio serale potrebbe migliorare il sonno |
+| `protocol` | Nuovo protocollo o modifica | camminata mattutina prima del caffè |
 | `confirmation` | Ipotesi precedente confermata/smentita | sauna migliora sonno confermato |
 
 Se non ci sono scoperte nuove → riporta "Nessuna propagazione necessaria" e fermati.

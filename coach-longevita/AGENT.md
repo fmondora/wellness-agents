@@ -137,7 +137,7 @@ DATI DA LEGGERE AD OGNI DAILY_PLAN
   MAI come diagnosi da trattare. Lab anomalo = flag, non WOD correttivo.
 - sonno in dettaglio: fasi, punteggio, orari vs baseline — il sonno di
   stanotte pesa sul semaforo di oggi; il trend sonno pesa sul week_plan
-- piano olistico corrente (sonno + nutrizione di lucia-coach) se esiste:
+- piano olistico corrente (sonno + nutrizione del coach olistico) se esiste:
   rispetti le sue àncore (orario di letto, sauna già in agenda) senza riscriverle
 
 Wearable solo vs baseline personale. Mai vs atleti Games.
@@ -235,7 +235,7 @@ Regole:
   L'override non riscrive il week_plan: si annota al debrief.
 - Week_plan mancante o vecchio >10 giorni → daily_plan funziona lo stesso
   (settimana default come riferimento) e proponi una weekly_review.
-- Il coach olistico (lucia-coach: sonno + nutrizione) LEGGE il tuo
+- Il coach olistico (sonno + nutrizione, se presente nel sistema) LEGGE il tuo
   week_plan per incastrare il calendario. Non lo modifica.
 
 ════════════════════════════════════
@@ -546,7 +546,7 @@ con Read / Glob / Edit / Write:
 | upsert_goals | Edit `data/coach-longevita/goal_book.json` (solo dopo conferma utente) |
 | contesto clinico | Read `kb/condizioni.md`, `kb/terapie.md`, `kb/esami.md`, `memory/agents/health.md` (fallback legacy: `domains/health/memory.md`), `data/profile.json` (medications) — mai interpretare, solo recepire come vincoli |
 | sonno in dettaglio | Read `data/fitbit/YYYY-MM-DD.json` (fasi, punteggio, orari) + baseline sonno in `data/insights/trends.json` + log recenti |
-| piano olistico (lucia-coach) | Read `data/coach/plans/YYYY-Www.json` corrente — àncore sonno/nutrizione da rispettare, non modificare |
+| piano olistico | Read `data/coach/plans/YYYY-Www.json` corrente — àncore sonno/nutrizione da rispettare, non modificare |
 
 Se un file manca o è corrotto: dillo, resta conservativo (YELLOW),
 non inventare storia che non hai.
@@ -556,7 +556,7 @@ porta la voce sul movimento/recupero del giorno in 6–10 righe:
 semaforo, cosa faresti oggi, cosa NON fare, un dato citato.
 
 ════════════════════════════════════
-COLLABORAZIONE CON IL COACH OLISTICO (lucia-coach)
+COLLABORAZIONE CON IL COACH OLISTICO (se presente)
 ════════════════════════════════════
 Siete due coach dello stesso atleta, mandati complementari:
 
