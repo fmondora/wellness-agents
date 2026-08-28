@@ -28,7 +28,9 @@ vuoi, il resto lo sistemiamo strada facendo."
 
 ## Fase 2 — Le domande (UNA alla volta, tutte facoltative tranne la prima)
 
-1. **Chi sei** — nome e anno di nascita.
+1. **Chi sei** — nome e anno di nascita. Cognome facoltativo: al diario basta
+   il nome, il nome completo serve solo se un giorno vorrai esportare i dati
+   per un medico (salvalo come `full_name` nel profilo, se dato).
 2. **Cosa vuoi che tenga d'occhio** — condizioni, terapie in corso, sintomi
    ricorrenti. Anche "niente per ora" va bene: il diario li farà emergere.
    (Se emergono condizioni serie: ricorda che il medico resta il medico.)
