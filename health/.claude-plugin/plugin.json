@@ -1,7 +1,7 @@
 {
   "name": "health",
-  "description": "Agente Salute del Wellness Council: triage sintomi, interpretazione referti, monitoraggio parametri vitali e red flags cliniche",
-  "version": "0.1.0",
+  "description": "Agente Salute del Wellness Council: triage sintomi, interpretazione referti, monitoraggio parametri vitali e red flags cliniche. Include /sonno: analisi del sonno sul baseline personale.",
+  "version": "0.2.0",
   "author": {
     "name": "Francesco Mondora"
   }

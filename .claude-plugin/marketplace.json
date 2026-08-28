@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "wellness-core",
       "source": "./core",
-      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati e skill /council: il consiglio si compone da config/council.json con i plugin installati.",
+      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati e skill di orchestrazione: /council e /ask (membri da config/council.json), /propagate.",
       "category": "core"
     },
     {
@@ -23,7 +23,7 @@
     {
       "name": "health",
       "source": "./health",
-      "description": "Salute — dominio osservazionale del corpo fisico: sintomi, HRV, red flag clinici con escalation immediata. Mai diagnosi.",
+      "description": "Salute — dominio osservazionale del corpo fisico: sintomi, HRV, red flag clinici con escalation immediata; /sonno con punteggio sul baseline personale. Mai diagnosi.",
       "category": "domain"
     },
     {
