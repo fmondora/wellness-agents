@@ -84,8 +84,10 @@ def _info_field(info: str, key: str) -> str | None:
     return None
 
 
-def _download_atomic(url: str, dest: Path, label: str) -> Path:
-    """Scarica su file temporaneo e rinomina solo a successo: mai cache parziali."""
+def _download_atomic(url: str, dest: Path, label: str) -> tuple[Path, bool]:
+    """Scarica su file temporaneo e rinomina solo a successo: mai cache parziali.
+
+    Ritorna (path, downloaded): downloaded=False se si è ricaduti sulla cache esistente."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
     print(f"Scarico {label} da {url} ...")
@@ -95,17 +97,18 @@ def _download_atomic(url: str, dest: Path, label: str) -> Path:
         tmp.unlink(missing_ok=True)
         if dest.exists():
             print(f"Download fallito ({e}): uso la cache esistente.")
-            return dest
+            return dest, False
         raise SystemExit(f"Download {label} fallito e nessuna cache: {e}")
     tmp.replace(dest)
-    return dest
+    return dest, True
 
 
 def _clinvar_cache(update: bool) -> Path:
     dest = dna_common.dna_dir() / "db" / "clinvar_GRCh37.vcf.gz"
     if dest.exists() and not update:
         return dest
-    return _download_atomic(CLINVAR_URL, dest, "ClinVar GRCh37 (~250MB)")
+    path, _ = _download_atomic(CLINVAR_URL, dest, "ClinVar GRCh37 (~250MB)")
+    return path
 
 
 def annotate_clinvar(update: bool = False, vcf_path: Path | None = None) -> int:
@@ -143,10 +146,11 @@ def _gwas_cache(update: bool) -> Path:
     dest = dna_common.dna_dir() / "db" / "gwas_catalog.tsv"
     if dest.exists() and not update:
         return dest
-    dest = _download_atomic(GWAS_URL, dest, "GWAS Catalog (~700MB)")
-    versions = dna_common.load_versions()
-    versions["gwas"] = date.today().isoformat()
-    dna_common.save_versions(versions)
+    dest, downloaded = _download_atomic(GWAS_URL, dest, "GWAS Catalog (~700MB)")
+    if downloaded:
+        versions = dna_common.load_versions()
+        versions["gwas"] = date.today().isoformat()
+        dna_common.save_versions(versions)
     return dest
 
 

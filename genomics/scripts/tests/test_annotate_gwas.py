@@ -10,12 +10,12 @@ HEADER = "DATE ADDED TO CATALOG\tPUBMEDID\tFIRST AUTHOR\tDATE\tJOURNAL\tLINK\tST
 def _mini_tsv(tmp_path) -> Path:
     def row(snps, trait, p, orb, gene, acc):
         cells = [""] * 38
-        cells[7], cells[14], cells[21], cells[27], cells[30], cells[35] = trait, gene, snps, p, orb, acc
+        cells[7], cells[14], cells[21], cells[27], cells[30], cells[36] = trait, gene, snps, p, orb, acc
         return "\t".join(cells)
     p = tmp_path / "mini_gwas.tsv"
     p.write_text("\n".join([HEADER,
         row("rs1000003", "Tratto Finto A", "3E-12", "1.21", "GENEY", "GCST900001"),
-        row("rs1000007; rs5555555", "Tratto Finto B", "2E-9", "0.88", "GENEW", "GCST900002"),
+        row("rs5555555 x rs1000007", "Tratto Finto B", "2E-9", "0.88", "GENEW", "GCST900002"),
         row("rs4242424", "Tratto Assente", "1E-8", "1.1", "GENEQ", "GCST900003")]))
     return p
 
@@ -30,3 +30,4 @@ def test_annotate_gwas(tmp_path, monkeypatch):
             (tmp_path / "data/dna/annotated/gwas.jsonl").read_text().splitlines()]
     multi = next(r for r in rows if r["rsid"] == "rs1000007")
     assert multi["trait"] == "Tratto Finto B" and multi["genotype"] == "GG"
+    assert multi["study"] == "GCST900002"
