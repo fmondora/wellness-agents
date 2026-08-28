@@ -37,6 +37,8 @@ def test_report_clinvar_ha_disclaimer_e_solo_patogeniche(tmp_path, monkeypatch):
     assert dna_report.DISCLAIMER_CLINICO in text
     assert "rs1000002" in text        # Pathogenic
     assert "rs1000003" not in text    # Benign: fuori dal report
+    assert "rs1000004" not in text    # Conflicting: fuori dal report
+    assert "Malattia Finta\\|Variante" in text
 
 
 def test_determinismo(tmp_path, monkeypatch):

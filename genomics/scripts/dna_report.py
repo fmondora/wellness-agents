@@ -17,6 +17,11 @@ RILEVANZA_ICONA = {"alta": "⚠️ Alta", "media": "⚠️ Media", "bassa": "ℹ
                    "neutro": "✅ Neutro", "da_rivedere": "❓ Da rivedere"}
 
 
+def _md(v) -> str:
+    """Escape del pipe per non spezzare le tabelle markdown (es. CLNDN multi-condizione)."""
+    return str(v).replace("|", "\\|")
+
+
 def _reports_dir() -> Path:
     p = dna_common.dna_dir() / "reports"
     p.mkdir(parents=True, exist_ok=True)
@@ -46,7 +51,8 @@ def report_panels() -> Path:
         for gene, rsid, gt, eff, rel in con.execute(
                 "SELECT gene, rsid, genotype, effect, relevance FROM annotations_panels "
                 "WHERE pathway=? ORDER BY gene, rsid", (pw,)):
-            out.append(f"| {gene} | {rsid} | {gt} | {eff} | {RILEVANZA_ICONA.get(rel, rel)} |")
+            out.append(f"| {_md(gene)} | {_md(rsid)} | {_md(gt)} | {_md(eff)} | "
+                       f"{RILEVANZA_ICONA.get(rel, rel)} |")
         out.append("")
     out.append(_fonti())
     dest = dna_common.data_root() / "kb" / "genomica.md"
@@ -60,14 +66,15 @@ def report_clinvar() -> Path:
     out = ["# Report ClinVar", "", DISCLAIMER_CLINICO, ""]
     rows = con.execute(
         "SELECT rsid, genotype, clnsig, condition, gene FROM annotations_clinvar "
-        "WHERE clnsig LIKE '%athogenic%' OR clnsig LIKE '%rotective%' "
+        "WHERE (clnsig LIKE '%athogenic%' OR clnsig LIKE '%rotective%') "
+        "AND clnsig NOT LIKE '%onflicting%' "
         "ORDER BY gene, rsid").fetchall()
     if not rows:
         out.append("Nessuna variante patogenica/protettiva nota trovata nel raw.")
     else:
         out += ["| Gene | SNP | Genotipo | Significato | Condizione |",
                 "|------|-----|----------|-------------|------------|"]
-        out += [f"| {g} | {r} | {gt} | {s} | {c.replace('_', ' ')} |"
+        out += [f"| {_md(g)} | {_md(r)} | {_md(gt)} | {_md(s)} | {_md(c.replace('_', ' '))} |"
                 for r, gt, s, c, g in rows]
     out += ["", _fonti()]
     dest = _reports_dir() / "clinvar.md"
@@ -82,7 +89,7 @@ def report_pharmgkb() -> Path:
            "su farmaci nasce da questo report.", "",
            "| Gene | SNP | Genotipo | Livello | Farmaci | Categoria |",
            "|------|-----|----------|---------|---------|-----------|"]
-    out += [f"| {g} | {r} | {gt} | {lv} | {d} | {cat} |"
+    out += [f"| {_md(g)} | {_md(r)} | {_md(gt)} | {_md(lv)} | {_md(d)} | {_md(cat)} |"
             for r, gt, g, lv, d, cat in con.execute(
                 "SELECT rsid, genotype, gene, level, drugs, category "
                 "FROM annotations_pharmgkb ORDER BY level, gene, rsid")]
@@ -102,7 +109,7 @@ def report_gwas() -> Path:
     for t in traits:
         out += [f"## {t}", "", "| SNP | Genotipo | Gene | p-value | OR/beta | Studio |",
                 "|-----|----------|------|---------|---------|--------|"]
-        out += [f"| {r} | {gt} | {g} | {p} | {e} | {s} |"
+        out += [f"| {_md(r)} | {_md(gt)} | {_md(g)} | {_md(p)} | {_md(e)} | {_md(s)} |"
                 for r, gt, g, p, e, s in con.execute(
                     "SELECT rsid, genotype, gene, p_value, effect, study "
                     "FROM annotations_gwas WHERE trait=? ORDER BY rsid", (t,))]
