@@ -1,0 +1,13 @@
+{
+  "panel": "test",
+  "pathway": "Pathway di Test",
+  "snps": [
+    {"rsid": "rs1000002", "gene": "GENEX", "label": "GENEX promoter",
+     "interpretations": {
+       "AA": {"effect": "wild type", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote, attività ridotta", "relevance": "media"},
+       "GG": {"effect": "omozigote, attività molto ridotta", "relevance": "alta"}}},
+    {"rsid": "rs9999999", "gene": "ASSENTE", "label": "non nel raw",
+     "interpretations": {"CC": {"effect": "x", "relevance": "bassa"}}}
+  ]
+}

@@ -1,0 +1,13 @@
+# genomics/scripts/tests/fixtures/sample_23andme.txt
+# Questo file è una FIXTURE SINTETICA: genotipi inventati, nessuna persona reale.
+# rsid	chromosome	position	genotype
+rs1000001	1	1000	AA
+rs1000002	1	2000	AG
+rs1000003	2	3000	CT
+rs1000004	5	132000	CC
+rs1000005	5	132100	TT
+rs1000006	10	45000	AC
+rs1000007	17	38000	GG
+rs1000008	22	21000	CT
+rs1000009	3	9000	--
+rs1000010	4	7000	DI

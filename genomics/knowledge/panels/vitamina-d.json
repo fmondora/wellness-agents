@@ -1,0 +1,17 @@
+{
+  "panel": "vitamina-d",
+  "pathway": "Vitamina D — recettore VDR e proteina di trasporto (GC/DBP)",
+  "snps": [
+    {"rsid": "rs1544410", "gene": "VDR", "label": "VDR BsmI (intronico, in LD con la regione 3'UTR)",
+     "interpretations": {
+       "CC": {"effect": "genotipo bb — il più comune; variante intronica non funzionale di per sé, alcuni studi la associano a differenze di densità ossea via linkage con il 3'UTR (evidenza mista)", "relevance": "bassa"},
+       "CT": {"effect": "eterozigote Bb — effetto intermedio, evidenza mista", "relevance": "bassa"},
+       "TT": {"effect": "genotipo BB — in alcune popolazioni associato a differenze di massa ossea e di risposta alla supplementazione; l'effetto è di linkage, non diretto", "relevance": "media"}}},
+    {"rsid": "rs7041", "gene": "GC", "label": "GC/DBP Asp432Glu (isoforme Gc1s/Gc1f/Gc2, trasporto vitamina D)",
+     "interpretations": {
+       "AA": {"effect": "due copie dell'allele Asp432 — livelli di proteina legante la vitamina D (DBP) tendenzialmente più bassi e 25(OH)D totale più bassa; per il target sierico possono servire dosi di colecalciferolo più alte (da definire col medico)", "relevance": "media"},
+       "AC": {"effect": "eterozigote — livello intermedio di DBP e di 25(OH)D totale", "relevance": "media"},
+       "CC": {"effect": "due copie dell'allele Glu432 (isoforma Gc1s) — DBP più alta, 25(OH)D totale tendenzialmente più alta", "relevance": "neutro"}}}
+  ],
+  "refs": ["PMID:15315818", "PMID:20541252"]
+}

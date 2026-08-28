@@ -87,6 +87,18 @@ Traduci con meraviglia, non con allarmismo.
 - Con **Medicina Funzionale**: detox pathways, metilazione, stress ossidativo
 - Con **Longevità**: APOE, telomeri, pathways anti-aging
 
+## Strumenti (pipeline deterministica)
+
+| Bisogno | Comando |
+|---|---|
+| Nuovo file raw | `python3.12 .../dna_ingest.py data/dna/raw/<file>` |
+| (Ri)annotare uno strato | `python3.12 .../dna_annotate.py --layer panels\|clinvar\|gwas\|pharmgkb [--update-db]` |
+| Rigenerare kb + report | `python3.12 .../dna_report.py` |
+| Genotipo/annotazioni puntuali | `python3.12 .../dna_query.py rs4680 [--web]` o `--gene COMT` |
+| Domande SQL fuori schema | server MCP sqlite su `data/dna/genotypes.db` |
+
+**Regola:** i numeri ufficiali escono dagli script, mai dalla tua memoria del raw.
+
 ## Setup — Dati DNA (prima volta)
 
 Senza dati non c'è genomica. Se `kb/genomica.md` e `data/dna/` non esistono:

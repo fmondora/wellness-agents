@@ -1,0 +1,32 @@
+{
+  "panel": "metilazione",
+  "pathway": "Metilazione / Omocisteina / Vitamine B",
+  "snps": [
+    {"rsid": "rs1801133", "gene": "MTHFR", "label": "MTHFR C677T",
+     "interpretations": {
+       "GG": {"effect": "wild type — attività MTHFR piena", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — attività ~65%", "relevance": "media"},
+       "AA": {"effect": "omozigote — attività ~30%, folati attivi consigliabili (parlarne col medico)", "relevance": "alta"}}},
+    {"rsid": "rs1801131", "gene": "MTHFR", "label": "MTHFR A1298C",
+     "interpretations": {
+       "TT": {"effect": "wild type", "relevance": "neutro"},
+       "GT": {"effect": "eterozigote — lieve riduzione", "relevance": "bassa"},
+       "GG": {"effect": "omozigote — riduzione moderata", "relevance": "media"}}},
+    {"rsid": "rs1805087", "gene": "MTR", "label": "MTR A2756G (metionina sintasi)",
+     "interpretations": {
+       "AA": {"effect": "wild type", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — possibile maggiore fabbisogno B12", "relevance": "media"},
+       "GG": {"effect": "omozigote — rimetilazione B12-dipendente ridotta", "relevance": "alta"}}},
+    {"rsid": "rs1801394", "gene": "MTRR", "label": "MTRR A66G",
+     "interpretations": {
+       "AA": {"effect": "wild type", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — rigenerazione MTR ridotta", "relevance": "media"},
+       "GG": {"effect": "omozigote — rigenerazione MTR compromessa", "relevance": "media"}}},
+    {"rsid": "rs4680", "gene": "COMT", "label": "COMT Val158Met",
+     "interpretations": {
+       "GG": {"effect": "Val/Val — COMT veloce, catecolamine smaltite rapidamente", "relevance": "bassa"},
+       "AG": {"effect": "Val/Met — metabolismo catecolamine intermedio", "relevance": "bassa"},
+       "AA": {"effect": "Met/Met — COMT lenta, catecolamine più persistenti", "relevance": "media"}}}
+  ],
+  "refs": ["PMID:7647779", "PMID:10195245"]
+}

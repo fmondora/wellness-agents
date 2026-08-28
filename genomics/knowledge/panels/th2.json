@@ -1,0 +1,27 @@
+{
+  "panel": "th2",
+  "pathway": "Th2 / Infiammazione allergica",
+  "snps": [
+    {"rsid": "rs2243250", "gene": "IL4", "label": "IL-4 promoter -589C>T",
+     "interpretations": {
+       "CC": {"effect": "wild type — produzione IL-4 tipica", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — aumentata espressione IL-4, predisposizione Th2", "relevance": "alta"},
+       "TT": {"effect": "omozigote — espressione IL-4 elevata, forte predisposizione Th2", "relevance": "alta"}}},
+    {"rsid": "rs20541", "gene": "IL13", "label": "IL-13 R130Q",
+     "interpretations": {
+       "GG": {"effect": "wild type", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — IL-13 più attiva, associata ad asma/atopia", "relevance": "alta"},
+       "AA": {"effect": "omozigote — variante R130Q su entrambi gli alleli", "relevance": "alta"}}},
+    {"rsid": "rs1800925", "gene": "IL13", "label": "IL-13 promoter -1112C>T",
+     "interpretations": {
+       "CC": {"effect": "wild type", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — promoter più attivo", "relevance": "media"},
+       "TT": {"effect": "omozigote — espressione IL-13 aumentata", "relevance": "alta"}}},
+    {"rsid": "rs7216389", "gene": "GSDMB/ORMDL3", "label": "locus 17q21 asma infantile",
+     "interpretations": {
+       "CC": {"effect": "wild type", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — rischio 17q21 intermedio", "relevance": "media"},
+       "TT": {"effect": "omozigote — rischio 17q21", "relevance": "alta"}}}
+  ],
+  "refs": ["PMID:9226976", "PMID:17611496"]
+}

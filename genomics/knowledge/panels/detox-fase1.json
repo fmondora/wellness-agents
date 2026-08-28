@@ -1,0 +1,37 @@
+{
+  "panel": "detox-fase1",
+  "pathway": "Detossificazione Fase I (CYP450)",
+  "snps": [
+    {"rsid": "rs1799853", "gene": "CYP2C9", "label": "CYP2C9*2 Arg144Cys",
+     "interpretations": {
+       "CC": {"effect": "wild type per *2 — metabolismo normale dei substrati CYP2C9 (FANS, warfarin, sulfaniluree)", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote *1/*2 — metabolismo ridotto di FANS e warfarin; le linee guida CPIC suggeriscono cautela nei dosaggi (decisione sempre col medico)", "relevance": "alta"},
+       "TT": {"effect": "omozigote *2/*2 — metabolismo marcatamente ridotto dei substrati CYP2C9, esposizione ai farmaci aumentata", "relevance": "alta"}}},
+    {"rsid": "rs1057910", "gene": "CYP2C9", "label": "CYP2C9*3 Ile359Leu",
+     "interpretations": {
+       "AA": {"effect": "wild type per *3", "relevance": "neutro"},
+       "AC": {"effect": "eterozigote *1/*3 — riduzione dell'attività CYP2C9 maggiore rispetto a *2, rilevante per warfarin e FANS", "relevance": "alta"},
+       "CC": {"effect": "omozigote *3/*3 — attività CYP2C9 fortemente ridotta, fenotipo metabolizzatore lento", "relevance": "alta"}}},
+    {"rsid": "rs4244285", "gene": "CYP2C19", "label": "CYP2C19*2 (allele non funzionale)",
+     "interpretations": {
+       "GG": {"effect": "wild type per *2 — metabolismo normale di IPP, clopidogrel e alcuni SSRI", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote *1/*2 — metabolizzatore intermedio: attivazione del clopidogrel ridotta (linee guida CPIC), esposizione a IPP aumentata", "relevance": "alta"},
+       "AA": {"effect": "omozigote *2/*2 — metabolizzatore lento: clopidogrel poco efficace, IPP a esposizione elevata", "relevance": "alta"}}},
+    {"rsid": "rs12248560", "gene": "CYP2C19", "label": "CYP2C19*17 (promoter, ultrarapido)",
+     "interpretations": {
+       "CC": {"effect": "wild type — nessun allele ultrarapido", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote *1/*17 — metabolizzatore rapido: possibile minore efficacia degli IPP a dose standard", "relevance": "media"},
+       "TT": {"effect": "omozigote *17/*17 — metabolizzatore ultrarapido: IPP e alcuni SSRI possono risultare sottodosati a dose standard", "relevance": "alta"}}},
+    {"rsid": "rs2740574", "gene": "CYP3A4", "label": "CYP3A4*1B (promoter -392A>G)",
+     "interpretations": {
+       "TT": {"effect": "wild type — metabolismo normale di statine, calcio-antagonisti, immunosoppressori e molti altri farmaci", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote *1/*1B — effetto funzionale modesto e con evidenza mista; spesso in linkage con CYP3A5*1", "relevance": "bassa"},
+       "CC": {"effect": "omozigote *1B/*1B — evidenza funzionale mista; il fenotipo dipende molto dal contesto CYP3A5", "relevance": "bassa"}}},
+    {"rsid": "rs776746", "gene": "CYP3A5", "label": "CYP3A5*3 (splicing, expressor/non-expressor)",
+     "interpretations": {
+       "CC": {"effect": "*3/*3 non-expressor — genotipo più comune negli europei; il CYP3A4 compensa, dosi standard di tacrolimus in genere adeguate", "relevance": "neutro"},
+       "CT": {"effect": "*1/*3 expressor intermedio — metabolismo più rapido dei substrati CYP3A5: per il tacrolimus le linee guida CPIC prevedono dosi iniziali maggiori", "relevance": "alta"},
+       "TT": {"effect": "*1/*1 expressor — metabolismo rapido dei substrati CYP3A5, rilevante soprattutto per immunosoppressori", "relevance": "alta"}}}
+  ],
+  "refs": ["PMID:21900891", "PMID:23698643", "PMID:16413245", "PMID:25801146"]
+}

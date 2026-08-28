@@ -1,0 +1,27 @@
+{
+  "panel": "barriera",
+  "pathway": "Immunità / Barriera mucosale / Suscettibilità autoimmune",
+  "snps": [
+    {"rsid": "rs2187668", "gene": "HLA-DQA1", "label": "Tag SNP HLA-DQ2.5 (celiachia)",
+     "interpretations": {
+       "CC": {"effect": "negativo per DQ2.5 — l'aplotipo di rischio principale per la celiachia è assente", "relevance": "neutro"},
+       "CT": {"effect": "un allele tag DQ2.5 — predisposizione genetica alla celiachia presente (necessaria ma non sufficiente: la maggior parte dei portatori non sviluppa la malattia)", "relevance": "media"},
+       "TT": {"effect": "due alleli tag DQ2.5 — dose genica più alta, il rischio relativo di celiachia è massimo tra i genotipi HLA", "relevance": "alta"}}},
+    {"rsid": "rs7454108", "gene": "HLA-DQB1", "label": "Tag SNP HLA-DQ8 (celiachia)",
+     "interpretations": {
+       "TT": {"effect": "negativo per DQ8 — insieme a DQ2.5 negativo rende la celiachia altamente improbabile (alto valore predittivo negativo)", "relevance": "neutro"},
+       "CT": {"effect": "un allele tag DQ8 — predisposizione genetica presente, rischio inferiore rispetto a DQ2.5", "relevance": "media"},
+       "CC": {"effect": "due alleli tag DQ8 — predisposizione genetica confermata su entrambi i cromosomi", "relevance": "media"}}},
+    {"rsid": "rs1800629", "gene": "TNF", "label": "TNF-α promoter -308G>A (allele TNF2)",
+     "interpretations": {
+       "GG": {"effect": "wild type — trascrizione TNF-α basale tipica", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — un allele TNF2: promoter più attivo, produzione di TNF-α tendenzialmente maggiore in risposta agli stimoli infiammatori", "relevance": "media"},
+       "AA": {"effect": "omozigote TNF2 — raro; trascrizione TNF-α aumentata, associato in alcuni studi a fenotipi infiammatori più intensi", "relevance": "media"}}},
+    {"rsid": "rs2104286", "gene": "IL2RA", "label": "IL2RA/CD25 (intronico — regolazione T-reg, suscettibilità autoimmune)",
+     "interpretations": {
+       "TT": {"effect": "genotipo comune — segnalazione IL-2/CD25 di riferimento", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — variante associata in GWAS a sclerosi multipla e diabete tipo 1 via alterata regolazione del recettore IL-2; effetto individuale piccolo", "relevance": "bassa"},
+       "CC": {"effect": "omozigote per la variante — associazione con alterata espressione di CD25 e suscettibilità autoimmune; resta un modificatore di rischio modesto, non deterministico", "relevance": "media"}}}
+  ],
+  "refs": ["PMID:18509540", "PMID:9096369", "PMID:17676041", "PMID:17660530"]
+}

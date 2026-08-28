@@ -1,0 +1,12 @@
+{
+  "panel": "farmacogenomica-core",
+  "pathway": "Farmacogenomica — risposta ai corticosteroidi (asse CRHR1)",
+  "snps": [
+    {"rsid": "rs242941", "gene": "CRHR1", "label": "CRHR1 (risposta ai corticosteroidi inalatori)",
+     "interpretations": {
+       "GG": {"effect": "genotipo comune — risposta ai corticosteroidi inalatori nella media", "relevance": "neutro"},
+       "GT": {"effect": "eterozigote — effetto intermedio; l'associazione con la risposta agli ICS è stata osservata soprattutto negli omozigoti per la variante", "relevance": "bassa"},
+       "TT": {"effect": "omozigote variante — negli studi CAMP/ACRN associato a miglioramento maggiore della funzione polmonare con corticosteroidi inalatori; replicazione solo parziale, evidenza di livello moderato", "relevance": "media"}}}
+  ],
+  "refs": ["PMID:15128701"]
+}
