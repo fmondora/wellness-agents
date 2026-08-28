@@ -1,0 +1,37 @@
+{
+  "panel": "cardiovascolare",
+  "pathway": "Cardiovascolare / Lipidi",
+  "snps": [
+    {"rsid": "rs429358", "gene": "APOE", "label": "APOE — primo SNP dell'aplotipo ε2/ε3/ε4 (leggere insieme a rs7412)",
+     "interpretations": {
+       "TT": {"effect": "nessun allele che contribuisce a ε4 — con rs7412 CC definisce il comune ε3/ε3, rischio lipidico nella media", "relevance": "neutro"},
+       "CT": {"effect": "un allele compatibile con ε4 — se rs7412 è CC, genotipo ε3/ε4: LDL tendenzialmente più alte, rischio cardiovascolare e di Alzheimer moderatamente aumentato", "relevance": "media"},
+       "CC": {"effect": "due alleli compatibili con ε4 — con rs7412 CC, genotipo ε4/ε4: rischio lipidico e neurodegenerativo aumentato in modo rilevante", "relevance": "alta"}}},
+    {"rsid": "rs7412", "gene": "APOE", "label": "APOE — secondo SNP dell'aplotipo ε2/ε3/ε4 (leggere insieme a rs429358)",
+     "interpretations": {
+       "CC": {"effect": "nessun allele ε2 — l'aplotipo si decide su rs429358", "relevance": "neutro"},
+       "CT": {"effect": "un allele ε2 — profilo LDL spesso più favorevole; rilevante solo in combinazione con rs429358", "relevance": "bassa"},
+       "TT": {"effect": "ε2/ε2 — raro; LDL basse ma predisposizione alla disbetalipoproteinemia di tipo III in presenza di cofattori metabolici", "relevance": "media"}}},
+    {"rsid": "rs3798220", "gene": "LPA", "label": "LPA Ile4399Met (Lp(a) elevata)",
+     "interpretations": {
+       "TT": {"effect": "wild type — nessun contributo di questa variante ai livelli di Lp(a)", "relevance": "neutro"},
+       "CT": {"effect": "un allele di rischio — Lp(a) mediamente molto più alta e rischio coronarico aumentato; la Lp(a) è un fattore indipendente, poco sensibile a dieta e statine: utile dosarla almeno una volta", "relevance": "alta"},
+       "CC": {"effect": "omozigote — raro; Lp(a) marcatamente elevata, rischio coronarico aumentato", "relevance": "alta"}}},
+    {"rsid": "rs10455872", "gene": "LPA", "label": "LPA (regione KIV-2, Lp(a) elevata)",
+     "interpretations": {
+       "AA": {"effect": "wild type per questo SNP — nessun contributo ai livelli di Lp(a) da questa variante", "relevance": "neutro"},
+       "AG": {"effect": "un allele di rischio — Lp(a) mediamente più alta, rischio coronarico aumentato", "relevance": "alta"},
+       "GG": {"effect": "omozigote — raro; Lp(a) elevata, rischio coronarico aumentato", "relevance": "alta"}}},
+    {"rsid": "rs1801282", "gene": "PPARG", "label": "PPARγ Pro12Ala (sensibilità insulinica)",
+     "interpretations": {
+       "CC": {"effect": "Pro/Pro — genotipo comune, nessun effetto protettivo dell'allele Ala12", "relevance": "neutro"},
+       "CG": {"effect": "un allele Ala12 — modesta riduzione del rischio di diabete tipo 2 e migliore sensibilità insulinica", "relevance": "bassa"},
+       "GG": {"effect": "Ala12/Ala12 — raro; effetto protettivo sul rischio di diabete tipo 2 leggermente maggiore", "relevance": "bassa"}}},
+    {"rsid": "rs662", "gene": "PON1", "label": "PON1 Q192R (paraoxonasi, protezione delle LDL)",
+     "interpretations": {
+       "TT": {"effect": "Gln192/Gln192 — attività paraoxonasica (verso il paraossone) più bassa; l'efficacia verso le LDL ossidate è substrato-dipendente e la letteratura è contrastante", "relevance": "media"},
+       "CT": {"effect": "eterozigote — attività intermedia; l'attività funzionale misurata predice il rischio meglio del solo genotipo", "relevance": "bassa"},
+       "CC": {"effect": "Arg192/Arg192 — alta attività verso il paraossone; alcune meta-analisi associano l'allele R a un modesto aumento del rischio coronarico", "relevance": "media"}}}
+  ],
+  "refs": ["PMID:17878422", "PMID:20032323", "PMID:10973253", "PMID:18349088"]
+}

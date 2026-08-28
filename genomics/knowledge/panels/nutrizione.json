@@ -1,0 +1,67 @@
+{
+  "panel": "nutrizione",
+  "pathway": "Nutrigenomica / Intolleranze alimentari",
+  "snps": [
+    {"rsid": "rs4988235", "gene": "LCT/MCM6", "label": "Lattasi persistenza -13910C>T",
+     "interpretations": {
+       "AA": {"effect": "persistenza lattasica — lattasi attiva in età adulta, digestione del lattosio conservata", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — una copia dell'allele di persistenza, digestione del lattosio in genere conservata ma possibile riduzione parziale", "relevance": "bassa"},
+       "GG": {"effect": "non-persistenza lattasica — declino fisiologico della lattasi in età adulta, probabile intolleranza al lattosio", "relevance": "alta"}}},
+    {"rsid": "rs182549", "gene": "MCM6", "label": "Lattasi persistenza -22018 (in LD con rs4988235)",
+     "interpretations": {
+       "TT": {"effect": "aplotipo di persistenza lattasica su entrambi i cromosomi", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — conferma parziale dell'aplotipo di persistenza, da leggere insieme a rs4988235", "relevance": "bassa"},
+       "CC": {"effect": "aplotipo di non-persistenza — coerente con intolleranza al lattosio in età adulta", "relevance": "media"}}},
+    {"rsid": "rs762551", "gene": "CYP1A2", "label": "CYP1A2*1F -163A>C (metabolismo caffeina)",
+     "interpretations": {
+       "AA": {"effect": "metabolizzatore rapido della caffeina — clearance elevata, l'inducibilità dell'enzima è piena", "relevance": "neutro"},
+       "AC": {"effect": "metabolizzatore lento — clearance della caffeina ridotta, effetti più prolungati; con consumo elevato di caffè alcuni studi riportano maggior rischio cardiovascolare", "relevance": "media"},
+       "CC": {"effect": "metabolizzatore lento — clearance della caffeina marcatamente ridotta, sensibilità aumentata a dosi standard", "relevance": "alta"}}},
+    {"rsid": "rs671", "gene": "ALDH2", "label": "ALDH2*2 Glu504Lys (metabolismo alcol)",
+     "interpretations": {
+       "GG": {"effect": "wild type — aldeide deidrogenasi 2 pienamente attiva, smaltimento normale dell'acetaldeide", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — attività ALDH2 fortemente ridotta, flushing da alcol e accumulo di acetaldeide; l'alcol aumenta il rischio di tumore esofageo in questi portatori", "relevance": "alta"},
+       "AA": {"effect": "omozigote variante — attività ALDH2 quasi assente, intolleranza marcata all'alcol", "relevance": "alta"}}},
+    {"rsid": "rs713598", "gene": "TAS2R38", "label": "TAS2R38 P49A — aplotipo PAV/AVI (gusto amaro) 1/3",
+     "interpretations": {
+       "CC": {"effect": "due alleli PAV a questa posizione — compatibile con fenotipo taster/super-taster per composti amari (PTC/PROP)", "relevance": "media"},
+       "CG": {"effect": "eterozigote — percezione dell'amaro intermedia, da leggere con gli altri due SNP dell'aplotipo", "relevance": "bassa"},
+       "GG": {"effect": "due alleli AVI a questa posizione — compatibile con fenotipo non-taster, bassa percezione dell'amaro", "relevance": "media"}}},
+    {"rsid": "rs1726866", "gene": "TAS2R38", "label": "TAS2R38 A262V — aplotipo PAV/AVI (gusto amaro) 2/3",
+     "interpretations": {
+       "AA": {"effect": "due alleli PAV a questa posizione — conferma orientamento taster", "relevance": "media"},
+       "AG": {"effect": "eterozigote — percezione dell'amaro intermedia", "relevance": "bassa"},
+       "GG": {"effect": "due alleli AVI a questa posizione — orientamento non-taster", "relevance": "media"}}},
+    {"rsid": "rs10246939", "gene": "TAS2R38", "label": "TAS2R38 V296I — aplotipo PAV/AVI (gusto amaro) 3/3",
+     "interpretations": {
+       "TT": {"effect": "due alleli PAV a questa posizione — se coerente con gli altri due SNP, fenotipo super-taster: forte percezione dell'amaro di crucifere e altri vegetali", "relevance": "media"},
+       "CT": {"effect": "eterozigote — percezione dell'amaro intermedia", "relevance": "bassa"},
+       "CC": {"effect": "due alleli AVI a questa posizione — fenotipo non-taster se coerente con l'aplotipo", "relevance": "media"}}},
+    {"rsid": "rs5082", "gene": "APOA2", "label": "APOA2 -265T>C (interazione grassi saturi)",
+     "interpretations": {
+       "AA": {"effect": "wild type — nessuna interazione documentata tra grassi saturi e peso corporeo per questo genotipo", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — l'interazione gene-dieta è documentata soprattutto negli omozigoti; effetto atteso modesto", "relevance": "bassa"},
+       "GG": {"effect": "omozigote variante — con dieta ricca di grassi saturi è replicata in più popolazioni un'associazione con BMI più alto e maggior rischio di obesità", "relevance": "media"}}},
+    {"rsid": "rs7903146", "gene": "TCF7L2", "label": "TCF7L2 rischio diabete tipo 2",
+     "interpretations": {
+       "CC": {"effect": "wild type — nessun contributo di questa variante al rischio di diabete tipo 2", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — rischio di diabete tipo 2 aumentato di circa 1.4 volte; la variante comune con effetto più forte sul T2D", "relevance": "media"},
+       "TT": {"effect": "omozigote — rischio di diabete tipo 2 circa raddoppiato; attenzione a carico glicemico e sensibilità insulinica", "relevance": "alta"}}},
+    {"rsid": "rs2241880", "gene": "ATG16L1", "label": "ATG16L1 T300A (autofagia / rischio Crohn)",
+     "interpretations": {
+       "AA": {"effect": "Thr300/Thr300 — autofagia conservata, nessun contributo di questa variante al rischio di malattia infiammatoria intestinale", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — una copia dell'allele Ala300, autofagia parzialmente ridotta, rischio di Crohn moderatamente aumentato", "relevance": "media"},
+       "GG": {"effect": "Ala300/Ala300 — ridotta autofagia e clearance batterica intestinale, rischio di malattia di Crohn aumentato", "relevance": "alta"}}},
+    {"rsid": "rs601338", "gene": "FUT2", "label": "FUT2 W143X (secretor status) 1/2",
+     "interpretations": {
+       "GG": {"effect": "secretor — antigeni ABO secreti sulle mucose, buona protezione mucosale; suscettibilità a norovirus più alta", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — fenotipo secretor conservato (basta una copia funzionale)", "relevance": "neutro"},
+       "AA": {"effect": "non-secretor — assenza di antigeni ABO sulle mucose: microbiota alterato, resistenza a norovirus, B12 plasmatica tendenzialmente più alta", "relevance": "media"}}},
+    {"rsid": "rs602662", "gene": "FUT2", "label": "FUT2 secretor status 2/2 (livelli B12)",
+     "interpretations": {
+       "GG": {"effect": "coerente con fenotipo secretor — livelli di B12 plasmatica tendenzialmente più bassi rispetto ai non-secretor", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — effetto intermedio sui livelli di B12 plasmatica", "relevance": "bassa"},
+       "AA": {"effect": "coerente con non-secretor — B12 plasmatica tendenzialmente più alta", "relevance": "bassa"}}}
+  ],
+  "refs": ["PMID:11788828", "PMID:10233211", "PMID:16522833", "PMID:19320537", "PMID:12595690", "PMID:19901143", "PMID:16415884", "PMID:17200669", "PMID:18776911"]
+}

@@ -1,0 +1,22 @@
+{
+  "panel": "omega",
+  "pathway": "Omega-3/6 — desaturasi FADS e conversione acidi grassi essenziali",
+  "snps": [
+    {"rsid": "rs174546", "gene": "FADS1", "label": "FADS1 (delta-5 desaturasi, conversione ALA→EPA/ARA)",
+     "interpretations": {
+       "CC": {"effect": "attività desaturasi piena — conversione efficiente di ALA e LA verso acidi grassi a catena lunga (EPA, arachidonico)", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — attività desaturasi intermedia, conversione parzialmente ridotta", "relevance": "bassa"},
+       "TT": {"effect": "attività desaturasi ridotta — minore conversione endogena di ALA in EPA: maggiore utilità di EPA/DHA preformati (pesce grasso o supplementi)", "relevance": "media"}}},
+    {"rsid": "rs174547", "gene": "FADS1", "label": "FADS1 (in forte LD con rs174546)",
+     "interpretations": {
+       "TT": {"effect": "aplotipo ad alta attività desaturasi — conferma conversione efficiente", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — attività intermedia", "relevance": "bassa"},
+       "CC": {"effect": "aplotipo a bassa attività — conversione ALA→EPA ridotta, PUFA a catena lunga plasmatici tendenzialmente più bassi", "relevance": "media"}}},
+    {"rsid": "rs1535", "gene": "FADS2", "label": "FADS2 (delta-6 desaturasi, verso DHA)",
+     "interpretations": {
+       "AA": {"effect": "attività FADS2 piena — buona progressione della via verso DHA", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — attività intermedia", "relevance": "bassa"},
+       "GG": {"effect": "attività FADS2 ridotta — sintesi endogena di DHA meno efficiente, fonti dirette di DHA più rilevanti", "relevance": "media"}}}
+  ],
+  "refs": ["PMID:16670158", "PMID:19148276"]
+}

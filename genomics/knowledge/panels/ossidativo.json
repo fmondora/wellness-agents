@@ -1,0 +1,17 @@
+{
+  "panel": "ossidativo",
+  "pathway": "Stress ossidativo / Difese antiossidanti endogene",
+  "snps": [
+    {"rsid": "rs4880", "gene": "SOD2", "label": "SOD2 (MnSOD) Val16Ala — import mitocondriale",
+     "interpretations": {
+       "AA": {"effect": "Val16/Val16 — import mitocondriale della MnSOD meno efficiente, attività superossido dismutasi nel mitocondrio ridotta", "relevance": "media"},
+       "AG": {"effect": "eterozigote — attività MnSOD mitocondriale intermedia; capacità antiossidante endogena parzialmente ridotta rispetto all'omozigote Ala", "relevance": "media"},
+       "GG": {"effect": "Ala16/Ala16 — import mitocondriale efficiente e attività MnSOD più alta; alcuni studi associano questo genotipo a rischi specifici quando l'apporto di antiossidanti è basso (evidenza mista)", "relevance": "bassa"}}},
+    {"rsid": "rs1800566", "gene": "NQO1", "label": "NQO1*2 C609T Pro187Ser (chinone ossidoreduttasi)",
+     "interpretations": {
+       "GG": {"effect": "wild type — NQO1 pienamente attiva: detossificazione dei chinoni e rigenerazione di ubichinolo/vitamina E conservate", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — attività NQO1 ridotta a circa un terzo per instabilità della proteina variante", "relevance": "media"},
+       "AA": {"effect": "omozigote *2/*2 — attività NQO1 quasi assente (proteina instabile, degradata): capacità ridotta di detossificare chinoni e benzene", "relevance": "alta"}}}
+  ],
+  "refs": ["PMID:12618592", "PMID:8826876", "PMID:9328142"]
+}

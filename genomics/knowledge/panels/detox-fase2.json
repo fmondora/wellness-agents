@@ -1,0 +1,27 @@
+{
+  "panel": "detox-fase2",
+  "pathway": "Detossificazione Fase II (coniugazione: GST / NAT)",
+  "snps": [
+    {"rsid": "rs1695", "gene": "GSTP1", "label": "GSTP1 Ile105Val",
+     "interpretations": {
+       "AA": {"effect": "Ile105/Ile105 — glutatione S-transferasi Pi con cinetica di riferimento verso la maggior parte dei substrati", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — attività intermedia; l'effetto della sostituzione Ile105Val dipende dal substrato (ridotta verso alcuni elettrofili, aumentata verso altri)", "relevance": "bassa"},
+       "GG": {"effect": "Val105/Val105 — cinetica alterata substrato-dipendente della GSTP1, capacità di coniugazione ridotta verso diversi xenobiotici", "relevance": "media"}}},
+    {"rsid": "rs1138272", "gene": "GSTP1", "label": "GSTP1 Ala114Val",
+     "interpretations": {
+       "CC": {"effect": "wild type — nessuna alterazione a questa posizione", "relevance": "neutro"},
+       "CT": {"effect": "eterozigote — lieve riduzione dell'attività GSTP1, spesso in aplotipo con Ile105Val", "relevance": "bassa"},
+       "TT": {"effect": "omozigote variante — raro; riduzione dell'attività di coniugazione GSTP1", "relevance": "media"}}},
+    {"rsid": "rs1799930", "gene": "NAT2", "label": "NAT2*6 590G>A (Arg197Gln, acetilazione)",
+     "interpretations": {
+       "GG": {"effect": "nessun allele *6 — compatibile con acetilazione rapida/intermedia (il fenotipo NAT2 dipende dall'aplotipo completo)", "relevance": "neutro"},
+       "AG": {"effect": "eterozigote — un allele lento *6; se l'altro cromosoma porta un altro allele lento, fenotipo acetilatore lento", "relevance": "media"},
+       "AA": {"effect": "omozigote *6/*6 — acetilatore lento: metabolismo ridotto di amine aromatiche e farmaci come isoniazide e sulfamidici; rischio aumentato in caso di esposizione ad amine (fumo, carni molto cotte)", "relevance": "alta"}}},
+    {"rsid": "rs1208", "gene": "NAT2", "label": "NAT2 803A>G (Lys268Arg, marcatore di aplotipo)",
+     "interpretations": {
+       "AA": {"effect": "803A/803A — da solo non determina il fenotipo: va letto nell'aplotipo NAT2 insieme agli altri SNP (590, 481, 341, 857)", "relevance": "bassa"},
+       "AG": {"effect": "eterozigote — marcatore di aplotipo, interpretabile solo nel contesto degli altri SNP NAT2", "relevance": "bassa"},
+       "GG": {"effect": "803G/803G — la sostituzione è presente sia in aplotipi lenti (*5B) sia rapidi (*12): serve l'aplotipo completo", "relevance": "bassa"}}}
+  ],
+  "refs": ["PMID:9092542", "PMID:16112301"]
+}
