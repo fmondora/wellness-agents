@@ -81,20 +81,28 @@ def _info_field(info: str, key: str) -> str | None:
     return None
 
 
+def _download_atomic(url: str, dest: Path, label: str) -> Path:
+    """Scarica su file temporaneo e rinomina solo a successo: mai cache parziali."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    print(f"Scarico {label} da {url} ...")
+    try:
+        urllib.request.urlretrieve(url, tmp)
+    except Exception as e:
+        tmp.unlink(missing_ok=True)
+        if dest.exists():
+            print(f"Download fallito ({e}): uso la cache esistente.")
+            return dest
+        raise SystemExit(f"Download {label} fallito e nessuna cache: {e}")
+    tmp.replace(dest)
+    return dest
+
+
 def _clinvar_cache(update: bool) -> Path:
     dest = dna_common.dna_dir() / "db" / "clinvar_GRCh37.vcf.gz"
     if dest.exists() and not update:
         return dest
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    print(f"Scarico ClinVar GRCh37 (~250MB) da {CLINVAR_URL} ...")
-    try:
-        urllib.request.urlretrieve(CLINVAR_URL, dest)
-    except Exception as e:
-        if dest.exists():
-            print(f"Download fallito ({e}): uso la cache esistente.")
-            return dest
-        raise SystemExit(f"Download ClinVar fallito e nessuna cache: {e}")
-    return dest
+    return _download_atomic(CLINVAR_URL, dest, "ClinVar GRCh37 (~250MB)")
 
 
 def annotate_clinvar(update: bool = False, vcf_path: Path | None = None) -> int:
@@ -119,7 +127,7 @@ def annotate_clinvar(update: bool = False, vcf_path: Path | None = None) -> int:
             rows.append({"rsid": rsid, "genotype": gts[rsid],
                          "clnsig": _info_field(info, "CLNSIG") or "n/d",
                          "condition": _info_field(info, "CLNDN") or "n/d",
-                         "gene": (_info_field(info, "GENEINFO") or ":").split(":")[0],
+                         "gene": ((_info_field(info, "GENEINFO") or "n/d:").split(":")[0]),
                          "source": "clinvar", "db_version": file_date})
     versions = dna_common.load_versions()
     versions["clinvar"] = file_date
