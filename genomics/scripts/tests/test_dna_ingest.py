@@ -29,3 +29,25 @@ def test_ingest_idempotente(tmp_path, monkeypatch):
     second = dna_ingest.ingest(FIXTURES / "sample_23andme.txt")
     assert first["status"] == "ok"
     assert second["status"] == "already_ingested"
+
+
+def test_ingest_vcf(tmp_path, monkeypatch):
+    monkeypatch.setenv("WELLNESS_DATA", str(tmp_path))
+    import dna_common, dna_ingest
+    res = dna_ingest.ingest(FIXTURES / "sample.vcf")
+    assert res["inserted"] == 3
+    con = dna_common.connect()
+    # 0/0 su REF=A → AA; 0/1 → AG (REF+ALT, ordine alfabetico non richiesto)
+    assert con.execute(
+        "SELECT genotype FROM genotypes WHERE rsid='rs1000001'").fetchone()[0] == "AA"
+    assert con.execute(
+        "SELECT genotype FROM genotypes WHERE rsid='rs1000002'").fetchone()[0] == "AG"
+
+
+def test_ingest_xlsx(tmp_path, monkeypatch):
+    monkeypatch.setenv("WELLNESS_DATA", str(tmp_path))
+    import pytest
+    pytest.importorskip("openpyxl")
+    import dna_ingest
+    res = dna_ingest.ingest(FIXTURES / "sample.xlsx")
+    assert res["inserted"] == 2 and res["skipped_nocall"] == 1
