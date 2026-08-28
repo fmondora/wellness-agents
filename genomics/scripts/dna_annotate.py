@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import gzip
 import json
 import sys
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -14,6 +16,7 @@ import dna_common
 DEFAULT_PANELS = Path(__file__).resolve().parent.parent / "knowledge" / "panels"
 
 CLINVAR_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz"
+GWAS_URL = "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative"
 
 
 def _annotated_path(layer: str) -> Path:
@@ -134,6 +137,40 @@ def annotate_clinvar(update: bool = False, vcf_path: Path | None = None) -> int:
     dna_common.save_versions(versions)
     return _write_layer("clinvar", rows,
                         ["rsid", "genotype", "clnsig", "condition", "gene"])
+
+
+def _gwas_cache(update: bool) -> Path:
+    dest = dna_common.dna_dir() / "db" / "gwas_catalog.tsv"
+    if dest.exists() and not update:
+        return dest
+    dest = _download_atomic(GWAS_URL, dest, "GWAS Catalog (~700MB)")
+    versions = dna_common.load_versions()
+    versions["gwas"] = date.today().isoformat()
+    dna_common.save_versions(versions)
+    return dest
+
+
+def annotate_gwas(update: bool = False, tsv_path: Path | None = None) -> int:
+    gts = _genotypes()
+    path = tsv_path or _gwas_cache(update)
+    version = dna_common.load_versions().get("gwas", "cache-locale")
+    rows = []
+    with open(path, newline="") as fh:
+        for rec in csv.DictReader(fh, delimiter="\t"):
+            snps = rec.get("SNPS", "")
+            for token in snps.replace(" x ", ";").split(";"):
+                rsid = token.strip()
+                if rsid in gts:
+                    rows.append({"rsid": rsid, "genotype": gts[rsid],
+                                 "trait": rec.get("DISEASE/TRAIT", ""),
+                                 "p_value": rec.get("P-VALUE", ""),
+                                 "effect": rec.get("OR or BETA", ""),
+                                 "gene": rec.get("MAPPED_GENE", ""),
+                                 "study": rec.get("STUDY ACCESSION", ""),
+                                 "source": "gwas", "db_version": version})
+                    break
+    return _write_layer("gwas", rows,
+                        ["rsid", "genotype", "trait", "p_value", "effect", "gene", "study"])
 
 
 def main() -> None:
