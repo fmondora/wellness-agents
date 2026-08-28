@@ -37,17 +37,18 @@ Regole:
 Il catalogo illustrato NON ha i movimenti CrossFit (alzate olimpiche, thruster,
 toes-to-bar, box jump, double-under, muscle-up, GHD, sled, turkish get-up,
 wall ball) — per quelli si usa `crossfit-movements.md` (video ufficiali).
-Nota: wall ball e burpee per Francesco sono comunque "no" (asma) —
-il resto è vocabolario legittimo al box, dosato dal semaforo e dalla storia.
+Nota: gli esercizi vietati per la persona stanno nel suo preference_book
+(repo dati) — il resto è vocabolario legittimo al box, dosato dal semaforo
+e dalla storia.
 
-## Riferimenti per lo skill HSW di Francesco (video ufficiali)
+## Riferimenti per lo skill HSW — handstand walk (video ufficiali)
 
 - [The Handstand Walk](https://www.crossfit.com/essentials/the-handstand-walk) — l'arrivo
 - [The Handstand](https://www.crossfit.com/essentials/freestanding-handstand)
 - [Wall walk](https://bryllim.github.io/workout-guide/exercises/wall-walk/) (illustrato)
 - [The Chest-to-Wall Handstand Push-Up](https://www.crossfit.com/essentials/the-chest-to-wall-handstand-push-up) — solo la posizione, non il push-up
 
-## Mapping rapido per gli esercizi ricorrenti di Francesco
+## Mapping rapido per gli esercizi ricorrenti
 
 | Nome nel piano | Slug catalogo |
 |---|---|
