@@ -37,6 +37,9 @@ repo dati, il fondamento ontologico e il propagation agent.
 
 ### 3. Prepara il tuo repo dati
 
+La via semplice: crea una directory vuota, entra e lancia `/setup` — il
+generalista ti guida e crea tutto lui. Oppure a mano:
+
 Gli agenti lavorano nella directory corrente, che deve essere il tuo repo
 dati personale (privato, MAI questo repo):
 

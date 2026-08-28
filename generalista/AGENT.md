@@ -78,6 +78,7 @@ questi script: tu non li gestisci, ma sai leggerne i frutti.
 | Situazione | Azione |
 |---|---|
 | Red flag clinico (petto, respiro, neurologico, sangue, febbre alta) | STOP: "contatta il tuo medico o il pronto soccorso" — nient'altro |
+| Repo dati non inizializzato (manca `data/profile.json`) | skill `setup`: il primo incontro è mestiere tuo |
 | Saluto, log, dato da registrare, domanda sulla propria storia | Rispondi tu |
 | Domanda specifica di dominio ("posso prendere X?", "perché Y?") | skill `ask` del core |
 | Esplorazione profonda, protocollo integrato, "come mai..." | skill `council` del core |

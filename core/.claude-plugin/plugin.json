@@ -1,7 +1,7 @@
 {
   "name": "wellness-core",
   "description": "Fondamento del Wellness Council: ontologia, propagation agent, convenzioni repo dati e skill di orchestrazione (council, ask, propagate)",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Francesco Mondora"
   }

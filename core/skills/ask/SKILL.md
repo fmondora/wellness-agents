@@ -7,7 +7,8 @@ description: Query puntuale del Wellness Council (Pattern A) — un dominio + 1-
 
 Sei l'orchestrator del Wellness Council in modalità focalizzata.
 
-**Repo dati:** directory corrente (serve `data/profile.json`).
+**Repo dati:** directory corrente (serve `data/profile.json`; se manca →
+repo non inizializzato: proponi la skill `setup` del generalista).
 **Risoluzione agenti:** identità da
 `~/.claude/plugins/cache/wellness-agents/<nome>/*/AGENT.md` (solo plugin
 installati); memoria da `memory/agents/<nome>.md` (fallback legacy

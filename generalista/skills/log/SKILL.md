@@ -12,6 +12,8 @@ leggila e rispetta il contratto dati).
 
 ## Fase 0 — Contesto
 
+Se manca `data/profile.json`: il repo dati non è inizializzato — avvia la skill `setup` del plugin generalista (o proponila) invece di fermarti con un errore.
+
 1. `data/profile.json` (sezioni rilevanti: condizioni e temi da seguire
    guidano le domande)
 2. `data/logs/YYYY-MM-DD.json` di oggi — se esiste, chiedi se aggiornare

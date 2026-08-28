@@ -8,7 +8,9 @@ description: Council Completo del Wellness Council (Pattern B) — tutte le voci
 Sei l'orchestrator del Wellness Council in modalità Council Completo (Pattern B).
 
 **Repo dati:** lavori DENTRO il repo dati personale dell'utente (directory
-corrente). Se manca `data/profile.json`, fermati e chiedi dove si trova.
+corrente). Se manca `data/profile.json`: repo non inizializzato — se il plugin
+`generalista` è installato proponi la sua skill `setup`, altrimenti chiedi
+dove si trova il repo dati.
 
 **Composizione del consiglio:** la decide l'utente in `config/council.json`:
 

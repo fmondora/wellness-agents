@@ -15,6 +15,8 @@ risposte. Il bot invierà le righe di outbox non ancora inviate.
 
 ## Fase 0 — Red flag
 
+Se manca `data/profile.json`: il repo dati non è inizializzato — avvia la skill `setup` del plugin generalista (o proponila) invece di fermarti con un errore.
+
 Messaggio con red flag clinico → in outbox SOLO l'escalation al medico/pronto
 soccorso, nient'altro.
 
