@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "plugins": [
     {
@@ -59,7 +59,7 @@
     {
       "name": "genomics",
       "source": "./genomics",
-      "description": "Genomica — interpretazione SNP e pathway (metilazione, detox, infiammazione) dai dati DNA nel repo dati dell'utente. Mai determinismo genetico.",
+      "description": "Genomica — pipeline deterministica sul raw DNA dell'utente (ingest, annotazione ClinVar/PharmGKB/GWAS/pannelli, report) + query via CLI e MCP. Mai determinismo genetico.",
       "category": "domain"
     },
     {

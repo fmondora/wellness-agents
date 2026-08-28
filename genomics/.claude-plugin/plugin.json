@@ -1,8 +1,12 @@
 {
   "name": "genomics",
-  "description": "Agente Genomica — traduce SNP e varianti del test consumer in significato funzionale, con cross-reference su esami e condizioni.",
-  "version": "0.1.1",
-  "author": {
-    "name": "Francesco Mondora"
+  "description": "Genomica — pipeline deterministica sul raw DNA dell'utente (ingest, annotazione ClinVar/PharmGKB/GWAS/pannelli, report) + query via CLI e MCP. Mai determinismo genetico.",
+  "version": "0.2.0",
+  "author": {"name": "Francesco Mondora"},
+  "mcpServers": {
+    "dna-sqlite": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "data/dna/genotypes.db"]
+    }
   }
 }
