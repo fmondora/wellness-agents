@@ -177,6 +177,37 @@ def annotate_gwas(update: bool = False, tsv_path: Path | None = None) -> int:
                         ["rsid", "genotype", "trait", "p_value", "effect", "gene", "study"])
 
 
+def annotate_pharmgkb(dump_dir: Path | None = None) -> int:
+    dump = dump_dir or (dna_common.dna_dir() / "db" / "pharmgkb")
+    tsv = dump / "clinical_annotations.tsv"
+    if not tsv.exists():
+        raise SystemExit(
+            "Dump PharmGKB non trovato.\n"
+            f"Scarica 'clinicalAnnotations.zip' da https://www.pharmgkb.org/downloads\n"
+            f"(account gratuito) ed estrai clinical_annotations.tsv in {dump}/")
+    created = sorted(dump.glob("CREATED_*.txt"))
+    version = created[-1].stem.replace("CREATED_", "") if created else "dump-locale"
+    gts = _genotypes()
+    rows = []
+    with open(tsv, newline="") as fh:
+        for rec in csv.DictReader(fh, delimiter="\t"):
+            variant = rec.get("Variant/Haplotypes", "").strip()
+            if not variant.startswith("rs") or variant not in gts:
+                continue
+            rows.append({"rsid": variant, "genotype": gts[variant],
+                         "gene": rec.get("Gene", ""),
+                         "level": rec.get("Level of Evidence", ""),
+                         "drugs": rec.get("Drug(s)", ""),
+                         "category": rec.get("Phenotype Category", ""),
+                         "ann_id": rec.get("Clinical Annotation ID", ""),
+                         "source": "pharmgkb", "db_version": version})
+    versions = dna_common.load_versions()
+    versions["pharmgkb"] = version
+    dna_common.save_versions(versions)
+    return _write_layer("pharmgkb", rows,
+                        ["rsid", "genotype", "gene", "level", "drugs", "category", "ann_id"])
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Annotazione DNA per strato")
     p.add_argument("--layer", required=True,
