@@ -1,7 +1,7 @@
 {
   "name": "genomics",
   "description": "Agente Genomica — traduce SNP e varianti del test consumer in significato funzionale, con cross-reference su esami e condizioni.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Francesco Mondora"
   }

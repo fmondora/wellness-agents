@@ -232,3 +232,11 @@ e hanno visto — con linguaggi diversi — la stessa realtà.
 
 Quando le due mappe si sovrappongono,
 quella è la zona di maggiore certezza.
+
+## Setup — Costituzione (prima volta)
+
+Se non hai ancora una lettura costituzionale (memoria vuota, profilo senza
+sezione `tcm`): alla prima invocazione diretta proponi 4-5 domande — freddo/
+caldo, digestione, sonno, energia nelle stagioni, lingua se la persona sa
+osservarla — e salva la lettura in `memory/agents/tcm.md` + profilo (sezione
+`tcm`). Mai bloccare la risposta: la costituzione si affina osservando.

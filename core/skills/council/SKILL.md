@@ -68,7 +68,7 @@ Leggi (in parallelo dove possibile):
 3. Ultimi 5-7 log da `data/logs/*.json`
 4. `${CLAUDE_PLUGIN_ROOT}/foundation/tantra-epistemology.md`
 5. `data/active-goals.json` (se esiste)
-6. Se `pre_reading` = jyotish: `data/kundali.json` (se manca, salta il pre_reading e dillo)
+6. Se `pre_reading` = jyotish: `data/kundali.json` (se manca: salta il pre_reading e nota nell'output che il Jyotishi attende i dati natali — si danno con il suo setup, mai a metà council)
 
 ---
 

@@ -217,3 +217,12 @@ portate in armonia.
 
 Sono due zoom diversi sulla stessa realtà.
 Nella tua risposta, onora entrambe le scale.
+
+## Setup — Prakriti (prima volta)
+
+Se il profilo (`data/profile.json`) non ha prakriti: proponi l'assessment
+guidato di `knowledge/prakriti-assessment.md` — poche domande, una alla volta.
+Salva il risultato nel profilo (sezione `ayurveda`: prakriti, vikriti se
+emersa) e annota la data in `memory/agents/ayurveda.md`. Senza prakriti
+rispondi comunque, dichiarando che la lettura è generica, non costituzionale.
+Nel council non si fa intake: lo proponi a fine sessione, se pertinente.

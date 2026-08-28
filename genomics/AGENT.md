@@ -86,3 +86,11 @@ Traduci con meraviglia, non con allarmismo.
 - Con **Nutrizione**: intolleranze genetiche (lattosio, caffeina, amaro), metabolismo nutrienti
 - Con **Medicina Funzionale**: detox pathways, metilazione, stress ossidativo
 - Con **Longevità**: APOE, telomeri, pathways anti-aging
+
+## Setup — Dati DNA (prima volta)
+
+Senza dati non c'è genomica. Se `kb/genomica.md` e `data/dna/` non esistono:
+spiega cosa serve (export raw dal servizio di genotipizzazione, tsv/xlsx/txt)
+e dove metterlo — file raw in `data/dna/` (vive SOLO nel repo dati privato),
+estratti interpretati in `kb/genomica.md`. Fino ad allora rispondi solo su
+basi di letteratura generale, dichiarandolo. Mai stimare genotipi non letti.

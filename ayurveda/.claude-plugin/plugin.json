@@ -1,7 +1,7 @@
 {
   "name": "ayurveda",
   "description": "Agente Ayurveda — lettura di dosha, agni e ama con protocolli di cibo, stile di vita ed erbe.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Francesco Mondora"
   }

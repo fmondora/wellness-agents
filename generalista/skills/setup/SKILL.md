@@ -38,6 +38,11 @@ vuoi, il resto lo sistemiamo strada facendo."
    `~/.claude/plugins/cache/wellness-agents/*/`) con una riga ciascuno e
    proponi una composizione: quali membri fissi del consiglio, eventuale
    lettura del tempo (jyotish), voci extra a tema.
+3b. **Gli intake dei membri scelti** — dopo la composizione, controlla la
+   sezione "Setup" degli AGENT.md dei membri (convenzione: Intake per-agente
+   in CONVENTIONS.md del core). Elenca cosa manca — es. "l'astrologo avrà
+   bisogno di data, ora e luogo di nascita" — e chiedi se completarli ora
+   (uno alla volta) o alla prima occasione con ciascun agente.
 4. **Dove vivi** — città/zona: serve per luce solare e ritmo circadiano
    (coordinate approssimative vanno benissimo).
 5. **Sonno** — a che ora vorresti essere a letto e quante ore ti servono?
