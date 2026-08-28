@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "plugins": [
     {
@@ -19,6 +19,12 @@
       "source": "./coach-longevita",
       "description": "Coach Longevità — training per benessere e longevità operativa (Bergeron/Orr): daily plan, week plan, debrief, lift book, skill ginnici uno alla volta, recovery termico. Non medico, non nutrizionista.",
       "category": "coaching"
+    },
+    {
+      "name": "generalista",
+      "source": "./generalista",
+      "description": "Il generalista — primo contatto, diario giornaliero (/log), coda Telegram (/telegram), contratto dati e pipeline di ingestione (sync wearable, insights, trends). Triage verso ask/council. Non è un medico e non diagnostica.",
+      "category": "frontline"
     },
     {
       "name": "health",

@@ -89,7 +89,8 @@ claude plugin update wellness-agents
 
 | Plugin | Categoria | Cosa fa |
 |---|---|---|
-| `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent — **obbligatorio** |
+| `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent, /council /ask /propagate — **obbligatorio** |
+| `generalista` | frontline | Primo contatto e diario (/log, /telegram): triage, contratto dati, pipeline ingestione (sync wearable, insights, trends) |
 | `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico |
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
@@ -105,8 +106,9 @@ claude plugin update wellness-agents
 | `jyotish` | tradizione | Dasha, transiti, prashna, graha-dhatu, muhurta |
 | `tantra-guide` | guida | Kaula: pratica, pratyabhijna, Vigyan Bhairava, spanda |
 
-**In arrivo**: logger (ingestione unificata: persona, wearable, messaggistica)
-e la skill council orchestrata da `config/council.json`.
+I job schedulati (launchd/cron) restano nel repo dati dell'utente come shim
+sottili che chiamano gli script del plugin `generalista` con `WELLNESS_DATA`
+puntato al proprio repo.
 
 ---
 

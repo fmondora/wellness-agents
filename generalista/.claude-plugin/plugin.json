@@ -1,0 +1,8 @@
+{
+  "name": "generalista",
+  "description": "Il generalista del consiglio — primo contatto, diario giornaliero, contratto dati, triage: risponde al primo livello e convoca ask/council quando serve. Include la pipeline di ingestione (sync wearable, insights engine, trends, coda Telegram). Non è un medico e non diagnostica.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}
