@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "wellness-core",
       "source": "./core",
-      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati (council.json, memoria agenti, --data-dir). Gli altri plugin lo assumono presente.",
+      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati e skill /council: il consiglio si compone da config/council.json con i plugin installati.",
       "category": "core"
     },
     {

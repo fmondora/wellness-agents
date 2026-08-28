@@ -45,17 +45,22 @@ Se non ci sono scoperte nuove → riporta "Nessuna propagazione necessaria" e fe
 
 Per ogni scoperta, identifica TUTTI i destinatari:
 
-**Memory.md degli agenti** — non solo quelli coinvolti nella sessione:
-- Se tocca il corpo fisico → `domains/health/memory.md`
-- Se tocca alimentazione → `domains/nutritionist/memory.md`
-- Se tocca allenamento → `domains/functional-training/memory.md`
-- Se tocca sedute/carichi/recupero operativo/skill ginnici → `domains/coach-longevita/memory.md` (sezione entry, NON le learned notes — quelle nascono solo dai debrief)
-- Se tocca invecchiamento/vitalità → `domains/longevity/memory.md`
-- Se tocca genomica → `domains/genomics/memory.md`
-- Se tocca dosha/agni/ama → `traditions/ayurveda/memory.md`
-- Se tocca qi/elementi/meridiani → `traditions/tcm/memory.md`
-- Se tocca root cause/biomarker → `traditions/functional-medicine/memory.md`
-- Se tocca piante/adattogeni → `traditions/shamanic-plants/memory.md`
+**Memorie degli agenti** — non solo quelli coinvolti nella sessione.
+Path: `memory/agents/<agente>.md` nel repo dati (fallback legacy:
+`domains/<agente>/memory.md` o `traditions/<agente>/memory.md`).
+Propaga SOLO verso agenti installati/presenti nel sistema.
+- Se tocca il corpo fisico → health
+- Se tocca alimentazione → nutritionist
+- Se tocca allenamento (osservazione) → functional-training
+- Se tocca sedute/carichi/recupero operativo/skill ginnici → coach-longevita (sezione entry, NON le learned notes — quelle nascono solo dai debrief)
+- Se tocca invecchiamento/vitalità → longevity
+- Se tocca genomica → genomics
+- Se tocca dosha/agni/ama → ayurveda
+- Se tocca qi/elementi/meridiani → tcm
+- Se tocca root cause/biomarker → functional-medicine
+- Se tocca piante/adattogeni → shamanic-plants
+- Se tocca tempo/transiti/muhurta → jyotish
+- Se tocca pratica/coscienza → tantra-guide
 
 **Knowledge base** — se l'informazione è oggettiva:
 - Nuova condizione o diagnosi → `kb/condizioni.md`
