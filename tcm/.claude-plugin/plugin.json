@@ -1,0 +1,8 @@
+{
+  "name": "tcm",
+  "description": "Agente di Medicina Cinese Classica — pattern diagnostici, 5 elementi, emozioni e cibo come medicina.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

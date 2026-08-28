@@ -1,0 +1,8 @@
+{
+  "name": "functional-medicine",
+  "description": "Agente di Medicina Funzionale — root cause analysis con matrice IFM e biomarker avanzati.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

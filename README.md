@@ -89,12 +89,24 @@ claude plugin update wellness-agents
 
 | Plugin | Categoria | Cosa fa |
 |---|---|---|
-| `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent |
+| `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent — **obbligatorio** |
 | `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico |
+| `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi |
+| `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
+| `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori |
+| `cellulite` | dominio | Lettura circolatoria, linfatica e ormonale del tessuto |
+| `functional-training` | dominio | 7 pattern di movimento, HRV come bussola, zone |
+| `genomics` | dominio | SNP e pathway dai dati DNA del repo dati — mai determinismo |
+| `george` | dominio | Framework reverse aging di @Bluefidel47 — claim etichettati |
+| `ayurveda` | tradizione | Dosha, agni, ama, rasayana |
+| `tcm` | tradizione | Qi, cinque elementi, pattern di organi, stagionalità |
+| `functional-medicine` | tradizione | Root cause, matrice IFM, biomarker di sistema |
+| `shamanic-plants` | tradizione | Intelligenza vegetale, adattogeni, dimensione cerimoniale |
+| `jyotish` | tradizione | Dasha, transiti, prashna, graha-dhatu, muhurta |
+| `tantra-guide` | guida | Kaula: pratica, pratyabhijna, Vigyan Bhairava, spanda |
 
-**In migrazione** dal sistema originale: health, nutritionist, genomics,
-ayurveda, tcm, functional-medicine, shamanic-plants, jyotish, tantra-guide,
-logger (ingestione unificata: persona, wearable, messaggistica).
+**In arrivo**: logger (ingestione unificata: persona, wearable, messaggistica)
+e la skill council orchestrata da `config/council.json`.
 
 ---
 

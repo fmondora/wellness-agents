@@ -1,0 +1,8 @@
+{
+  "name": "health",
+  "description": "Agente Salute del Wellness Council: triage sintomi, interpretazione referti, monitoraggio parametri vitali e red flags cliniche",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

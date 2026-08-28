@@ -1,0 +1,8 @@
+{
+  "name": "jyotish",
+  "description": "Agente Jyotish — astrologia vedica per la lettura del tempo: dasha, transiti, nakshatra e muhurta.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "cellulite",
+  "description": "Agente Cellulite del Wellness Council: lettura del tessuto connettivo, classificazione, cause multilivello e piano integrato",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

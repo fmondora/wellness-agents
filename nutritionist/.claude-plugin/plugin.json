@@ -1,0 +1,8 @@
+{
+  "name": "nutritionist",
+  "description": "Agente Nutrizione del Wellness Council: assessment nutrizionale, ricette con lettura energetica, piani pasti e obiettivi come intenzioni",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

@@ -4,14 +4,14 @@
     "name": "Francesco Mondora"
   },
   "metadata": {
-    "description": "Wellness Council — agenti medici, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.1.0"
+    "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "wellness-core",
       "source": "./core",
-      "description": "OBBLIGATORIO — Fondamento tantrico, propagation agent, convenzioni del repo dati (council.json, memoria agenti, --data-dir). Gli altri plugin lo assumono presente.",
+      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati (council.json, memoria agenti, --data-dir). Gli altri plugin lo assumono presente.",
       "category": "core"
     },
     {
@@ -19,6 +19,84 @@
       "source": "./coach-longevita",
       "description": "Coach Longevità — training per benessere e longevità operativa (Bergeron/Orr): daily plan, week plan, debrief, lift book, skill ginnici uno alla volta, recovery termico. Non medico, non nutrizionista.",
       "category": "coaching"
+    },
+    {
+      "name": "health",
+      "source": "./health",
+      "description": "Salute — dominio osservazionale del corpo fisico: sintomi, HRV, red flag clinici con escalation immediata. Mai diagnosi.",
+      "category": "domain"
+    },
+    {
+      "name": "nutritionist",
+      "source": "./nutritionist",
+      "description": "Nutrizione — cibo come nutrimento e informazione: pattern alimentari, ricette, filosofia degli obiettivi mai punitiva.",
+      "category": "domain"
+    },
+    {
+      "name": "longevity",
+      "source": "./longevity",
+      "description": "Longevità — hallmarks dell'aging, forza e VO2max come predittori, protocolli di lungo periodo.",
+      "category": "domain"
+    },
+    {
+      "name": "cellulite",
+      "source": "./cellulite",
+      "description": "Cellulite — lettura circolatoria, linfatica e ormonale del tessuto; protocolli movimento+nutrizione.",
+      "category": "domain"
+    },
+    {
+      "name": "functional-training",
+      "source": "./functional-training",
+      "description": "Allenamento funzionale — dominio osservazionale del movimento: 7 pattern fondamentali, HRV come bussola, guida alle zone.",
+      "category": "domain"
+    },
+    {
+      "name": "genomics",
+      "source": "./genomics",
+      "description": "Genomica — interpretazione SNP e pathway (metilazione, detox, infiammazione) dai dati DNA nel repo dati dell'utente. Mai determinismo genetico.",
+      "category": "domain"
+    },
+    {
+      "name": "george",
+      "source": "./george",
+      "description": "George (@Bluefidel47) — framework reverse aging e chetocarnivora dalla voce pubblica di X: claim etichettati, mai sostituisce le tradizioni né il medico.",
+      "category": "domain"
+    },
+    {
+      "name": "ayurveda",
+      "source": "./ayurveda",
+      "description": "Ayurveda — dosha, agni, ama, rasayana: lettura costituzionale e protocolli della tradizione vedica.",
+      "category": "tradition"
+    },
+    {
+      "name": "tcm",
+      "source": "./tcm",
+      "description": "Medicina Tradizionale Cinese — qi, cinque elementi, pattern di organi e meridiani, stagionalità.",
+      "category": "tradition"
+    },
+    {
+      "name": "functional-medicine",
+      "source": "./functional-medicine",
+      "description": "Medicina Funzionale — root cause analysis, matrice IFM, biomarker come segnali di sistema.",
+      "category": "tradition"
+    },
+    {
+      "name": "shamanic-plants",
+      "source": "./shamanic-plants",
+      "description": "Piante & Sciamanesimo — intelligenza vegetale, adattogeni, erbe e dimensione cerimoniale.",
+      "category": "tradition"
+    },
+    {
+      "name": "jyotish",
+      "source": "./jyotish",
+      "description": "Jyotish — astrologia medica vedica: dasha, transiti, prashna, graha-dhatu e muhurta. Chart natale nel repo dati (data/kundali.json).",
+      "category": "tradition"
+    },
+    {
+      "name": "tantra-guide",
+      "source": "./tantra-guide",
+      "description": "Kaula — guida tantrica: pratica quotidiana, riconoscimento (pratyabhijna), Vigyan Bhairava Tantra, spanda.",
+      "category": "guide"
     }
   ]
 }
