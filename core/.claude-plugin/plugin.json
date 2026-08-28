@@ -1,0 +1,8 @@
+{
+  "name": "wellness-core",
+  "description": "Fondamento del Wellness Council: ontologia tantrica, propagation agent, convenzioni del repo dati personale",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}

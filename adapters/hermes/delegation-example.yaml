@@ -1,0 +1,10 @@
+# Esempio di config Hermes per delegare agli agenti wellness.
+# Aggiungere in ~/.hermes/config.yaml, sezione delegation.
+delegation:
+  max_concurrent_children: 4
+  inherit_mcp: true
+  children:
+    coach-longevita:
+      # prompt di sistema = AGENT.md del plugin (path assoluto di questo repo)
+      system_prompt_file: /PATH/A/wellness-agents/coach-longevita/AGENT.md
+      # il child lavora nella cwd del repo dati personale

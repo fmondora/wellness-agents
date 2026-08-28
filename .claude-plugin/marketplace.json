@@ -1,0 +1,24 @@
+{
+  "name": "wellness-agents",
+  "owner": {
+    "name": "Francesco Mondora"
+  },
+  "metadata": {
+    "description": "Wellness Council — agenti medici, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "wellness-core",
+      "source": "./core",
+      "description": "OBBLIGATORIO — Fondamento tantrico, propagation agent, convenzioni del repo dati (council.json, memoria agenti, --data-dir). Gli altri plugin lo assumono presente.",
+      "category": "core"
+    },
+    {
+      "name": "coach-longevita",
+      "source": "./coach-longevita",
+      "description": "Coach Longevità — training per benessere e longevità operativa (Bergeron/Orr): daily plan, week plan, debrief, lift book, skill ginnici uno alla volta, recovery termico. Non medico, non nutrizionista.",
+      "category": "coaching"
+    }
+  ]
+}
