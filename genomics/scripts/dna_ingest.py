@@ -11,6 +11,12 @@ import dna_common
 NO_CALLS = {"--", ""}
 
 
+def _clean_num(v) -> str:
+    """Normalizza numeri da xlsx: 1.0 → "1", 2000.0 → "2000"."""
+    s = str(v).strip()
+    return s[:-2] if s.endswith(".0") else s
+
+
 def _rows_txt(path: Path):
     for line in path.read_text().splitlines():
         if not line or line.startswith("#"):
@@ -49,7 +55,8 @@ def _rows_xlsx(path: Path):
     want = ["rsid", "chromosome", "position", "genotype"]
     idx = None
     for row in ws.iter_rows(max_row=50, values_only=True):
-        low = [str(c).strip().lower() if c else "" for c in row]
+        # Normalizza: rimuovi "#" e spazi, poi lowercase
+        low = [str(c).strip().lstrip("#").strip().lower() if c is not None else "" for c in row]
         if all(w in low for w in want):
             idx = {w: low.index(w) for w in want}
             header_found = row
@@ -63,8 +70,10 @@ def _rows_xlsx(path: Path):
             continue
         if row[idx["rsid"]] is None:
             continue
-        yield (str(row[idx["rsid"]]), str(row[idx["chromosome"]]),
-               int(row[idx["position"]]), str(row[idx["genotype"]]).strip())
+        chrom = _clean_num(row[idx["chromosome"]])
+        pos = int(float(row[idx["position"]]))
+        yield (str(row[idx["rsid"]]).strip(), chrom,
+               pos, str(row[idx["genotype"]]).strip())
 
 
 READERS = {".txt": _rows_txt, ".vcf": _rows_vcf, ".xlsx": _rows_xlsx}

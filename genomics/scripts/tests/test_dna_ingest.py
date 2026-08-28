@@ -48,6 +48,10 @@ def test_ingest_xlsx(tmp_path, monkeypatch):
     monkeypatch.setenv("WELLNESS_DATA", str(tmp_path))
     import pytest
     pytest.importorskip("openpyxl")
-    import dna_ingest
+    import dna_common, dna_ingest
     res = dna_ingest.ingest(FIXTURES / "sample.xlsx")
     assert res["inserted"] == 2 and res["skipped_nocall"] == 1
+    # Verifica normalizzazione: header con "# rsid" e chromosome/position come float
+    con = dna_common.connect()
+    row = con.execute("SELECT chrom, pos FROM genotypes WHERE rsid='rs1000002'").fetchone()
+    assert row == ("1", 2000)
