@@ -98,7 +98,6 @@ claude plugin update wellness-agents
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
 | `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori |
-| `functional-training` | dominio | 7 pattern di movimento, HRV come bussola, zone |
 | `genomics` | dominio | SNP e pathway dai dati DNA del repo dati — mai determinismo |
 | `george` | dominio | Framework reverse aging di @Bluefidel47 — claim etichettati |
 | `ayurveda` | tradizione | Dosha, agni, ama, rasayana |
@@ -140,7 +139,6 @@ flowchart TB
         GEO["🥩 george<br/>protocolli come spunti, claim etichettati"]
         DNA["🧬 genomics<br/>informazione, mai determinismo"]
         NUT["🥗 nutritionist<br/>pattern e ricette come proposte"]
-        FT["💪 functional-training<br/>consulenza biomeccanica (in ridefinizione)"]
     end
 
     subgraph COUNCIL["TRADIZIONI — voci del council"]

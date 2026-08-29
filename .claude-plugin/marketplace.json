@@ -45,12 +45,6 @@
       "category": "domain"
     },
     {
-      "name": "functional-training",
-      "source": "./functional-training",
-      "description": "Allenamento funzionale — dominio osservazionale del movimento: 7 pattern fondamentali, HRV come bussola, guida alle zone.",
-      "category": "domain"
-    },
-    {
       "name": "genomics",
       "source": "./genomics",
       "description": "Genomica — pipeline deterministica sul raw DNA dell'utente (ingest, annotazione ClinVar/PharmGKB/GWAS/pannelli, report) + query via CLI e MCP. Mai determinismo genetico.",

@@ -51,8 +51,7 @@ Path: `memory/agents/<agente>.md` nel repo dati (fallback legacy:
 Propaga SOLO verso agenti installati/presenti nel sistema.
 - Se tocca il corpo fisico → health
 - Se tocca alimentazione → nutritionist
-- Se tocca allenamento (osservazione) → functional-training
-- Se tocca sedute/carichi/recupero operativo/skill ginnici → coach-longevita (sezione entry, NON le learned notes — quelle nascono solo dai debrief)
+- Se tocca allenamento/sedute/carichi/recupero operativo/skill ginnici → coach-longevita (sezione entry, NON le learned notes — quelle nascono solo dai debrief)
 - Se tocca invecchiamento/vitalità → longevity
 - Se tocca genomica → genomics
 - Se tocca dosha/agni/ama → ayurveda
