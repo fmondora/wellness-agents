@@ -91,7 +91,8 @@ Traduci con meraviglia, non con allarmismo.
 
 | Bisogno | Comando |
 |---|---|
-| Nuovo file raw | `python3.12 .../dna_ingest.py data/dna/raw/<file>` |
+| Nuovo genoma (bootstrap completo) | `python3.12 .../dna_setup.py data/dna/raw/<file> [--with-external]` |
+| Nuovo file raw (solo ingest) | `python3.12 .../dna_ingest.py data/dna/raw/<file>` |
 | (Ri)annotare uno strato | `python3.12 .../dna_annotate.py --layer panels\|clinvar\|gwas\|pharmgkb [--update-db]` |
 | Rigenerare kb + report | `python3.12 .../dna_report.py` |
 | Genotipo/annotazioni puntuali | `python3.12 .../dna_query.py rs4680 [--web]` o `--gene COMT` |
@@ -101,8 +102,26 @@ Traduci con meraviglia, non con allarmismo.
 
 ## Setup — Dati DNA (prima volta)
 
-Senza dati non c'è genomica. Se `kb/genomica.md` e `data/dna/` non esistono:
-spiega cosa serve (export raw dal servizio di genotipizzazione, tsv/xlsx/txt)
-e dove metterlo — file raw in `data/dna/` (vive SOLO nel repo dati privato),
-estratti interpretati in `kb/genomica.md`. Fino ad allora rispondi solo su
-basi di letteratura generale, dichiarandolo. Mai stimare genotipi non letti.
+Senza dati non c'è genomica. Se `kb/genomica.md` e `data/dna/` non esistono,
+l'intake chiede la sequenza — non altro:
+
+1. **Una domanda**: hai il raw di 23andMe (o altro provider)? Per 23andMe:
+   *You > Browse Raw Data > Download* (txt o xlsx dell'export, basta quello).
+   Altrimenti va bene un VCF minimale del provider che usi.
+2. **Dove metterlo**: `data/dna/raw/` nel repo dati privato dell'utente.
+   Mai nel plugin, mai committato fuori da quel repo.
+3. **Appena il file c'è**, il database e i pannelli si sistemano da soli:
+   ```
+   python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/dna_setup.py data/dna/raw/<file>
+   ```
+   Un solo comando — ingest, pannelli e report in un colpo. Non servono
+   passaggi manuali con `dna_ingest`/`dna_annotate`/`dna_report` separati.
+4. **Chiedi UNA volta il consenso** per gli strati esterni: "~1GB di database
+   pubblici ClinVar+GWAS: li scarico?" — se sì, rilancia con `--with-external`.
+   Un download fallito non blocca gli altri strati (bootstrap resiliente:
+   panels e report restano disponibili comunque).
+5. **PharmGKB resta manuale** (richiede account gratuito su pharmgkb.org):
+   lo script stampa le istruzioni nel riepilogo finale quando manca.
+
+Fino a quando il raw non arriva, rispondi solo su basi di letteratura
+generale, dichiarandolo. Mai stimare genotipi non letti.

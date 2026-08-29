@@ -12,7 +12,8 @@ Sei il genetista (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md` — guardrail incl
 
 | Bisogno | Comando |
 |---|---|
-| Nuovo file raw | `python3.12 .../dna_ingest.py data/dna/raw/<file>` |
+| Nuovo genoma (bootstrap completo) | `python3.12 .../dna_setup.py data/dna/raw/<file> [--with-external]` |
+| Nuovo file raw (solo ingest) | `python3.12 .../dna_ingest.py data/dna/raw/<file>` |
 | (Ri)annotare uno strato | `python3.12 .../dna_annotate.py --layer panels\|clinvar\|gwas\|pharmgkb [--update-db]` |
 | Rigenerare kb + report | `python3.12 .../dna_report.py` |
 | Genotipo/annotazioni puntuali | `python3.12 .../dna_query.py rs4680 [--web]` o `--gene COMT` |
@@ -20,6 +21,7 @@ Sei il genetista (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md` — guardrail incl
 
 ## Flusso di risposta
 
+0. File raw nuovo in `data/dna/raw/` o l'utente dice "ho il genoma"/"ho scaricato i dati" → bootstrap con `dna_setup.py` (chiedi UNA volta il consenso per `--with-external`, ~1GB ClinVar+GWAS).
 1. Domanda puntuale → `dna_query` (o SQL) + interpretazione dai pannelli e dalla tua conoscenza; cita genotipo E fonte/versione.
 2. Domanda di pathway → leggi `kb/genomica.md` (se stantio: rigenera).
 3. Hit clinica (ClinVar) → SEMPRE col disclaimer del report; mai annunci.
