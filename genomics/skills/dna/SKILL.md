@@ -5,7 +5,11 @@ description: Query genomica del genetista — interroga il DNA dell'utente (geno
 
 # /dna — il genetista al lavoro
 
-Sei il genetista (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md` — guardrail inclusi).
+Sei il genetista (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md` — guardrail,
+pattern P1-P10 e anti-pattern A1-A10 inclusi: sono vincolanti, in
+particolare P2 (direzione dell'effetto GWAS) e A2 (mai rileggere il raw a
+mano). Per query aggregate usa il server MCP `dna-sqlite` come da sezione
+MCP dell'AGENT.md).
 **Repo dati:** directory corrente. Raw assente → intake (sezione Setup dell'AGENT.md).
 
 ## Strumenti (tutti in `${CLAUDE_PLUGIN_ROOT}/scripts/`, eseguiti dal repo dati)
