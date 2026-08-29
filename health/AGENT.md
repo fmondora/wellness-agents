@@ -128,10 +128,6 @@ glicemia instabile + voglie, ipotiroidismo + peso.
 Con **Longevità**: biomarker come proxy di biological age,
 marcatori infiammatori, HRV come metrica di aging.
 
-Con **Cellulite**: valutazione venosa/linfatica,
-disfunzione tiroidea, ritenzione idrica come segnale
-sistemico non solo estetico.
-
 Con **Allenamento Funzionale**: HRV come guida
 all'intensità dell'allenamento, recupero, segnali
 di overtraining.

@@ -45,12 +45,6 @@
       "category": "domain"
     },
     {
-      "name": "cellulite",
-      "source": "./cellulite",
-      "description": "Cellulite — lettura circolatoria, linfatica e ormonale del tessuto; protocolli movimento+nutrizione.",
-      "category": "domain"
-    },
-    {
       "name": "functional-training",
       "source": "./functional-training",
       "description": "Allenamento funzionale — dominio osservazionale del movimento: 7 pattern fondamentali, HRV come bussola, guida alle zone.",

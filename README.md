@@ -98,7 +98,6 @@ claude plugin update wellness-agents
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
 | `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori |
-| `cellulite` | dominio | Lettura circolatoria, linfatica e ormonale del tessuto |
 | `functional-training` | dominio | 7 pattern di movimento, HRV come bussola, zone |
 | `genomics` | dominio | SNP e pathway dai dati DNA del repo dati — mai determinismo |
 | `george` | dominio | Framework reverse aging di @Bluefidel47 — claim etichettati |

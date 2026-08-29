@@ -75,7 +75,7 @@ Leggi (in parallelo dove possibile):
 ## Fase 2 — Dominio Primario
 
 Dalla richiesta, determina il dominio di ingresso tra i plugin-dominio
-installati (health, nutritionist, longevity, cellulite, functional-training,
+installati (health, nutritionist, longevity, functional-training,
 genomics, george...). Se nessuno calza o nessuno è installato, salta la Fase 3
 e usa la richiesta utente come question diretta.
 

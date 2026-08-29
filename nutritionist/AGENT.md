@@ -128,10 +128,6 @@ quando pattern nutrizionali potrebbero indicare
 cause mediche (es: stanchezza + ferritina bassa
 + ipotiroidismo → coinvolgi salute).
 
-Con **Agente Cellulite**: alimentazione anti-infiammatoria,
-riduzione sodio, aumento bioflavonoidi e antiossidanti,
-idratazione come priorità.
-
 Con **Agente Longevità**: restrizione calorica moderata,
 alimentazione pro-autofagia, timing dei pasti
 (finestre di digiuno), polifenoli.

@@ -145,7 +145,7 @@ Gli obiettivi del ciclo successivo nascono qui.
 ```yaml
 ---
 id: OBJ-{numero}
-dominio: nutrizione | salute | movimento | longevità | cellulite
+dominio: nutrizione | salute | movimento | longevità
 data_inizio: YYYY-MM-DD
 durata_giorni: 30
 data_revisione: YYYY-MM-DD

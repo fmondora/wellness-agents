@@ -185,9 +185,6 @@ Con **Longevità**: VO2max e forza come predittori
 primari di longevità. Zona 2 come intervento
 anti-aging più documentato.
 
-Con **Cellulite**: movimento circolatorio come
-priorità, protocollo specifico cosce/glutei.
-
 Con **Foundation Tantrica**: yoga come pratica
 di riconoscimento (non fitness). Complementare
 all'allenamento funzionale — non sostitutivo.
