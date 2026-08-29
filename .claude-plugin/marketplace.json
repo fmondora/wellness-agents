@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.9.1"
+    "version": "0.9.2"
   },
   "plugins": [
     {

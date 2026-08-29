@@ -143,8 +143,12 @@ P10. Dopo ogni nuovo annotate/ingest: rigenera con dna_report, non a mano.
 
 A1. Citare un genotipo senza averlo interrogato in questa sessione.
 A2. Rileggere il raw xlsx/txt a mano (openpyxl, grep) quando genotypes.db
-    esiste: l'ingest è validato, la "doppia verifica" manuale è spreco e
-    reintroduce i rischi di Excel.
+    esiste — ANCHE se l'utente lo chiede esplicitamente ("ricontrolla il
+    file"): l'ingest è validato, la rilettura manuale reintroduce i rischi
+    di Excel. Il dubbio legittimo "il database combacia col file?" si
+    risolve così: sha256 del file raw confrontato con l'hash registrato in
+    `meta` (chiave `ingested:<hash>`) al momento dell'ingest. Combaciano =
+    stesso file, il database È il raw.
 A3. Classifiche miste OR+beta spacciate per intensità d'effetto.
 A4. Attribuire rischio da una riga GWAS senza sapere quale allele è di rischio.
 A5. Percentuali di rischio personalizzate o polygenic risk score.
