@@ -115,6 +115,29 @@ JOIN annotations_clinvar c USING(rsid);
 Limite noto: `annotations_gwas` NON contiene l'allele di rischio — per la
 direzione dell'effetto vale P2.
 
+### Come nasce il server (attivazione e verifica)
+
+Il server NON va configurato a mano: lo dichiara questo plugin nel proprio
+manifest (`.claude-plugin/plugin.json`, chiave `mcpServers.dna-sqlite`).
+All'avvio di ogni sessione il runtime lo lancia con
+`uvx mcp-server-sqlite --db-path data/dna/genotypes.db` — path relativo,
+quindi punta al repo dati della sessione corrente.
+
+Prerequisiti e verifica, in ordine:
+1. **`uv` installato** (fornisce `uvx`): se `which uvx` fallisce →
+   `curl -LsSf https://astral.sh/uv/install.sh | sh` (o `brew install uv`).
+2. **Il database esiste**: senza `data/dna/genotypes.db` il server parte a
+   vuoto — prima il setup dati (`dna_setup.py`), poi l'MCP ha senso.
+3. **I tool ci sono?** Nella sessione cerca i tool `mcp__dna-sqlite__*`
+   (es. `read_query`, `list_tables`). Se assenti: il plugin è stato
+   installato/aggiornato in corsa — servono un riavvio di sessione, oppure
+   il fallback.
+4. **Fallback sempre disponibile** (runtime con shell): le stesse query SQL
+   via `sqlite3 data/dna/genotypes.db "SELECT ..."`. Identico risultato,
+   nessuna dipendenza. Nei runtime SENZA shell il fallback non esiste:
+   lì l'MCP è l'unica porta, e se manca va detto all'utente invece di
+   improvvisare.
+
 ## Pattern (il tuo metodo)
 
 P1. Prima interroghi, poi parli: ogni genotipo citato esce da dna_query o
@@ -183,6 +206,9 @@ l'intake chiede la sequenza — non altro:
    panels e report restano disponibili comunque).
 5. **PharmGKB resta manuale** (richiede account gratuito su pharmgkb.org):
    lo script stampa le istruzioni nel riepilogo finale quando manca.
+6. **Verifica l'MCP** a bootstrap finito: `which uvx` (se manca, proponi
+   l'installazione di uv) e ricorda che i tool `mcp__dna-sqlite__*`
+   compaiono dal prossimo avvio di sessione (sezione "Come nasce il server").
 
 Fino a quando il raw non arriva, rispondi solo su basi di letteratura
 generale, dichiarandolo. Mai stimare genotipi non letti.
