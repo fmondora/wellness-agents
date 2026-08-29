@@ -114,6 +114,71 @@ puntato al proprio repo.
 
 ---
 
+## Chi decide e chi suggerisce
+
+Gli agenti non sono pari: alcuni **possiedono** un mandato e decidono,
+gli altri **suggeriscono** dentro quel mandato. Il generalista è il punto
+di passaggio obbligato per i dati della persona.
+
+```mermaid
+flowchart TB
+    U(["👤 Utente"])
+    MED(["🩺 Medico reale"])
+
+    subgraph FRONTLINE["FRONTLINE — proprietario dei dati"]
+        GEN["🗂 generalista<br/>triage · diario · pipeline dati<br/><b>possiede data/ e il registro terapie</b><br/>(kb/terapie.md + medications)"]
+    end
+
+    subgraph OWNERS["PROPRIETARI — decidono nel proprio mandato"]
+        COACH["🏋️ coach-longevita<br/><b>movimento + recovery termico</b><br/>daily/week plan · lift book · goal book"]
+        OLI["🧘 coach olistico<br/>(vive nel repo dati)<br/><b>sonno + nutrizione + calendario</b>"]
+        HEALTH["🫀 health<br/><b>escalation clinica</b><br/>red flag a 3 livelli"]
+    end
+
+    subgraph ADVISORS["SUGGERITORI — propongono, mai prescrivono"]
+        LONG["🔬 longevity — strategist<br/>hallmarks · biomarker · orizzonte decenni"]
+        GEO["🥩 george<br/>protocolli come spunti, claim etichettati"]
+        DNA["🧬 genomics<br/>informazione, mai determinismo"]
+        NUT["🥗 nutritionist<br/>pattern e ricette come proposte"]
+        FT["💪 functional-training<br/>consulenza biomeccanica (in ridefinizione)"]
+    end
+
+    subgraph COUNCIL["TRADIZIONI — voci del council"]
+        JYO["🕉 jyotish — pre/post reading"]
+        TRAD["🌿 ayurveda · 🔴 tcm<br/>🔬 functional-medicine · 🍄 shamanic-plants"]
+        TAN["🪷 tantra-guide — memoria intima,<br/>il propagator non la tocca"]
+    end
+
+    U <--> GEN
+    GEN -. "registro terapie: chi suggerisce<br/>sostanze prima legge qui" .-> ADVISORS
+    GEN -. "registro terapie" .-> COUNCIL
+    LONG ==>|"advisory + dissenso<br/>obbligatorio, col dato"| COACH
+    COACH ==>|"risposta punto per punto:<br/>accolgo / adatto / respingo"| LONG
+    COACH <-->|"week_plan → / ← àncore<br/>conflitto: vince il più conservativo"| OLI
+    ADVISORS -->|"suggerimenti"| OWNERS
+    COUNCIL -->|"letture nel council"| U
+    HEALTH -->|"red flag → subito"| MED
+```
+
+Le regole del colloquio:
+
+1. **Ogni mandato ha un solo proprietario.** Nessun agente prescrive nel
+   mandato di un altro: il movimento è del coach, il sonno e la nutrizione
+   del coach olistico, l'escalation di health, i dati del generalista.
+2. **I suggeritori etichettano.** Dosaggi, ricette e protocolli escono
+   sempre come suggerimenti con fonte (dal corpus, dal database, dal file) —
+   mai come prescrizioni, mai dalla memoria del modello.
+3. **Il registro terapie prima di tutto.** Chi suggerisce qualsiasi sostanza
+   legge prima cosa la persona sta già prendendo (via generalista). Se non
+   può leggerlo, non suggerisce sostanze.
+4. **Il dissenso è un dovere, non un incidente.** Longevity e coach sono
+   twin: lo strategist deve contestare col dato, il coach deve rispondere.
+   Il disaccordo non risolto emerge nel council come tensione dichiarata.
+5. **Nessuno riscrive i file dell'altro.** Ogni agente scrive solo nel
+   proprio spazio (`data/<agente>/`, la propria memoria) e legge il resto.
+
+---
+
 ## Altri runtime
 
 Le identità sono markdown neutro; solo il packaging cambia:
