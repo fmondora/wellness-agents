@@ -35,9 +35,12 @@ def test_report_clinvar_ha_disclaimer_e_solo_patogeniche(tmp_path, monkeypatch):
     text = dna_report.report_clinvar().read_text()
     assert text.startswith("# Report ClinVar")
     assert dna_report.DISCLAIMER_CLINICO in text
-    assert "rs1000002" in text        # Pathogenic
+    assert "rs1000002" in text        # Pathogenic, eterozigote (AG, ALT=G) → portatore
+    assert "eterozigote" in text
     assert "rs1000003" not in text    # Benign: fuori dal report
     assert "rs1000004" not in text    # Conflicting: fuori dal report
+    assert "rs1000005" not in text    # Pathogenic ma TT, ALT=C → omozigote riferimento
+    assert "omozigote riferimento" in text
     assert "Malattia Finta\\|Variante" in text
 
 

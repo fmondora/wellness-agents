@@ -65,17 +65,36 @@ def report_clinvar() -> Path:
     con = dna_common.connect()
     out = ["# Report ClinVar", "", DISCLAIMER_CLINICO, ""]
     rows = con.execute(
-        "SELECT rsid, genotype, clnsig, condition, gene FROM annotations_clinvar "
+        "SELECT rsid, genotype, clnsig, condition, gene, ref, alt FROM annotations_clinvar "
         "WHERE (clnsig LIKE '%athogenic%' OR clnsig LIKE '%rotective%') "
         "AND clnsig NOT LIKE '%onflicting%' "
         "ORDER BY gene, rsid").fetchall()
-    if not rows:
-        out.append("Nessuna variante patogenica/protettiva nota trovata nel raw.")
+    portatori, non_portatore, non_valutabili = [], 0, 0
+    for r, gt, s, c, g, ref, alt in rows:
+        alleles_alt = set(alt.split(","))
+        gt_chars = set(gt)
+        if gt_chars & {"D", "I"}:
+            non_valutabili += 1
+            continue
+        if gt_chars & alleles_alt:
+            zigosita = ("omozigote variante" if all(ch in alleles_alt for ch in gt)
+                        else "eterozigote")
+            portatori.append((r, gt, s, c, g, zigosita))
+        else:
+            non_portatore += 1
+    if not portatori:
+        out.append("Nessuna variante patogenica/protettiva portata trovata nel raw.")
     else:
-        out += ["| Gene | SNP | Genotipo | Significato | Condizione |",
-                "|------|-----|----------|-------------|------------|"]
-        out += [f"| {_md(g)} | {_md(r)} | {_md(gt)} | {_md(s)} | {_md(c.replace('_', ' '))} |"
-                for r, gt, s, c, g in rows]
+        out += ["| Gene | SNP | Genotipo | Zigosità | Significato | Condizione |",
+                "|------|-----|----------|----------|-------------|------------|"]
+        out += [f"| {_md(g)} | {_md(r)} | {_md(gt)} | {_md(z)} | {_md(s)} | "
+                f"{_md(c.replace('_', ' '))} |"
+                for r, gt, s, c, g, z in portatori]
+    if non_portatore:
+        out.append(f"\n*Escluse {non_portatore} posizioni patogeniche note dove il genotipo "
+                   "è omozigote riferimento (allele di rischio assente).*")
+    if non_valutabili:
+        out.append(f"\n*{non_valutabili} varianti non valutabili (indel da chip).*")
     out += ["", _fonti()]
     dest = _reports_dir() / "clinvar.md"
     dest.write_text("\n".join(out))

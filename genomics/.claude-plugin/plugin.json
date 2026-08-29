@@ -1,7 +1,7 @@
 {
   "name": "genomics",
   "description": "Genomica — pipeline deterministica sul raw DNA dell'utente (ingest, annotazione ClinVar/PharmGKB/GWAS/pannelli, report) + query via CLI e MCP. Mai determinismo genetico.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {"name": "Francesco Mondora"},
   "mcpServers": {
     "dna-sqlite": {

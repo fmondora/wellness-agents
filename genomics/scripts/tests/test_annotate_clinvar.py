@@ -13,6 +13,7 @@ MINI = """##fileformat=VCFv4.1
 2\t3000\trs1000003\tC\tT\t.\t.\tRS=1000003;CLNSIG=Benign;CLNDN=not_provided;GENEINFO=GENEY:222
 9\t9999\trs7777777\tG\tA\t.\t.\tRS=7777777;CLNSIG=Pathogenic;CLNDN=Altra;GENEINFO=GENEZ:333
 5\t132000\trs1000004\tC\tT\t.\t.\tRS=1000004;CLNSIG=Conflicting_classifications_of_pathogenicity;CLNDN=Incerta;GENEINFO=GENEK:444
+5\t132100\trs1000005\tT\tC\t.\t.\tRS=1000005;CLNSIG=Pathogenic;CLNDN=Non_Portata;GENEINFO=GENEW:555
 """
 
 
@@ -30,7 +31,7 @@ def test_annotate_clinvar_join(tmp_path, monkeypatch):
     n = dna_annotate.annotate_clinvar(vcf_path=_mini_vcf(tmp_path))
     # rs7777777 non è nel raw; rs1000004 (Conflicting) è nel raw e l'annotazione lo tiene
     # — è report_clinvar() a filtrarlo fuori, non annotate_clinvar()
-    assert n == 3
+    assert n == 4
     rows = [json.loads(l) for l in
             (tmp_path / "data/dna/annotated/clinvar.jsonl").read_text().splitlines()]
     patho = next(r for r in rows if r["rsid"] == "rs1000002")

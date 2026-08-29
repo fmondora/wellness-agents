@@ -5,8 +5,10 @@ import argparse
 import csv
 import gzip
 import json
+import shutil
 import sys
 import urllib.request
+import zipfile
 from datetime import date
 from pathlib import Path
 
@@ -16,7 +18,8 @@ import dna_common
 DEFAULT_PANELS = Path(__file__).resolve().parent.parent / "knowledge" / "panels"
 
 CLINVAR_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz"
-GWAS_URL = "https://www.ebi.ac.uk/gwas/api/search/downloads/alternative"
+GWAS_URL = ("https://ftp.ebi.ac.uk/pub/databases/gwas/releases/latest/"
+            "gwas-catalog-associations_ontology-annotated-full.zip")
 
 
 def _annotated_path(layer: str) -> Path:
@@ -134,19 +137,32 @@ def annotate_clinvar(update: bool = False, vcf_path: Path | None = None) -> int:
                          "clnsig": _info_field(info, "CLNSIG") or "n/d",
                          "condition": _info_field(info, "CLNDN") or "n/d",
                          "gene": ((_info_field(info, "GENEINFO") or "n/d:").split(":")[0]),
+                         "ref": f[3], "alt": f[4],
                          "source": "clinvar", "db_version": file_date})
     versions = dna_common.load_versions()
     versions["clinvar"] = file_date
     dna_common.save_versions(versions)
     return _write_layer("clinvar", rows,
-                        ["rsid", "genotype", "clnsig", "condition", "gene"])
+                        ["rsid", "genotype", "clnsig", "condition", "gene", "ref", "alt"])
+
+
+def _extract_first_tsv(zip_path: Path, dest: Path) -> Path:
+    """Estrae il primo membro .tsv dello zip su `dest`, in streaming."""
+    with zipfile.ZipFile(zip_path) as zf:
+        member = next(n for n in zf.namelist() if n.lower().endswith(".tsv"))
+        with zf.open(member) as src, open(dest, "wb") as out:
+            shutil.copyfileobj(src, out)
+    return dest
 
 
 def _gwas_cache(update: bool) -> Path:
     dest = dna_common.dna_dir() / "db" / "gwas_catalog.tsv"
     if dest.exists() and not update:
         return dest
-    dest, downloaded = _download_atomic(GWAS_URL, dest, "GWAS Catalog (~700MB)")
+    zip_dest = dna_common.dna_dir() / "db" / "gwas_catalog.zip"
+    zip_path, downloaded = _download_atomic(GWAS_URL, zip_dest, "GWAS Catalog (~700MB)")
+    _extract_first_tsv(zip_path, dest)
+    zip_path.unlink(missing_ok=True)
     if downloaded:
         versions = dna_common.load_versions()
         versions["gwas"] = date.today().isoformat()
