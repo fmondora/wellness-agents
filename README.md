@@ -189,6 +189,14 @@ Dettagli in [`adapters/README.md`](adapters/README.md).
 
 ---
 
+## Specs
+
+Il repo è spec-first: ogni agente ha (o avrà) una spec in [`specs/`](specs/)
+che ne definisce mandato, contratti e conformità; l'AGENT.md la implementa e
+questa tabella la rispecchia. La struttura obbligatoria è in
+[`specs/TEMPLATE.md`](specs/TEMPLATE.md); la prima spec è
+[`specs/longevity.md`](specs/longevity.md) (twin strategist + coach).
+
 ## Principi non negoziabili
 
 1. **Il repo dati è la persona; il plugin è il sapere.** Mai mescolarli.
