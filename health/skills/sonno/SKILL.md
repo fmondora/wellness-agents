@@ -35,6 +35,28 @@ Se lo script fallisce o mancano dati: dillo e fai la lettura solo qualitativa.
   `domains/health/memory.md`) + `kb/` per keyword (caffeina, farmaci serali,
   cene, ansia — quello che la SUA storia ha già mostrato)
 
+## Fase 2-bis — Veglia abitata
+
+Se l'output porta `night_practice`, la notte ha la firma del risveglio diventato
+pratica: alzata, postura ferma, e la FC che poi scende **sotto** il livello di
+prima del risveglio. È un'inferenza, non un fatto — il punteggio NON si corregge
+da solo, e lo script te ne dà due: `score` sulla veglia totale e
+`score_if_inhabited` scorporando i minuti di pratica.
+
+Quindi:
+1. **Mostra entrambi i numeri** e nomina l'ambiguità ("è un 69, oppure un 80 se
+   quella veglia era abitata"). Mai scegliere al posto dell'utente.
+2. **Chiedi**: ha meditato? Che pratica era? La risposta va nel log sotto
+   `practice.night_note` (il detector apre già la domanda in `open_questions`).
+3. Se l'utente conferma, **la leva della Fase 4 diventa la pratica**, non
+   l'igiene del sonno: se il plugin `tantra-guide` è installato, proponi la
+   prossima dharana da `guide/tantra/curriculum.json` — quella per la soglia fra
+   sonno e veglia, se è nel curriculum. Una sola, concreta, per stanotte.
+
+Se la firma NON c'è ma la notte è frammentata, **chiedi lo stesso** prima di
+chiamarla storta: il wearable misura tempo fuori dal sonno, non sa distinguere
+la veglia subita dalla veglia scelta.
+
 ## Fase 3 — La lettura
 
 - La notte nel contesto: recupero? debito? post-carico? circadiano entrato tardi?
@@ -44,8 +66,8 @@ Se lo script fallisce o mancano dati: dillo e fai la lettura solo qualitativa.
 
 ## Fase 4 — Un passo, se serve
 
-UNA leva per la prossima notte (tipicamente: orario di letto, o timing
-dell'ultimo caffè). Mai una lista.
+UNA leva per la prossima notte (tipicamente: orario di letto, timing
+dell'ultimo caffè — o, se c'è veglia abitata, la pratica). Mai una lista.
 
 ## Tono
 

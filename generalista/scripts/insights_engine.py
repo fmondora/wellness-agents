@@ -28,8 +28,9 @@ import os
 PROJECT_ROOT = Path(os.environ.get("WELLNESS_DATA", Path.cwd()))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from health_metrics import (env_flag, fitbit_days_back, load_env,  # noqa: E402
-                            load_fitbit_day, main_sleep_session,
+from health_metrics import (DEFAULT_NIGHT_PRACTICE, env_flag,  # noqa: E402
+                            fitbit_days_back, load_env, load_fitbit_day,
+                            main_sleep_session, night_practice_windows,
                             primary_chat_id, rmssd_or_none, robust_baseline,
                             robust_zscore, sleep_stage_minutes)
 from telegram_queue import write_reply  # noqa: E402
@@ -300,8 +301,46 @@ def detect_hrv(cfg: dict, date_str: str) -> list[dict]:
     return events
 
 
-def detect_sleep(cfg: dict, date_str: str) -> list[dict]:
-    """sleep_critical (immediate) + sleep_anomaly (morning) sulla notte di date_str."""
+def detect_night_practice(cfg: dict, date_str: str) -> tuple[list[dict], int]:
+    """Veglia abitata: il risveglio notturno che è diventato pratica.
+
+    Il detector non afferma che Francesco ha meditato — afferma che la notte ne
+    porta la firma, e glielo chiede. La risposta va nel log; il punteggio del
+    sonno resta doppio (vedi sleep_analysis), perché qui si inferisce, non si sa.
+
+    Ritorna (eventi, minuti_di_pratica): i minuti servono a sleep_anomaly per non
+    contare come frammentazione una veglia che è stata scelta.
+    """
+    rule = {**DEFAULT_NIGHT_PRACTICE, **(cfg["rules"].get("night_practice") or {})}
+    session = main_sleep_session(load_fitbit_day(date_str))
+    windows = night_practice_windows(load_fitbit_day(date_str), session, rule)
+    if not windows:
+        return [], 0
+    minutes = sum(w["minutes"] for w in windows)
+    w = max(windows, key=lambda x: x["minutes"])
+    events = [{
+        "id": f"night_practice-{date_str}",
+        "rule": "night_practice", "date": date_str,
+        "severity": "info", "deliver": rule.get("deliver", "morning"),
+        "data": {"windows": windows, "minutes": minutes},
+        "message": (f"🪷 Stanotte {w['start']}–{w['end']}: ti sei alzato e sei rimasto "
+                    f"fermo {minutes} minuti, poi la FC è scesa a {w['post_level']:.0f} — "
+                    f"sotto i {w['pre_level']:.0f} di prima del risveglio. "
+                    "Hai meditato? Che pratica era?"),
+        "question": ("Veglia abitata rilevata stanotte: hai meditato? Che pratica era?"
+                     if rule.get("ask") else None),
+        "log_target": rule.get("log_target"),
+    }]
+    return events, minutes
+
+
+def detect_sleep(cfg: dict, date_str: str, practice_min: int = 0) -> list[dict]:
+    """sleep_critical (immediate) + sleep_anomaly (morning) sulla notte di date_str.
+
+    `practice_min` è la veglia abitata già riconosciuta da detect_night_practice:
+    va scorporata prima di chiamare frammentata una notte. Restare seduti sul
+    cuscino non è un risveglio subito.
+    """
     events = []
     today = load_fitbit_day(date_str)
     session = main_sleep_session(today)
@@ -325,6 +364,7 @@ def detect_sleep(cfg: dict, date_str: str) -> list[dict]:
     if not rule.get("enabled"):
         return events
     awake = sleep_stage_minutes(session, "AWAKE")
+    awake_subita = max(0, awake - practice_min) if awake is not None else None
     deep = sleep_stage_minutes(session, "DEEP")
     history = fitbit_days_back(8, date_str)[:-1]  # 7 giorni precedenti
     baseline = robust_baseline([
@@ -336,8 +376,9 @@ def detect_sleep(cfg: dict, date_str: str) -> list[dict]:
     reasons = []
     if asleep < rule["min_asleep_min"]:
         reasons.append(f"corta ({asleep // 60}h{asleep % 60:02d})")
-    if awake is not None and awake >= rule["max_awake_min"]:
-        reasons.append(f"frammentata ({awake} min svegli)")
+    if awake_subita is not None and awake_subita >= rule["max_awake_min"]:
+        abitata = (f", oltre a {practice_min} di veglia abitata" if practice_min else "")
+        reasons.append(f"frammentata ({awake_subita} min svegli{abitata})")
     if deep is not None and deep < rule["min_deep_min"]:
         reasons.append(f"poco sonno profondo ({deep} min)")
     if z is not None and z < rule["zscore_vs_7d"]:
@@ -347,7 +388,9 @@ def detect_sleep(cfg: dict, date_str: str) -> list[dict]:
             "id": f"sleep_anomaly-{date_str}",
             "rule": "sleep_anomaly", "date": date_str,
             "severity": "warn", "deliver": rule["deliver"],
-            "data": {"minutes_asleep": asleep, "awake": awake, "deep": deep, "z": z},
+            "data": {"minutes_asleep": asleep, "awake": awake,
+                     "awake_involuntary": awake_subita, "night_practice_min": practice_min,
+                     "deep": deep, "z": z},
             "message": "😴 Notte " + ", ".join(reasons) + ".",
         })
     return events
@@ -402,7 +445,9 @@ def evaluate(date_str: str, cfg: dict, state: dict,
     events += detect_long_walk(fitbit, cfg, date_str, now)
     events += detect_intense_session(fitbit, cfg, date_str, now)
     events += detect_hrv(cfg, date_str)
-    events += detect_sleep(cfg, date_str)
+    practice_events, practice_min = detect_night_practice(cfg, date_str)
+    events += practice_events
+    events += detect_sleep(cfg, date_str, practice_min)
     events += detect_streak_positive(cfg, date_str, state)
     return events
 

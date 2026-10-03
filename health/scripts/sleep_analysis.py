@@ -27,8 +27,9 @@ import os
 PROJECT_ROOT = Path(os.environ.get("WELLNESS_DATA", Path.cwd()))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from health_metrics import (fitbit_days_back, load_fitbit_day,  # noqa: E402
-                            main_sleep_session, rmssd_or_none,
+from health_metrics import (DEFAULT_NIGHT_PRACTICE, fitbit_days_back,  # noqa: E402
+                            load_fitbit_day, main_sleep_session,
+                            night_practice_windows, rmssd_or_none,
                             robust_baseline, sleep_stage_minutes)
 
 TZ = ZoneInfo("Europe/Rome")
@@ -42,6 +43,13 @@ TARGET_ASLEEP = _cfg.get("target_asleep_min", 420)   # default 7h
 TARGET_DEEP = _cfg.get("target_deep_min", 60)
 TARGET_REM = _cfg.get("target_rem_min", 100)
 BEDTIME_TARGET = _cfg.get("bedtime_target", "22:30")
+
+# soglie della veglia abitata: stesse del detector, lette dal repo dati
+_insights_path = PROJECT_ROOT / "config" / "insights.json"
+NIGHT_PRACTICE_RULE = dict(DEFAULT_NIGHT_PRACTICE)
+if _insights_path.exists():
+    NIGHT_PRACTICE_RULE.update(
+        (json.loads(_insights_path.read_text()).get("rules") or {}).get("night_practice") or {})
 
 # pesi del punteggio personale (somma 100)
 WEIGHTS = {"durata": 25, "efficienza": 20, "deep": 20, "rem": 15, "continuita": 20}
@@ -109,18 +117,42 @@ def analyze(date_str: str | None = None) -> dict | None:
     c_deep = _score_component(deep, med["deep"] or TARGET_DEEP)
     c_rem = _score_component(rem, med["rem"] or TARGET_REM)
     # continuità: pieno se svegli <=15 min, zero a >=90 min
-    c_cont = max(0.0, min(1.0, (90 - awake) / 75)) if awake is not None else None
+    def _continuita(minuti_svegli):
+        return max(0.0, min(1.0, (90 - minuti_svegli) / 75)) if minuti_svegli is not None else None
+
+    c_cont = _continuita(awake)
 
     comps = {"durata": c_dur, "efficienza": c_eff, "deep": c_deep,
              "rem": c_rem, "continuita": c_cont}
-    total_w = sum(WEIGHTS[k] for k, v in comps.items() if v is not None)
-    score = round(sum(WEIGHTS[k] * v for k, v in comps.items() if v is not None)
-                  / total_w * 100) if total_w else None
 
-    label = ("ottimo" if score and score >= 85 else
-             "buono" if score and score >= 70 else
-             "discreto" if score and score >= 55 else
-             "sotto la tua norma" if score is not None else None)
+    def _score(components):
+        total_w = sum(WEIGHTS[k] for k, v in components.items() if v is not None)
+        return (round(sum(WEIGHTS[k] * v for k, v in components.items() if v is not None)
+                      / total_w * 100) if total_w else None)
+
+    score = _score(comps)
+
+    def _label(value):
+        return ("ottimo" if value and value >= 85 else
+                "buono" if value and value >= 70 else
+                "discreto" if value and value >= 55 else
+                "sotto la tua norma" if value is not None else None)
+
+    label = _label(score)
+
+    # Veglia abitata — il risveglio che è diventato pratica. Il punteggio NON si
+    # corregge da solo: la firma è un'inferenza, non un fatto. La lettura mostra
+    # entrambi i numeri e nomina l'ambiguità; a scioglierla è la risposta, nel log.
+    practice = None
+    windows = night_practice_windows(fitbit, session, NIGHT_PRACTICE_RULE)
+    if windows and awake is not None:
+        practice_min = sum(w["minutes"] for w in windows)
+        comps_abitata = {**comps, "continuita": _continuita(max(0, awake - practice_min))}
+        score_abitata = _score(comps_abitata)
+        practice = {"minutes": practice_min, "windows": windows,
+                    "awake_involuntary": max(0, awake - practice_min),
+                    "score_if_inhabited": score_abitata,
+                    "label_if_inhabited": _label(score_abitata)}
 
     return {
         "date": date_str,
@@ -134,6 +166,7 @@ def analyze(date_str: str | None = None) -> dict | None:
             "light": {"min": light, "pct": _pct(light, asleep)},
             "awake": {"min": awake},
         },
+        "night_practice": practice,
         "asleep_baseline": med["asleep"],
         "vitals": {"hrv_rmssd": rmssd_or_none((fitbit or {}).get("hrv_rmssd")),
                    "resting_hr": (fitbit or {}).get("resting_hr"),
@@ -162,6 +195,13 @@ def format_text(a: dict) -> str:
     lines.append(f"DEEP {d['min']}m ({d['pct']}%){_arrow(d['min'], d['baseline'])}"
                  f" · REM {r['min']}m ({r['pct']}%){_arrow(r['min'], r['baseline'])}"
                  f" · svegli {st['awake']['min']}m")
+    np_ = a.get("night_practice")
+    if np_:
+        w = max(np_["windows"], key=lambda x: x["minutes"])
+        lines.append(f"🪷 {w['start']}–{w['end']} fermo, poi FC a {w['post_level']:.0f} "
+                     f"(sotto i {w['pre_level']:.0f} di prima): se quella veglia era abitata "
+                     f"il punteggio è {np_['score_if_inhabited']} "
+                     f"({np_['label_if_inhabited']}), non {a['score']}. Hai meditato?")
     v = a["vitals"]
     if v["hrv_rmssd"]:
         lines.append(f"HRV {v['hrv_rmssd']:.0f} · FC riposo {v['resting_hr']:.0f}"

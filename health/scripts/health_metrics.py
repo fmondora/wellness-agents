@@ -144,3 +144,101 @@ def primary_chat_id(env: dict[str, str]) -> int | None:
         if part.lstrip("-").isdigit():
             return int(part)
     return None
+
+
+# ── veglia abitata ───────────────────────────────────────────
+
+BUCKET_MIN = 15  # granularità intraday (900s)
+
+# Fallback se il repo dati non definisce rules.night_practice in config/insights.json.
+DEFAULT_NIGHT_PRACTICE = {
+    "enabled": True,
+    "wake_steps_min": 5,        # alzarsi dal letto, non girarsi nel sonno
+    "wake_steps_max": 80,       # oltre, si è camminato: non è postura seduta
+    "pre_buckets": 2,           # quanti bucket guardare per il livello pre-risveglio
+    "hr_rise_min": 4,           # bpm sopra il pre-risveglio: il corpo si è messo seduto
+    "hr_plateau_max": 75,       # tetto: sopra è attività, non pratica
+    "min_duration_min": 30,
+    "ratification_window_min": 90,
+}
+
+
+def _bucket_min(hhmm: str) -> int | None:
+    if not hhmm or ":" not in hhmm:
+        return None
+    h, m = hhmm.split(":")
+    return int(h) * 60 + int(m)
+
+
+def night_practice_windows(fitbit_day: dict | None, session: dict | None,
+                           rule: dict | None = None) -> list[dict]:
+    """Finestre di "veglia abitata" dentro la notte: il risveglio che diventa pratica.
+
+    Riconoscere che qualcuno si è alzato è facile. Il punto è distinguere chi si
+    siede sul cuscino da chi prende il telefono: entrambi lasciano passi isolati e
+    FC sopra il pavimento notturno. A separarli è la coda — dopo la pratica il
+    sistema scende SOTTO il livello pre-risveglio, dopo il rimuginio resta sopra.
+    È la `ratifica`, ed è la condizione che porta il peso di questa funzione.
+
+    Guarda solo la parte di notte contenuta nel file del giorno (da mezzanotte
+    alla sveglia): la sera precedente vive nel file del giorno prima.
+
+    Ritorna [] quando non c'è nulla da affermare — mai una finestra non ratificata.
+    """
+    rule = {**DEFAULT_NIGHT_PRACTICE, **(rule or {})}
+    if not rule.get("enabled") or not fitbit_day or not session:
+        return []
+    buckets = sorted((b for b in (fitbit_day.get("heart_rate_15min") or [])
+                      if _bucket_min(b.get("time")) is not None),
+                     key=lambda b: _bucket_min(b["time"]))
+    if not buckets:
+        return []
+    wake_min = _bucket_min(session.get("end"))
+    if wake_min is None:
+        return []
+    steps_by_min = {_bucket_min(b.get("time")): b.get("steps", 0)
+                    for b in (fitbit_day.get("steps_intraday") or [])
+                    if _bucket_min(b.get("time")) is not None}
+
+    night = [b for b in buckets if _bucket_min(b["time"]) < wake_min]
+    windows, i = [], 0
+    while i < len(night):
+        start_min = _bucket_min(night[i]["time"])
+        steps = steps_by_min.get(start_min, 0)
+        if not rule["wake_steps_min"] <= steps <= rule["wake_steps_max"]:
+            i += 1
+            continue
+
+        pre = night[max(0, i - rule["pre_buckets"]):i]
+        if len(pre) < rule["pre_buckets"]:   # niente con cui confrontare: non si afferma
+            i += 1
+            continue
+        pre_level = min(b["avg"] for b in pre)
+        floor = pre_level + rule["hr_rise_min"]
+
+        j = i
+        while (j < len(night) and floor <= night[j]["avg"] <= rule["hr_plateau_max"]
+               and steps_by_min.get(_bucket_min(night[j]["time"]), 0) <= rule["wake_steps_max"]):
+            j += 1
+        duration = (j - i) * BUCKET_MIN
+        if duration < rule["min_duration_min"]:
+            i += 1
+            continue
+
+        end_min = start_min + duration
+        tail = [b for b in night
+                if end_min <= _bucket_min(b["time"]) < end_min + rule["ratification_window_min"]]
+        ratified = any(b["avg"] <= pre_level for b in tail)
+        if ratified:
+            post_level = min(b["avg"] for b in tail)
+            windows.append({
+                "start": night[i]["time"],
+                "end": f"{end_min // 60 % 24:02d}:{end_min % 60:02d}",
+                "minutes": duration,
+                "hr_avg": round(sum(b["avg"] for b in night[i:j]) / (j - i), 1),
+                "pre_level": round(pre_level, 1),
+                "post_level": round(post_level, 1),
+                "ratified": True,
+            })
+        i = j
+    return windows
