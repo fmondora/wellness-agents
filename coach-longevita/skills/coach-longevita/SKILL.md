@@ -54,6 +54,33 @@ generalista (inizializza il repo dati), poi il tuo onboard.
    (debrief/review). All'utente arriva ESCLUSIVAMENTE il testo coach nel
    formato schematico dell'AGENT.md (tabella + poche righe). Mai JSON a schermo.
 
+5. **Consegna della scheda** (daily_plan, e week_plan/review se chiesti su
+   carta). La scheda si legge in palestra tra una serie e l'altra: **ogni
+   esercizio con le sue illustrazioni** (frame-1 partenza, frame-2 fine),
+   mai solo prosa.
+   - **Immagini**: prendi gli `slug` da `knowledge/exercise-catalog.json` e
+     lancia `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/scheda_img.py <slug...>
+     --dest data/coach-longevita/daily/img [--png]`. Copia dal bundle del
+     plugin (`assets/img/`, già ricolorato) o scarica e ricolora; stampa i
+     path relativi da usare. Slug senza immagine → dillo, non inventare.
+   - **Markdown** (sempre): `data/coach-longevita/daily/YYYY-MM-DD.md`, stesso
+     testo coach dello schermo, frame affiancati:
+     `![Plank — partenza](img/plank-frame-1.svg){width=42%} ![Plank — fine](img/plank-frame-2.svg){width=42%}`
+   - **PDF** (se chiesto): skill `make-pdf` con `--strict` sul .md; `bun` deve
+     essere nel PATH (`export PATH="$HOME/.bun/bin:$PATH"`). Poi **guarda il
+     risultato** (`pdftoppm -png -r 60 -f 1 -l 3`): `--strict` verifica che
+     il file esista, non che si veda.
+   - **Telegram** (se chiesto, o se la richiesta arriva da Telegram): `--png`
+     sulle immagini, poi spec `data/coach-longevita/daily/YYYY-MM-DD.telegram.json`
+     = lista di passi `{"text": "<b>HTML</b>"}` o
+     `{"photos": ["img/png/x-frame-1.svg.png", "img/png/x-frame-2.svg.png"], "caption": "<b>HTML</b>"}`.
+     Struttura: intestazione (semaforo, durata, perché in `<blockquote>`) →
+     un album per esercizio con caption (nome · serie × reps, 1-2 righe di
+     tecnica) → testo per i blocchi senza immagine (mobilità, defaticamento,
+     cosa evitare). HTML ammesso: `<b> <i> <u> <s> <code> <pre> <a> <blockquote>`.
+     Invia con lo script del repo dati `scripts/telegram_send_rich.py <spec>`;
+     se il repo dati non ce l'ha, consegna .md/PDF e dillo.
+
 ## Guardrail personali
 
 Leggili dal profilo (`data/profile.json`, campi guardrails/psychology se
