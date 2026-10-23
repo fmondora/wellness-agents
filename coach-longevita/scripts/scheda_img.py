@@ -31,10 +31,19 @@ BUNDLE = ROOT / "assets" / "img"
 CATALOG = ROOT / "knowledge" / "exercise-catalog.json"
 INK = "#1a1a1a"
 WHITE_FILL = re.compile(r'fill="(?:#fff|#ffffff|white)"', re.I)
+SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Un SVG scaricato finisce nel renderer del PDF: niente script, handler,
+# foreignObject né riferimenti esterni.
+ACTIVE = re.compile(r"<script|<foreignObject|\son[a-z]+\s*=|(?:href|src)\s*=\s*[\"'](?!#)", re.I)
 
 
 def recolor(svg: str) -> str:
     return WHITE_FILL.sub(f'fill="{INK}"', svg)
+
+
+def known_slugs(catalog: dict) -> set[str]:
+    bundled = {f.name.split("-frame-")[0].removesuffix(".svg") for f in BUNDLE.glob("*.svg")}
+    return {e["slug"] for e in catalog["exercises"]} | bundled
 
 
 def fetch(url: str) -> str:
@@ -57,6 +66,9 @@ def download(slug: str, url_tpl: str, dest: Path) -> list[Path]:
         except Exception:
             if n <= 2:
                 print(f"# {slug}: frame-{n} non scaricabile ({url})", file=sys.stderr)
+            continue
+        if not svg.lstrip().startswith("<svg") or ACTIVE.search(svg):
+            print(f"# {slug}: frame-{n} scartato (non è un SVG statico)", file=sys.stderr)
             continue
         out = dest / f"{slug}-frame-{n}.svg"
         out.write_text(recolor(svg), encoding="utf-8")
@@ -107,11 +119,17 @@ def main() -> int:
     png_dir = dest / "png"
     if a.png:
         png_dir.mkdir(exist_ok=True)
-    url_tpl = json.loads(CATALOG.read_text(encoding="utf-8"))["_svg_url"]
+    catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+    url_tpl = catalog["_svg_url"]
+    allowed = known_slugs(catalog)
     base = dest.parent
 
     missing = 0
     for slug in a.slugs:
+        if not SLUG.match(slug) or slug not in allowed:
+            print(f"# {slug}: slug sconosciuto (non nel catalogo né nel bundle)", file=sys.stderr)
+            missing += 1
+            continue
         found = frames(slug, dest, url_tpl)
         if not found:
             print(f"# {slug}: nessuna immagine (né in bundle né scaricabile)", file=sys.stderr)
