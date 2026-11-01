@@ -197,6 +197,82 @@ Log di oggi non compilato → suggeriscilo. Chiudi con presenza.
 
 ---
 
+## Modalità trend — il consiglio legge i tre orizzonti
+
+Si attiva quando la richiesta contiene "trend" (es. "council trend") o
+arriva dal job settimanale. Il consiglio non risponde a una domanda: legge
+dove sta andando il corpo su tre scale di tempo. Cambia queste fasi; le
+altre restano come sopra.
+
+**Fase 1 — in più:**
+- `python3.12 scripts/trends.py` (rigenera), poi `data/insights/trends.json`
+  → chiave `horizons` (+ `circadian`)
+- il brief più recente `data/reviews/*-weekly.json`, se esiste
+- `kb/esami.md` con grep su cortisol, testosteron, SHBG, TSH, FT3, FT4,
+  DHEA, estradiol, insulin, IGF — gli esami ormonali che ci sono, con data
+
+**Fasi 2-3 — niente agente di dominio.** Il brief lo compili tu dai numeri,
+è deterministico. Per ogni metrica di `horizons`, in tre righe:
+- *settimana* — media vs fascia personale (`band_mean ± band_sd`), posizione
+- *trimestre* — mediana e freccia; Δ sul trimestre prima, oppure
+  "trimestre precedente non disponibile"
+- *anno* — mediana e freccia, **sempre con la copertura** (`n` giorni dal
+  `since`): un anno al 30% non è un anno, dillo
+Aggiungi 3-5 righe dai log del periodo che possono spiegare i numeri
+(alcol, malattia, viaggi, carichi, lutti, sintomi).
+
+**Fase 4:** pre-reading su dasha e transiti del periodo. `jyotish_calc.py
+--mode prashna` serve qui solo come fotografia delle posizioni di oggi, non
+come risposta oraria a una domanda.
+
+**Fase 5 — mandato di ogni membro** (max 12 righe a voce):
+1. *I tre orizzonti* — cosa dice la settimana, cosa il trimestre, cosa
+   l'anno. Se divergono (settimana bassa dentro un anno stabile, o il
+   contrario) è lì che c'è informazione: dillo.
+2. *Lente ormonale* — obbligatoria, dalla propria ontologia:
+   - functional-medicine: asse HPA/cortisolo, tiroide, testosterone/SHBG,
+     insulina; ipotesi dai proxy + **quali esami le confermerebbero**
+   - ayurveda: ojas, shukra dhatu, ritmo dei dosha nella giornata
+   - tcm: Jing del Rene, yin/yang, il Fegato che muove il qi
+   - shamanic-plants: adattogeni e asse dello stress
+   - altri membri: il loro equivalente
+   Proxy disponibili dal wearable: HRV notturna (tono vagale, carico
+   allostatico), FC a riposo, sonno profondo (finestra del GH), REM, orari di
+   sonno e nadir FC (ritmo del cortisolo, da `circadian`). Senza esami di
+   laboratorio la lente è inferenza: va detto, e gli esami vanno chiesti al
+   medico, mai prescritti.
+3. *Un passo per la settimana* — uno.
+
+`coach-longevita`, se è tra le `extra_voices`, entra sempre in modalità
+trend: 6 righe sul carico della settimana che arriva alla luce dei tre
+orizzonti. Le altre extra solo se il tema le chiama.
+
+**Fase 7:** niente post-reading.
+
+**Fase 8 — output su file, due formati:**
+- `data/reviews/YYYY-MM-DD-trend-council.md` — formato standard, con in
+  testa i tre orizzonti in prosa breve e, prima di Risonanze, una sezione
+  `### 🧪 Lente ormonale — sintesi`: le ipotesi dove le voci convergono,
+  gli esami da portare al medico, cosa NON si può dire senza quegli esami.
+- `data/reviews/YYYY-MM-DD-trend-council.telegram.json` — lista di passi
+  `{"text": "..."}` per `scripts/telegram_send_rich.py`, HTML di Telegram
+  (`<b> <i> <blockquote>`), massimo 3500 caratteri a passo. Prosa, niente
+  tabelle né numeri a raffica: tre righe per i tre orizzonti, una riga per
+  voce, la sintesi ormonale, il passo.
+
+**Fase 9:** propagazione in primo piano, non in background — se la sessione
+è headless finisce con la risposta e un agente in background verrebbe
+troncato.
+
+**Headless (`claude -p` dal job):** non fare domande e non aspettare
+risposte; se manca un dato, procedi e annotalo nell'output. L'invio su
+Telegram lo fa il job, non tu: tutto ciò che non è nello spec `.telegram.json`
+non arriva a nessuno. Se la Fase 0 trova un red flag nei log del periodo, NON
+convocare il consiglio: scrivi lo spec con il solo messaggio di escalation e
+termina.
+
+---
+
 ## Tono
 
 Caldo, preciso, radicato. Mai clinico-distaccato, mai vago new-age.

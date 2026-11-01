@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import statistics
 import sys
 from datetime import date, datetime, timedelta
@@ -37,6 +38,22 @@ OUT_FILE = PROJECT_ROOT / "data" / "insights" / "trends.json"
 
 WINDOWS = [10, 30, 90, 300]
 ANOMALY_Z = 2.0
+# Tre orizzonti per la lettura del consiglio: la settimana contro la fascia
+# personale, il trimestre contro il trimestre prima, l'anno intero.
+HORIZON_METRICS = ["hrv_rmssd", "resting_hr", "deep_min", "rem_min", "minutes_asleep"]
+WEEK_DAYS, WEEK_MIN = 7, 5
+BAND_DAYS, BAND_MIN = 60, 30
+QUARTER_DAYS, QUARTER_MIN = 90, 30
+YEAR_DAYS = 365
+BAND_K = 0.5  # stesso k_zona2 del semaforo HRV
+# Pavimento sulla SD della fascia, nell'unità della metrica: la FC a riposo
+# intera ha SD ~1.5 e senza pavimento finirebbe "sopra/sotto" ogni settimana.
+SD_FLOOR = {"hrv_rmssd": 2.0, "resting_hr": 1.0, "deep_min": 5.0,
+            "rem_min": 5.0, "minutes_asleep": 15.0}
+# Su trimestre e anno la freccia guarda la variazione sull'intero arco
+# (slope × giorni) in % della mediana: la soglia per-giorno delle finestre
+# corte su 365 gg lascerebbe "→" anche un calo del 25%.
+SPAN_REL_THRESHOLD = 0.05
 # slope relativa (per giorno, in % della mediana) oltre cui il trend non è "→"
 SLOPE_REL_THRESHOLD = 0.004
 
@@ -88,7 +105,7 @@ def build_series(end_date: str, max_days: int) -> dict[str, list[tuple[str, floa
                     v = fn(fitbit)
                 except Exception:
                     v = None
-                if isinstance(v, (int, float)):
+                if isinstance(v, (int, float)) and math.isfinite(v):
                     series[metric].append((d, float(v)))
 
         # fallback log: HRV storica pre-Fitbit (o giorni senza file fitbit)
@@ -101,7 +118,7 @@ def build_series(end_date: str, max_days: int) -> dict[str, list[tuple[str, floa
                     continue
                 raw = (log.get("morning") or {}).get("hrv")
                 norm = normalize_hrv(raw)
-                if norm is None:
+                if norm is None or not math.isfinite(norm[1]):
                     continue
                 scale, value = norm
                 if scale == "rmssd_ms":
@@ -135,6 +152,82 @@ def _classify(slope: float | None, median: float | None) -> str:
     if rel < -SLOPE_REL_THRESHOLD:
         return "↓"
     return "→"
+
+
+# ── orizzonti ────────────────────────────────────────────────
+
+
+def _classify_span(points: list[tuple[str, float]], slope: float | None,
+                   median: float) -> str:
+    if slope is None or not median:
+        return "?"
+    span = (date.fromisoformat(points[-1][0]) - date.fromisoformat(points[0][0])).days
+    rel = slope * span / abs(median)
+    if rel > SPAN_REL_THRESHOLD:
+        return "↑"
+    if rel < -SPAN_REL_THRESHOLD:
+        return "↓"
+    return "→"
+
+
+def _between(points: list[tuple[str, float]], end: date,
+             start_off: int, stop_off: int) -> list[tuple[str, float]]:
+    """Punti con end-stop_off < data <= end-start_off."""
+    lo = (end - timedelta(days=stop_off)).isoformat()
+    hi = (end - timedelta(days=start_off)).isoformat()
+    return [(d, v) for d, v in points if lo < d <= hi]
+
+
+def horizons(points: list[tuple[str, float]], end_date: str,
+             sd_floor: float = 0.0) -> dict:
+    """Settimana / trimestre / anno per una metrica.
+
+    Ogni orizzonte dichiara su quanti giorni poggia: con storico corto
+    l'anno c'è ma è parziale, e chi legge deve saperlo.
+    """
+    end = date.fromisoformat(end_date)
+    out: dict = {}
+
+    week = _between(points, end, 0, WEEK_DAYS)
+    band = _between(points, end, WEEK_DAYS, WEEK_DAYS + BAND_DAYS)
+    if len(week) >= WEEK_MIN and len(band) >= BAND_MIN:
+        mean = statistics.mean(v for _, v in band)
+        sd = max(statistics.stdev(v for _, v in band), sd_floor)
+        avg = statistics.mean(v for _, v in week)
+        z = (avg - mean) / sd if sd else 0.0
+        out["settimana"] = {
+            "values": [round(v, 1) for _, v in week],
+            "avg": round(avg, 1),
+            "band_mean": round(mean, 1), "band_sd": round(sd, 1),
+            "z": round(z, 2),
+            "position": "sotto" if z < -BAND_K else "sopra" if z > BAND_K else "dentro",
+        }
+
+    last_q = _between(points, end, 0, QUARTER_DAYS)
+    prev_q = _between(points, end, QUARTER_DAYS, 2 * QUARTER_DAYS)
+    if len(last_q) >= QUARTER_MIN:
+        med = statistics.median(v for _, v in last_q)
+        slope = _slope_per_day(last_q)
+        q = {"n": len(last_q), "median": round(med, 1),
+             "slope_per_month": round(slope * 30, 2) if slope is not None else None,
+             "trend": _classify_span(last_q, slope, med), "prev_median": None, "delta": None}
+        if len(prev_q) >= QUARTER_MIN:
+            prev = statistics.median(v for _, v in prev_q)
+            q["prev_median"], q["delta"] = round(prev, 1), round(med - prev, 1)
+        out["trimestre"] = q
+
+    year = _between(points, end, 0, YEAR_DAYS)
+    if len(year) >= QUARTER_MIN:
+        slope = _slope_per_day(year)
+        med = statistics.median(v for _, v in year)
+        out["anno"] = {
+            "n": len(year), "since": year[0][0],
+            "coverage": round(len(year) / YEAR_DAYS, 2),
+            "median": round(med, 1),
+            "slope_per_month": round(slope * 30, 2) if slope is not None else None,
+            "trend": _classify_span(year, slope, med),
+        }
+    return out
 
 
 # ── circadiano ───────────────────────────────────────────────
@@ -296,12 +389,18 @@ def circadian_analysis(end_date: str, days: int = 30) -> dict:
 
 def analyze(end_date: str | None = None) -> dict:
     end_date = end_date or datetime.now(TZ).strftime("%Y-%m-%d")
-    series = build_series(end_date, max(WINDOWS))
+    series = build_series(end_date, max(max(WINDOWS), YEAR_DAYS))
 
     out = {"generated_at": datetime.now(TZ).isoformat(),
-           "end_date": end_date, "metrics": {}}
+           "end_date": end_date, "metrics": {},
+           "horizons": {m: horizons(series[m], end_date, SD_FLOOR.get(m, 0.0))
+                        for m in HORIZON_METRICS if series.get(m)}}
 
+    # la serie arriva a 365 gg per gli orizzonti: le finestre storiche
+    # restano sugli ultimi max(WINDOWS) giorni, come prima
+    legacy_cut = (date.fromisoformat(end_date) - timedelta(days=max(WINDOWS))).isoformat()
     for metric, points in series.items():
+        points = [(d, v) for d, v in points if d > legacy_cut]
         if len(points) < 3:
             continue
         m_out = {"windows": {}, "latest": None, "anomalies_10d": []}
@@ -361,6 +460,22 @@ def print_summary(trends: dict) -> None:
         print(line)
         for a in m.get("anomalies_10d", []):
             print(f"   ⚡ anomalia {a['date']}: {a['value']:.1f} (z={a['z']:+.1f})")
+
+    hz = trends.get("horizons") or {}
+    if hz:
+        print("\nOrizzonti:")
+    for metric, h in hz.items():
+        print(f"  {metric}")
+        if s := h.get("settimana"):
+            print(f"    settimana  media {s['avg']:.1f} vs fascia {s['band_mean']:.1f} ± {s['band_sd']:.1f}"
+                  f" → {s['position']} (z={s['z']:+.2f})")
+        if q := h.get("trimestre"):
+            prev = (f" · trimestre prima {q['prev_median']:.1f} (Δ {q['delta']:+.1f})"
+                    if q["delta"] is not None else " · trimestre prima: dati insufficienti")
+            print(f"    trimestre  mediana {q['median']:.1f} {q['trend']}{prev}")
+        if a := h.get("anno"):
+            print(f"    anno       mediana {a['median']:.1f} {a['trend']}"
+                  f" · {a['n']} giorni dal {a['since']} (copertura {a['coverage']:.0%})")
 
     circ = trends.get("circadian") or {}
     if circ:

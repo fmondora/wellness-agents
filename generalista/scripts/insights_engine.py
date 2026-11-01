@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import subprocess
 import sys
 from datetime import date, datetime, timedelta
@@ -261,8 +262,89 @@ def detect_intense_session(fitbit: dict, cfg: dict, date_str: str,
     return events
 
 
+def hrv_rolling_zone(series: dict[str, float], date_str: str, rule: dict) -> dict | None:
+    """Semaforo sulla media mobile, non sulla mattina singola.
+
+    La mattina singola oscilla di ~5 ms senza causa: confrontarla con una
+    soglia fissa accende il rosso una mattina su tre. Qui la media degli
+    ultimi `short_days` si confronta con la fascia personale dei
+    `baseline_days` precedenti (esclusi gli ultimi `short_days`, così il
+    calo in corso non sporca il riferimento). Fascia = media − k·SD.
+    """
+    import statistics
+    end = date.fromisoformat(date_str)
+    short_n, base_n = rule["short_days"], rule["baseline_days"]
+
+    def window(start: int, stop: int) -> list[float]:
+        days = ((end - timedelta(days=o)).isoformat() for o in range(start, stop))
+        return [series[d] for d in days if d in series]
+
+    recent = window(0, short_n)
+    base = window(short_n, short_n + base_n)
+    if len(recent) < rule["short_min"] or len(base) < rule["baseline_min"]:
+        return None
+    # pavimento sulla SD: con una fascia piatta 0.1 ms di calo varrebbe "recupero"
+    mean = statistics.mean(base)
+    sd = max(statistics.stdev(base), rule.get("sd_floor", 0.0))
+    avg = statistics.mean(recent)
+    zone = ("verde" if avg >= mean - rule["k_zona2"] * sd
+            else "zona2" if avg >= mean - rule["k_recovery"] * sd
+            else "recupero")
+    return {"rmssd": series.get(date_str), "avg_short": round(avg, 1),
+            "baseline_mean": round(mean, 1), "baseline_sd": round(sd, 1),
+            "threshold": round(mean - (rule["k_zona2"] if zone == "zona2"
+                                       else rule["k_recovery"]) * sd, 1),
+            "zone": zone,
+            "today_low": (date_str in series
+                          and series[date_str] < mean - rule["k_recovery"] * sd)}
+
+
+def _detect_hrv_rolling(cfg: dict, date_str: str) -> list[dict]:
+    rule = cfg["rules"]["hrv_low"]
+    days = fitbit_days_back(rule["short_days"] + rule["baseline_days"], date_str)
+    series = {d["date"]: v for d in days
+              if (v := rmssd_or_none(d.get("hrv_rmssd"))) is not None and math.isfinite(v)}
+    # Come il ramo fisso: senza la misura di stanotte non si giudica, altrimenti
+    # il daemon delle 04:30 emette su 6 giorni e il dedup blocca la giornata.
+    if date_str not in series:
+        return []
+    z = hrv_rolling_zone(series, date_str, rule)
+    if z is None or z["zone"] == "verde":
+        return []
+    fascia = f"tua soglia {z['threshold']:.1f}, fascia {z['baseline_mean']:.1f} ± {z['baseline_sd']:.1f}"
+    media = f"HRV media {rule['short_days']}gg {z['avg_short']:.1f}"
+    events = [] if not rule.get("enabled") else [{
+        "id": f"hrv_low-{date_str}",
+        "rule": "hrv_low", "date": date_str,
+        "severity": "warn" if z["zone"] == "recupero" else "info",
+        "deliver": rule["deliver"],
+        "data": z,
+        "message": (f"⚠️ {media}, sotto la {fascia}: "
+                    "oggi recupero attivo, niente intensità."
+                    if z["zone"] == "recupero" else
+                    f"🟡 {media}, sotto la {fascia}: "
+                    "ok zona 2/camminata, non di più."),
+    }]
+    rule2 = cfg["rules"]["hrv_two_mornings"]
+    # In modalità rolling: la settimana è già sotto e anche stamattina crolla.
+    if rule2.get("enabled") and z["zone"] == "recupero" and z["today_low"]:
+        events.append({
+            "id": f"hrv_two_mornings-{date_str}",
+            "rule": "hrv_two_mornings", "date": date_str,
+            "severity": "high",
+            "deliver": rule2["deliver"],
+            "data": z,
+            "message": (f"🔴 Settimana sotto la tua fascia ({media}) e stamattina "
+                        f"{z['rmssd']:.1f}: riposo — niente allenamento, sauna ok. "
+                        "Cerca la causa."),
+        })
+    return events
+
+
 def detect_hrv(cfg: dict, date_str: str) -> list[dict]:
     """hrv_low (semaforo) + hrv_two_mornings. Delivery: morning."""
+    if cfg["rules"]["hrv_low"].get("mode") == "rolling":
+        return _detect_hrv_rolling(cfg, date_str)
     events = []
     rule = cfg["rules"]["hrv_low"]
     today = load_fitbit_day(date_str)
