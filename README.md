@@ -37,8 +37,8 @@ repo dati, il fondamento ontologico e il propagation agent.
 
 ### 3. Prepara il tuo repo dati
 
-La via semplice: crea una directory vuota, entra e lancia `/setup` — il
-generalista ti guida e crea tutto lui. Oppure a mano:
+La via semplice: crea una directory vuota, entra e lancia `/setup` —
+Hṛdaya ti guida e crea tutto lui (Telegram compreso, se vuoi). Oppure a mano:
 
 Gli agenti lavorano nella directory corrente, che deve essere il tuo repo
 dati personale (privato, MAI questo repo):
@@ -93,9 +93,10 @@ claude plugin update wellness-agents
 | Plugin | Categoria | Cosa fa |
 |---|---|---|
 | `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent, /council /ask /propagate — **obbligatorio** |
-| `generalista` | frontline | Primo contatto e diario (/log, /telegram): triage, contratto dati, pipeline ingestione (sync wearable, insights, trends) |
-| `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico |
-| `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi |
+| `hridaya` | frontline | Hṛdaya, il cuore: voce unica e coordinatore (/log, /telegram, /servizio, /setup), quadro della giornata con le scadenze cliniche, convocazione degli specialisti; canale Telegram (bot, cancello dei push col silenzio notturno fino all'alzata, server MCP) |
+| `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico; workout player (Telegram Mini App) |
+| `dream-agent` | coaching | DreamAgent: il sonno — ora di letto a fine ciclo, piano settimanale, review settimanale e mensile |
+| `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi; /sonno; pipeline dati del corpo (sync wearable, insights, trends, FC al minuto, webhook) |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
 | `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori |
 | `genomics` | dominio | SNP e pathway dai dati DNA del repo dati — mai determinismo |
@@ -108,30 +109,31 @@ claude plugin update wellness-agents
 | `tantra-guide` | guida | Kaula: pratica, pratyabhijna, Vigyan Bhairava, spanda |
 
 I job schedulati (launchd/cron) restano nel repo dati dell'utente come shim
-sottili che chiamano gli script del plugin `generalista` con `WELLNESS_DATA`
-puntato al proprio repo.
+sottili che chiamano gli script dei plugin (`hridaya` per il bot, `health` per
+sync e detector) con `WELLNESS_DATA` puntato al proprio repo. Mappa dei percorsi:
+[`MIGRATION.md`](MIGRATION.md).
 
 ---
 
 ## Chi decide e chi suggerisce
 
 Gli agenti non sono pari: alcuni **possiedono** un mandato e decidono,
-gli altri **suggeriscono** dentro quel mandato. Il generalista è il punto
-di passaggio obbligato per i dati della persona.
+gli altri **suggeriscono** dentro quel mandato. Hṛdaya è la voce unica verso
+la persona e il punto di passaggio obbligato per i suoi dati.
 
 ```mermaid
 flowchart TB
     U(["👤 Utente"])
     MED(["🩺 Medico reale"])
 
-    subgraph FRONTLINE["FRONTLINE — proprietario dei dati"]
-        GEN["🗂 generalista<br/>triage · diario · pipeline dati<br/><b>possiede data/ e il registro terapie</b><br/>(kb/terapie.md + medications)"]
+    subgraph FRONTLINE["FRONTLINE — voce unica, proprietario dei dati"]
+        GEN["🫀 hridaya<br/>triage · diario · quadro della giornata · canale Telegram<br/><b>possiede data/ e il registro terapie</b><br/>(kb/terapie.md + medications)"]
     end
 
     subgraph OWNERS["PROPRIETARI — decidono nel proprio mandato"]
         COACH["🏋️ coach-longevita<br/><b>movimento + recovery termico</b><br/>daily/week plan · lift book · goal book"]
-        OLI["🧘 coach olistico<br/>(vive nel repo dati)<br/><b>sonno + nutrizione + calendario</b>"]
-        HEALTH["🫀 health<br/><b>escalation clinica</b><br/>red flag a 3 livelli"]
+        OLI["🌙 dream-agent<br/><b>sonno</b><br/>ora di letto · piano settimanale · review"]
+        HEALTH["🩺 health<br/><b>escalation clinica + pipeline dati</b><br/>red flag a 3 livelli"]
     end
 
     subgraph ADVISORS["SUGGERITORI — propongono, mai prescrivono"]
@@ -152,7 +154,8 @@ flowchart TB
     GEN -. "registro terapie" .-> COUNCIL
     LONG ==>|"advisory + dissenso<br/>obbligatorio, col dato"| COACH
     COACH ==>|"risposta punto per punto:<br/>accolgo / adatto / respingo"| LONG
-    COACH <-->|"week_plan → / ← àncore<br/>conflitto: vince il più conservativo"| OLI
+    COACH <-->|"week_plan → / ← àncore serali<br/>conflitto: vince il più conservativo"| OLI
+    GEN ==>|"convoca + vincoli del giorno;<br/>consegna i blocchi firmati"| OWNERS
     ADVISORS -->|"suggerimenti"| OWNERS
     COUNCIL -->|"letture nel council"| U
     HEALTH -->|"red flag → subito"| MED
@@ -161,13 +164,13 @@ flowchart TB
 Le regole del colloquio:
 
 1. **Ogni mandato ha un solo proprietario.** Nessun agente prescrive nel
-   mandato di un altro: il movimento è del coach, il sonno e la nutrizione
-   del coach olistico, l'escalation di health, i dati del generalista.
+   mandato di un altro: il movimento è del coach, il sonno di DreamAgent,
+   l'escalation di health, i dati e il canale di Hṛdaya.
 2. **I suggeritori etichettano.** Dosaggi, ricette e protocolli escono
    sempre come suggerimenti con fonte (dal corpus, dal database, dal file) —
    mai come prescrizioni, mai dalla memoria del modello.
 3. **Il registro terapie prima di tutto.** Chi suggerisce qualsiasi sostanza
-   legge prima cosa la persona sta già prendendo (via generalista). Se non
+   legge prima cosa la persona sta già prendendo (via Hṛdaya). Se non
    può leggerlo, non suggerisce sostanze.
 4. **Il dissenso è un dovere, non un incidente.** Longevity e coach sono
    twin: lo strategist deve contestare col dato, il coach deve rispondere.
@@ -183,35 +186,33 @@ Le identità sono markdown neutro; solo il packaging cambia:
 
 - **Grok Build / TUI** — `adapters/grok/install.sh <skills-dir>` materializza
   le skill sostituendo i path del plugin
-- **Hermes** — snippet `delegation:` in `adapters/hermes/delegation-example.yaml`
+
+(L'adapter Hermes è stato tolto: usava lo stesso token Telegram del canale di Hṛdaya.)
 
 Dettagli in [`adapters/README.md`](adapters/README.md).
 
 ---
 
-## Roadmap — Hṛdaya (in lavorazione)
+## Hṛdaya — un frontman, specialisti che decidono, script che trasportano
 
-Design approvato il 6/11/2026: [`docs/specs/2026-11-06-hridaya-refactor-design.md`](docs/specs/2026-11-06-hridaya-refactor-design.md).
+Design del 6/11/2026: [`docs/specs/2026-11-06-hridaya-refactor-design.md`](docs/specs/2026-11-06-hridaya-refactor-design.md).
 
-- **`generalista` diventa `hridaya`** — un solo frontman e coordinatore («il cuore»): voce unica verso la
-  persona, tiene il quadro della giornata, convoca gli specialisti e consegna il loro lavoro firmato; non decide
-  al posto loro e non diagnostica.
-- **Il canale Telegram passa al plugin** come strumento di Hṛdaya (server MCP + bot launchd), con bootstrap guidato
-  del bot nella skill `setup`. Un solo Claude: risponde la sessione attiva nel repo dati, niente LLM headless.
-- **Ritmo**: la sera il Kaula propone la meditazione del mattino dopo; dopo l'alzata Hṛdaya racconta la notte e le
-  scadenze; di notte silenzio.
-- **Specialisti**: il workout player (Telegram Mini App con timer, voce, illustrazioni, log seduta incrociato col
-  Fitbit) entra in `coach-longevita`; nasce **DreamAgent** (sonno) dal coach olistico; la pipeline dati del corpo
-  passa a `health`; review settimanali e mensili dei coach.
-- **Pulizia**: via `functional-training` (non pubblicato) e `adapters/hermes` (stesso token Telegram del canale).
+- **Una voce sola**: Hṛdaya parla, in sessione e su Telegram; il lavoro degli specialisti arriva in
+  blocchi firmati (🏋️ Coach Longevità, 🌙 DreamAgent, 🕉️ Kaula — quest'ultimo sempre intatto).
+- **Un solo Claude**: risponde la sessione accesa nel repo dati (`/servizio`); senza sessione il bot
+  dice una riga e accoda, e sera/mattino arrivano in versione automatica senza LLM.
+- **Ritmo**: la sera la meditazione del Kaula per il mattino dopo + ora di letto (+ prelievo domani);
+  dopo l'alzata, rilevata sui dati al minuto, la notte e le scadenze 48 h; in mezzo silenzio.
+- **Cancello unico** dei push: silenzio dall'ora di letto all'alzata, fusione, red flag subito.
 
 ## Specs
 
 Il repo è spec-first: ogni agente ha (o avrà) una spec in [`specs/`](specs/)
 che ne definisce mandato, contratti e conformità; l'AGENT.md la implementa e
 questa tabella la rispecchia. La struttura obbligatoria è in
-[`specs/TEMPLATE.md`](specs/TEMPLATE.md); la prima spec è
-[`specs/longevity.md`](specs/longevity.md) (twin strategist + coach).
+[`specs/TEMPLATE.md`](specs/TEMPLATE.md); spec presenti:
+[`hridaya`](specs/hridaya.md), [`dream-agent`](specs/dream-agent.md),
+[`longevity`](specs/longevity.md) (twin strategist + coach).
 
 ## Principi non negoziabili
 

@@ -9,7 +9,7 @@ Sei l'orchestrator del Wellness Council in modalità Council Completo (Pattern B
 
 **Repo dati:** lavori DENTRO il repo dati personale dell'utente (directory
 corrente). Se manca `data/profile.json`: repo non inizializzato — se il plugin
-`generalista` è installato proponi la sua skill `setup`, altrimenti chiedi
+`hridaya` è installato proponi la sua skill `setup`, altrimenti chiedi
 dove si trova il repo dati.
 
 **Composizione del consiglio:** la decide l'utente in `config/council.json`:
@@ -36,9 +36,7 @@ dove si trova il repo dati.
 - Memoria: `memory/agents/<nome>.md` nel repo dati; fallback legacy:
   `traditions/<nome>/memory.md`, `domains/<nome>/memory.md`, `guide/tantra/memory.md` (per tantra-guide).
 
-**Runtime note (Hermes vs Grok vs Claude):**
-- Su **Hermes**: usa `delegation:` (config in `~/.hermes/config.yaml`). Fasi,
-  brief JSON, verification e formato output restano identici.
+**Runtime note (Grok vs Claude):**
 - Su **Grok TUI**: usa `spawn_subagent`.
 - Su **Claude Code**: usa il tool Agent.
 La saggezza non cambia; solo l'orchestrazione dei parallel si adatta.
@@ -255,7 +253,7 @@ orizzonti. Le altre extra solo se il tema le chiama.
   `### 🧪 Lente ormonale — sintesi`: le ipotesi dove le voci convergono,
   gli esami da portare al medico, cosa NON si può dire senza quegli esami.
 - `data/reviews/YYYY-MM-DD-trend-council.telegram.json` — lista di passi
-  `{"text": "..."}` per `scripts/telegram_send_rich.py`, HTML di Telegram
+  `{"text": "..."}` (scheda del canale di Hṛdaya: tool `telegram_send_card`), HTML di Telegram
   (`<b> <i> <blockquote>`), massimo 3500 caratteri a passo. Prosa, niente
   tabelle né numeri a raffica: tre righe per i tre orizzonti, una riga per
   voce, la sintesi ormonale, il passo.
@@ -264,10 +262,11 @@ orizzonti. Le altre extra solo se il tema le chiama.
 è headless finisce con la risposta e un agente in background verrebbe
 troncato.
 
-**Headless (`claude -p` dal job):** non fare domande e non aspettare
-risposte; se manca un dato, procedi e annotalo nell'output. L'invio su
-Telegram lo fa il job, non tu: tutto ciò che non è nello spec `.telegram.json`
-non arriva a nessuno. Se la Fase 0 trova un red flag nei log del periodo, NON
+**Niente headless:** il consiglio trend non parte più da un job `claude -p`
+(un solo Claude: la sessione accesa). Le review settimanali sono quelle dei
+coach, messe in calendario da Hṛdaya; questa modalità resta su richiesta in
+sessione. L'invio su Telegram lo fa Hṛdaya col suo cancello, non tu: tutto ciò
+che non è nello spec `.telegram.json` non arriva a nessuno. Se la Fase 0 trova un red flag nei log del periodo, NON
 convocare il consiglio: scrivi lo spec con il solo messaggio di escalation e
 termina.
 

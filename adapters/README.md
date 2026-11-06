@@ -7,7 +7,7 @@ cambia per runtime. Un adapter non duplica contenuto: punta ai file del repo.
 
 ```
 claude plugin marketplace add <path-o-github>/wellness-agents
-claude plugin install wellness-core coach-longevita
+claude plugin install wellness-core hridaya coach-longevita
 ```
 Le skill usano `${CLAUDE_PLUGIN_ROOT}` per i file del plugin e path relativi
 alla cwd per il repo dati.
@@ -20,9 +20,8 @@ skill di Grok, e le identità restano lette da questo repo. Sostituire
 `${CLAUDE_PLUGIN_ROOT}` con il path assoluto di questo repo (vedi
 `grok/install.sh`).
 
-## Hermes
+## Hermes (tolto)
 
-Usa il meccanismo `delegation:` in `~/.hermes/config.yaml` (children con
-model/provider override, max_concurrent_children, inherit_mcp). Snippet di
-esempio in `hermes/delegation-example.yaml`. La sequenza fasi, i brief JSON
-e i formati output NON cambiano: solo l'orchestrazione dei subagent.
+L'adapter Hermes è stato rimosso il 6/11/2026: leggeva lo stesso token Telegram del
+canale di Hṛdaya e gli rubava i messaggi (409 Conflict). Il canale ha un solo lettore:
+il bot del plugin `hridaya`.

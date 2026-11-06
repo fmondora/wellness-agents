@@ -5,31 +5,37 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.9.4"
+    "version": "0.10.0"
   },
   "plugins": [
     {
       "name": "wellness-core",
       "source": "./core",
-      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati e skill di orchestrazione: /council e /ask (membri da config/council.json), /propagate.",
+      "description": "OBBLIGATORIO — Fondamento ontologico, propagation agent, convenzioni del repo dati (una voce: Hṛdaya) e skill di orchestrazione: /council e /ask (membri da config/council.json), /propagate.",
       "category": "core"
     },
     {
       "name": "coach-longevita",
       "source": "./coach-longevita",
-      "description": "Coach Longevità — training per benessere e longevità operativa (Bergeron/Orr): daily plan, week plan, debrief, lift book, skill ginnici uno alla volta, recovery termico. Non medico, non nutrizionista.",
+      "description": "Coach Longevità — training per benessere e longevità operativa (Bergeron/Orr): daily plan, week plan, debrief (anche dalle sedute del workout player, con FC e passi), lift book, skill ginnici uno alla volta, recovery termico. Non medico, non nutrizionista.",
       "category": "coaching"
     },
     {
-      "name": "generalista",
-      "source": "./generalista",
-      "description": "Il generalista — primo contatto, diario giornaliero (/log), coda Telegram (/telegram), contratto dati e pipeline di ingestione (sync wearable, insights, trends). Triage verso ask/council; /setup inizializza il repo dati al primo avvio. Non è un medico e non diagnostica.",
+      "name": "dream-agent",
+      "source": "./dream-agent",
+      "description": "DreamAgent — proprietario del sonno: target, ora di letto a fine ciclo, piano settimanale del sonno, review settimanale e mensile; usa /sonno di health. Non nutrizione, non movimento, non diagnosi.",
+      "category": "coaching"
+    },
+    {
+      "name": "hridaya",
+      "source": "./hridaya",
+      "description": "Hṛdaya, il cuore del consiglio — voce unica e coordinatore: diario (/log), quadro della giornata con le scadenze cliniche, convocazione degli specialisti con i vincoli, canale Telegram (bot, cancello dei push con silenzio notturno fino all'alzata, server MCP), /servizio per accendere l'ascolto nella sessione, /setup con bootstrap Telegram. Non decide al posto degli specialisti e non diagnostica.",
       "category": "frontline"
     },
     {
       "name": "health",
       "source": "./health",
-      "description": "Salute — dominio osservazionale del corpo fisico: sintomi, HRV, red flag clinici con escalation immediata; /sonno con punteggio sul baseline personale. Mai diagnosi.",
+      "description": "Salute — dominio osservazionale del corpo fisico: sintomi, HRV, red flag clinici con escalation immediata; /sonno con punteggio sul baseline personale; pipeline dati del corpo (sync wearable, insights engine, trends, FC al minuto, webhook). Mai diagnosi.",
       "category": "domain"
     },
     {
@@ -89,7 +95,7 @@
     {
       "name": "tantra-guide",
       "source": "./tantra-guide",
-      "description": "Kaula — guida tantrica: pratica quotidiana, riconoscimento (pratyabhijna), Vigyan Bhairava Tantra, spanda.",
+      "description": "Kaula — guida tantrica: pratica quotidiana (la meditazione della sera per il mattino dopo), riconoscimento (pratyabhijna), Vigyan Bhairava Tantra, spanda; ingest del canale @tibetanbuddha come citazioni.",
       "category": "guide"
     }
   ]

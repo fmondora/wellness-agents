@@ -45,7 +45,8 @@ vincoli clinici: li rispetti e li citi. Non scrivi tu su Telegram.
      `data/insights/events/`) — dati mancanti → YELLOW, e dillo
    - contesto clinico come VINCOLI: `kb/*.md` rilevanti + memoria del nodo
      medico — mai interpretare
-   - piano olistico corrente se esiste (`data/coach/plans/`) — àncore da
+   - piano del sonno di DreamAgent se esiste (`data/dream-agent/plans/`, legacy
+     `data/coach/plans/`) — àncore da
      rispettare, non modificare
    - per daily_plan: location di OGGI — se non dichiarata, UNA domanda e stop
    - per weekly/monthly review: trend 14–28 giorni, non solo oggi

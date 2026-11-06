@@ -12,11 +12,14 @@ con la directory corrente dentro quel repo (o, per gli script, con `--data-dir`)
 │   ├── profile.json            # profilo, vincoli, medications, guardrail personali
 │   ├── logs/YYYY-MM-DD.json    # log giornalieri
 │   ├── fitbit/ insights/       # wearable e trend (se presenti)
-│   └── <agente>/               # stato per-agente (es. coach-longevita/)
+│   ├── telegram/               # canale di Hṛdaya: coda, push.jsonl, gate.json, session.json
+│   ├── scadenze.json           # scadenze cliniche e pratiche (Hṛdaya le porta nel quadro)
+│   └── <agente>/               # stato per-agente (es. coach-longevita/, dream-agent/, hridaya/)
 ├── kb/                         # knowledge base clinica personale (esami, condizioni…)
-├── memory/agents/<agente>.md   # memoria vivente di ogni agente
+├── memory/agents/<agente>.md   # memoria vivente di ogni agente (unico formato)
 └── config/
     ├── council.json            # CHI partecipa al consiglio di questa persona
+    ├── hridaya.json            # ritmo: messaggio della sera, ora di letto, alzata (facoltativo)
     └── *.json + .env           # soglie, token, segreti (MAI nel plugin)
 ```
 
@@ -49,7 +52,12 @@ Il propagator propaga solo verso le memorie degli agenti presenti.
 4. **Memoria**: dopo sessioni significative, aggiorna `memory/agents/<te>.md`
    (formato: `## YYYY-MM-DD — Titolo` + implicazione).
 5. **Runtime**: le identità sono markdown neutro. Claude Code le usa via skill
-   (`${CLAUDE_PLUGIN_ROOT}`), Grok/Hermes via adapters (vedi `/adapters`).
+   (`${CLAUDE_PLUGIN_ROOT}`), Grok via adapters (vedi `/adapters`).
+6. **Una voce verso la persona**: parla Hṛdaya (plugin `hridaya`). Gli specialisti
+   producono contenuti e file; non scrivono mai su Telegram. Un messaggio d'iniziativa
+   non va in outbox: si chiede al cancello di Hṛdaya con una riga in
+   `data/telegram/push.jsonl` (schema in `hridaya/scripts/push_gate.py`; scrittore
+   d'esempio: `health/scripts/push_request.py`).
 
 ## Plugin con server MCP
 
@@ -86,12 +94,13 @@ Alcuni agenti richiedono dati propri alla prima attivazione, dichiarati nella
 sezione "Setup" del loro AGENT.md: jyotish → dati natali (`data/kundali.json`);
 ayurveda → prakriti (profilo); tcm → costituzione; genomics → raw DNA
 (`data/dna/`); tantra-guide → punto di partenza (`data/tantra/curriculum.json`);
-coach-longevita → questionario onboard (`data/coach-longevita/state.json`).
+coach-longevita → questionario onboard (`data/coach-longevita/state.json`);
+dream-agent → sveglia e bisogno di sonno (`data/dream-agent/state.json`).
 
 Regole:
 1. L'agente si auto-verifica alla prima invocazione DIRETTA e fa il suo intake.
 2. Nel COUNCIL non si fa mai intake: nota esplicita ("mi mancano i dati X")
    e si procede in modo generico o senza quella lettura.
-3. Il `/setup` del generalista, composto il consiglio, elenca gli intake
+3. Il `/setup` di Hṛdaya, composto il consiglio, elenca gli intake
    mancanti dei membri scelti e propone di completarli subito o rimandarli.
 

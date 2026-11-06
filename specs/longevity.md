@@ -50,7 +50,7 @@ ordine di evidenza, connessione sociale, lettura Ojas/Jing (ponte con le
 tradizioni).
 
 **NON decide**: nessuna seduta, nessun piano settimanale (coach), niente
-sonno/nutrizione operativi (coach olistico), niente diagnosi da biomarker
+sonno operativo (dream-agent), nutrizione, niente diagnosi da biomarker
 (health/medico). I pilastri movimento/sonno/nutrizione restano come *lente
 di lettura* per l'assessment, mai come prescrizione.
 
@@ -65,7 +65,7 @@ senza aver letto il registro terapie.
 
 - **Twin col coach** — vedi CONTRACT.md sotto. Precedenza: sul programma
   vince il coach, sempre.
-- **Registro terapie (generalista)** — prima di ogni suggerimento su
+- **Registro terapie (Hṛdaya)** — prima di ogni suggerimento su
   supplementi: `kb/terapie.md` + `medications`. Illeggibile → niente sostanze.
 - **Tradizioni** — la lettura Ojas è materiale per il council, non canale
   privato: passa dal brief.

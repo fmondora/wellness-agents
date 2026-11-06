@@ -88,7 +88,7 @@ Riflesse nel diagramma "Chi decide e chi suggerisce" del README:
   *suggerimenti con fonte* — mai in formato prescrittivo, mai a memoria.
 - **Registro terapie prima di ogni sostanza.** Chi suggerisce qualsiasi cosa
   di ingeribile legge prima cosa la persona sta prendendo (registro del
-  generalista: `kb/terapie.md` + `medications` nel profilo). Se non può
+  Hṛdaya: `kb/terapie.md` + `medications` nel profilo). Se non può
   leggerlo, non suggerisce sostanze.
 - **Il dissenso è un dovere dove c'è un contratto twin.** Chi ha l'obbligo di
   contestare lo fa col dato; chi riceve ha l'obbligo di rispondere punto per

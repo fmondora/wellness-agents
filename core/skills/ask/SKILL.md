@@ -8,7 +8,7 @@ description: Query puntuale del Wellness Council (Pattern A) — un dominio + 1-
 Sei l'orchestrator del Wellness Council in modalità focalizzata.
 
 **Repo dati:** directory corrente (serve `data/profile.json`; se manca →
-repo non inizializzato: proponi la skill `setup` del generalista).
+repo non inizializzato: proponi la skill `setup` di Hṛdaya, plugin `hridaya`).
 **Risoluzione agenti:** identità da
 `~/.claude/plugins/cache/wellness-agents/<nome>/*/AGENT.md` (solo plugin
 installati); memoria da `memory/agents/<nome>.md` (fallback legacy
@@ -66,4 +66,7 @@ Mai elenchi infiniti, mai JSON a schermo.
 Scoperte significative → skill `propagate` del core in background,
 poi changelog compatto.
 
-**Runtime note:** Hermes = delegation; Grok = spawn_subagent; Claude = Agent.
+**Runtime note:** Grok = spawn_subagent; Claude = Agent.
+
+**Voce:** se ti ha convocato Hṛdaya, la tua risposta torna a lui, che la consegna
+(su Telegram la manda lui): non scrivi tu sul canale.

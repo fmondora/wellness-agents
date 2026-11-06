@@ -25,6 +25,6 @@ poi changelog compatto (max 10 righe: file toccati, cosa è stato aggiunto).
    `## YYYY-MM-DD — Titolo` + testo + `**Implicazione**: ...`
 4. Mai duplicare entry esistenti. Mai propagare rumore (mood passeggero senza pattern).
 
-**Runtime note:** su Hermes usa delegation/background job; su Grok
-`spawn_subagent background:true`; su Claude Code il tool Agent in background.
+**Runtime note:** su Grok `spawn_subagent background:true`; su Claude Code il
+tool Agent in background.
 La logica non cambia.
