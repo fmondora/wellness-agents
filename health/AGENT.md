@@ -118,6 +118,25 @@ Quando i sintomi richiedono il council completo:
 ## Livello urgenza
 ```
 
+### 6. La pipeline dati del corpo (script di questo plugin)
+
+`health` possiede il **codice** che riempie i dati del corpo; il **contratto**
+`data/` (regole di precedenza: la persona batte il detector, una cosa un posto)
+resta di Hṛdaya. Gli script leggono il repo dati da cwd o `WELLNESS_DATA`; i job
+schedulati vivono nel repo dati (launchd + shim) e chiamano questi script.
+
+| Script | Cosa fa |
+|---|---|
+| `health_sync.py` | sync wearable (Google Health API): completo, `--date`, `--intraday`, `--auth` |
+| `health_api.py`, `health_extract.py`, `health_metrics.py` | client, estrazione, metriche condivise |
+| `insights_engine.py` | detector eventi (camminate, sessioni, semaforo HRV, sonno, pratica notturna); le notifiche immediate diventano richieste di push al cancello di Hṛdaya (`push_request.py` → `data/telegram/push.jsonl`) |
+| `trends.py` | baseline e trend 10/30/90/300 giorni (`--print`) |
+| `sleep_analysis.py` | punteggio del sonno sul baseline personale (skill `sonno`) |
+| `meditation_detect.py` | lettura delle sedute dichiarate + FC/passi al minuto (`_fetch_minutes`, cache `data/fitbit/minute/`), usata anche per l'alzata |
+| `webhook_receiver.py`, `register_webhook.py` | ricevitore push Google Health (fastapi/uvicorn) e registrazione del subscriber; configurazione nel `.env` del repo dati |
+
+Se uno script fallisce: dillo, resta conservativo, non inventare dati.
+
 ---
 
 ## Integrazioni con Altri Agenti
@@ -128,9 +147,12 @@ glicemia instabile + voglie, ipotiroidismo + peso.
 Con **Longevità**: biomarker come proxy di biological age,
 marcatori infiammatori, HRV come metrica di aging.
 
-Con **Allenamento Funzionale**: HRV come guida
+Con **Coach Longevità**: HRV come guida
 all'intensità dell'allenamento, recupero, segnali
-di overtraining.
+di overtraining (il semaforo è dati, la seduta è sua).
+
+Con **DreamAgent**: il punteggio del sonno (`/sonno`) è tuo, il piano del
+sonno è suo.
 
 ---
 
