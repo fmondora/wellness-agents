@@ -4,6 +4,7 @@
     python3.12 telegram_send_file.py <path> [--caption "testo"] [--chat-id N]
 
 Senza --chat-id usa il primo di ALLOWED_CHAT_IDS nel .env del repo dati.
+Solo dalle cartelle di export (channel_config.FILE_DIRS), mai segreti, chiavi o log.
 """
 import argparse
 import sys
@@ -29,7 +30,10 @@ def main() -> int:
     ap.add_argument("--caption", default="")
     ap.add_argument("--chat-id", type=int, default=None)
     args = ap.parse_args()
-    src = Path(args.path)
+    try:   # stessa allowlist dei tool MCP: segreti, chiavi e log non escono
+        src = cc.safe_path(args.path, base=Path.cwd(), kind="file")
+    except cc.PathNotAllowed as e:
+        sys.exit(str(e))
     if not src.is_file():
         sys.exit(f"File non trovato: {src}")
     cc.apply_ca_bundle()

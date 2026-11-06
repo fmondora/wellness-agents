@@ -44,6 +44,10 @@ def main() -> int:
     chat = a.chat_id or cc.primary_chat_id(env)
     if not token or not chat:
         sys.exit("Manca il token del bot o ALLOWED_CHAT_IDS (skill setup di Hṛdaya)")
+    try:   # stessa allowlist dei tool MCP per le foto
+        steps = cc.safe_card(steps, spec_path.parent)
+    except cc.PathNotAllowed as e:
+        sys.exit(str(e))
     n = tt.send_card(token, chat, steps, spec_path.parent)
     print(f"Inviati {n} messaggi.")
     return 0
