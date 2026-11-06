@@ -83,8 +83,15 @@ giorno, debrief a fine seduta, piano settimanale, review mensile.
 ### Aggiornamenti
 
 ```bash
-claude plugin update wellness-agents
+claude plugin marketplace update wellness-agents
+claude plugin update <plugin>@wellness-agents
 ```
+
+Sviluppo dal checkout locale (com'è durante la migrazione a Hṛdaya):
+`claude plugin marketplace add ~/wip/personal/wellness-agents` sostituisce la sorgente GitHub senza
+disinstallare nulla. Gli shim del repo dati leggono la **cache** (`~/.claude/plugins/cache/wellness-agents/`):
+dopo una modifica a uno script si alza la versione in `plugin.json` e si lancia `claude plugin update`,
+altrimenti la cache resta quella vecchia.
 
 ---
 
@@ -98,7 +105,7 @@ claude plugin update wellness-agents
 | `dream-agent` | coaching | DreamAgent: il sonno — ora di letto a fine ciclo, piano settimanale, review settimanale e mensile |
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi; /sonno; pipeline dati del corpo (sync wearable, insights, trends, FC al minuto, webhook) |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
-| `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori |
+| `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori; swarm Attia · Patrick · Longo |
 | `genomics` | dominio | SNP e pathway dai dati DNA del repo dati — mai determinismo |
 | `george` | dominio | Framework reverse aging di @Bluefidel47 — claim etichettati |
 | `ayurveda` | tradizione | Dosha, agni, ama, rasayana |
@@ -112,6 +119,12 @@ I job schedulati (launchd/cron) restano nel repo dati dell'utente come shim
 sottili che chiamano gli script dei plugin (`hridaya` per il bot, `health` per
 sync e detector) con `WELLNESS_DATA` puntato al proprio repo. Mappa dei percorsi:
 [`MIGRATION.md`](MIGRATION.md).
+
+Runtime tipico nel repo dati (macOS, launchd): bot di Hṛdaya (long polling + cancello dei push, KeepAlive),
+daemon (merge HRV + insight engine di `health`), sync completo del wearable al mattino, ricevitore webhook
+di `health` dietro un tunnel, brief settimanale deterministico, ingest del canale del Kaula. Nessun job
+lancia un LLM: risponde solo la sessione Claude aperta nel repo dati, accesa con `/hridaya:servizio`
+(il server MCP `telegram` di `hridaya` dà alla sessione i tool `mcp__plugin_hridaya_telegram__*`).
 
 ---
 
