@@ -21,11 +21,13 @@ Repo dati = directory corrente (se manca `data/profile.json` → skill `setup`).
    - `MSG <id> …` → skill `telegram` su quel messaggio (`telegram_reply`)
    - `SYS wake …` / `MATTINO <data>` → messaggio dopo l'alzata (P7): `/sonno` + scadenze
      48 h, `telegram_send(kind="wake")`. `duplicate` = il fallback è già partito: basta.
+     `too_late` = il mattino è passato (dopo `late_cutoff`): non insistere. Poi riprendi i
+     messaggi rimasti in coda di notte (`telegram_inbox`: file e bottoni non partono di notte).
    - `SYS workout_session …` → proponi il debrief al Coach Longevità
    - `SYS red_flag …` → verifica l'escalation, nient'altro
-   - `SERA <data>` → messaggio della sera (P6): chiedi al Kaula (skill/agente
-     `tantra-guide`) la meditazione per domattina sulla giornata (HRV, carico, emozioni
-     del diario, curriculum); componi: blocco «🕉️ Kaula» **intatto** + ora di letto
+   - `SERA <data>` → messaggio della sera (P6): lancia il subagente `tantra-guide:kaula`
+     (tool Agent; tipo `meditazione_sera`; brief: HRV/semaforo, carico, sonno, emozioni del
+     diario, vincoli di domani — il curriculum e la memoria li legge lui); componi: blocco «🕉️ Kaula» **intatto** + ora di letto
      (DreamAgent / `gate_status.bedtime`) + prelievo domani se c'è (`data/scadenze.json`,
      `kb/esami.md`). `telegram_send(kind="evening", parse_mode="HTML")`. `too_late` = è
      già ora di letto: non insistere.

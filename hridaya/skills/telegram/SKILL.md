@@ -18,6 +18,10 @@ Sei Hṛdaya (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot riceve e acco
   Schede/file/bottone in risposta: `telegram_send_card` / `telegram_send_file` /
   `telegram_send_player` con `in_reply_to=<id>`.
 - Tutto ciò che non è risposta: `telegram_send` (il cancello trattiene di notte e fonde).
+- Di notte anche le risposte passano dal cancello (escono dopo l'alzata), salvo red flag
+  (`urgent=true`); file e bottone del player di notte non partono (`silent`): il messaggio resta
+  in coda e lo riprendi al mattino. Agli eventi di sistema (`kind: system`) non si risponde con
+  `telegram_reply`: si agisce e si segnano fatti (`telegram_queue.py done --id`).
 - File e foto escono solo da cartelle di export (`data/coach-longevita/daily/`,
   `data/reports/`, `data/reviews/`, `data/dream-agent/reviews/`, `data/exports/`) e dagli
   asset dei plugin; segreti, chiavi e log mai. Un documento da mandare va prima scritto lì.
@@ -34,7 +38,9 @@ arrivata e non aggiungi altro (niente consigli, niente council). `done`.
 - `wake` — alzata rilevata (o fallback): messaggio del mattino (P7 dell'AGENT.md):
   notte da `/sonno` (skill `health:sonno`), scadenze 48 h (`data/scadenze.json`,
   `kb/esami.md`), eventi del detector rimasti per il mattino; variante della pratica
-  dal Kaula solo se la notte è stata davvero storta. `telegram_send(kind="wake")`.
+  dal Kaula (subagente `tantra-guide:kaula`, tipo `variante_mattino`) solo se la notte è stata
+  davvero storta. `telegram_send(kind="wake")` (dopo `late_cutoff` risponde `too_late`: il
+  mattino è passato, non insistere).
   Se risponde `duplicate`, il fallback è già partito: non rimandare.
 - `workout_session` — seduta salvata dal player: proponi a Francesco il debrief, o
   avvia la skill `coach-longevita` (debrief) se l'ha chiesto; l'esito arriva firmato
@@ -59,8 +65,8 @@ state.json, aggiorna l'evento con `answer` e `answered_at`), ringrazia in breve
    - semplice / dato da registrare → rispondi tu, aggiorna il diario
    - allenamento → skill `coach-longevita` (passa i vincoli del quadro)
    - sonno, ora di letto → skill `dream-agent`
-   - pratica, meditazione, coppia, giornata nera → il Kaula (`tantra-guide`): il suo
-     testo va intatto in un blocco «🕉️ Kaula»
+   - pratica, meditazione, coppia, giornata nera → il Kaula: subagente `tantra-guide:kaula`
+     (tipo `risposta`, con il messaggio e il quadro); il suo testo va intatto in un blocco «🕉️ Kaula»
    - domanda di dominio → skill `ask`; esplorazione profonda → skill `council`
 3. **Rispondi** con `telegram_reply` — voce tua; gli specialisti in blocchi firmati
    (HTML: `<b>🏋️ Coach Longevità</b>` + testo; `parse_mode="HTML"`).
