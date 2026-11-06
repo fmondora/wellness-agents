@@ -165,3 +165,15 @@ def test_cli_submit_scrive_lo_schema(data):
     row = tq.read_jsonl(pg.push_path())[0]
     assert row["status"] == "pending" and row["kind"] == "review" and row["card"]["steps"]
     json.dumps(row)
+
+
+def test_scheda_in_coda_con_foto_fuori_viene_scartata(data, tmp_path):
+    s = Sender()
+    pg.save_state({"wake": {D: {"at": "06:30", "source": "minuto", "recorded_at": t(D, "06:50").isoformat()}},
+                   "wake_sent": D, "evening_sent": D})
+    out = tmp_path / "fuori.png"
+    out.write_bytes(b"x")
+    pg.submit("", source="x", card={"steps": [{"photos": [str(out)]}], "base": str(tmp_path)},
+              created_at=t(D, "15:00"))
+    tick(t(D, "15:05"), s)
+    assert s.sent == []

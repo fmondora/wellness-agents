@@ -12,11 +12,15 @@ from conftest import FakeCall
 
 class Keychain:
     def __init__(self, ok=True):
-        self.store, self.ok = {}, ok
+        self.store, self.ok, self.argvs = {}, ok, []
 
     def __call__(self, argv, **kw):
         if argv[1] == "add-generic-password" and self.ok:
-            self.store[argv[argv.index("-a") + 1]] = argv[argv.index("-w") + 1]
+            assert argv[-1] == "-w"                       # il token non passa mai in argv
+            pw, again = kw["input"].splitlines()
+            assert pw == again
+            self.store[argv[argv.index("-a") + 1]] = pw
+            self.argvs.append(argv)
             return subprocess.CompletedProcess(argv, 0, "", "")
         if argv[1] == "find-generic-password":
             acc = argv[argv.index("-a") + 1]
@@ -32,6 +36,7 @@ def test_migrazione_token_nel_portachiavi(data):
     assert "TELEGRAM_BOT_TOKEN" not in env and env["TELEGRAM_TOKEN_SOURCE"] == "keychain"
     assert env["ALLOWED_CHAT_IDS"] == "42"                    # il resto del .env resta
     assert cc.bot_token(env, runner=kc) == "123:T"
+    assert all("123:T" not in a for argv in kc.argvs for a in argv)
 
 
 def test_portachiavi_che_fallisce_lascia_il_token_nel_env(data):
@@ -52,20 +57,49 @@ def test_check_vede_il_409_e_il_webhook():
     assert "poll_ok" not in ts.check("T", call=FakeCall(), poll=False)
 
 
-def test_wait_start_registra_e_conferma(data):
-    class Calls(FakeCall):
-        def __call__(self, token, method, **p):
-            self.calls.append((method, p))
-            if method == "getUpdates" and p.get("timeout") == 10:
-                return {"ok": True, "result": [{"update_id": 5, "message": {
-                    "text": "/start", "chat": {"id": 777, "type": "private", "first_name": "F"}}}]}
-            return {"ok": True, "result": {}}
-    fc = Calls()
-    who = ts.wait_start("T", 5, call=fc, sleep=lambda s: None)
+class Updates(FakeCall):
+    """getUpdates finto: backlog (offset=-1) e poi i messaggi della finestra."""
+
+    def __init__(self, backlog, window):
+        super().__init__()
+        self.backlog, self.window = backlog, window
+
+    def __call__(self, token, method, **p):
+        self.calls.append((method, p))
+        if method == "getUpdates" and p.get("offset") == -1:
+            return {"ok": True, "result": self.backlog[-1:]}
+        if method == "getUpdates" and p.get("timeout") == 10:
+            got, self.window = self.window, []
+            return {"ok": True, "result": [u for u in got if u["update_id"] >= p["offset"]]}
+        return {"ok": True, "result": {}}
+
+
+def _u(uid, text, chat=777, date=2000, kind="private"):
+    return {"update_id": uid, "message": {"text": text, "date": date,
+                                          "chat": {"id": chat, "type": kind, "first_name": "F"}}}
+
+
+def test_wait_start_vuole_il_codice_e_ignora_il_backlog(data):
+    backlog = [_u(1, "/start AB12CD", chat=666, date=500)]           # arrivato prima del setup
+    window = [_u(2, "/start", chat=555), _u(3, "/start ZZZZZZ", chat=444),
+              _u(4, "/start ab12cd", chat=333, kind="group"), _u(5, "/start AB12CD", chat=777)]
+    fc = Updates(backlog, window)
+    who = ts.wait_start("T", "AB12CD", 5, call=fc, sleep=lambda s: None, clock=lambda: 1990)
     assert who["id"] == 777
+    assert ("getUpdates", {"offset": 2, "timeout": 0}) in fc.calls      # backlog confermato e scartato
     ts.register_chat(777, "T", call=fc)
     assert cc.load_env()["ALLOWED_CHAT_IDS"] == "777"
     assert "Hṛdaya" in fc.texts()[-1]
+
+
+def test_wait_start_messaggio_vecchio_col_codice_non_vale(data):
+    fc = Updates([], [_u(9, "/start AB12CD", date=100)])
+    assert ts.wait_start("T", "AB12CD", 1, call=fc, sleep=lambda s: None, clock=lambda: 2000) is None
+
+
+def test_codice_monouso():
+    a, b = ts.new_code(), ts.new_code()
+    assert len(a) == 6 and a != b
 
 
 def test_plist_del_bot(data):

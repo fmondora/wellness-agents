@@ -191,13 +191,14 @@ def call_tool(name: str, args: dict) -> Any:
                                  parse_mode=args.get("parse_mode"), urgent=bool(args.get("urgent")))
     if name == "telegram_send_card":
         if args.get("spec_path"):
-            spec = Path(args["spec_path"])
-            spec = spec if spec.is_absolute() else cc.data_root() / spec
+            spec = cc.safe_path(args["spec_path"])
             steps, base = json.loads(spec.read_text(encoding="utf-8")), spec.parent
         elif args.get("steps"):
-            steps, base = args["steps"], Path(args.get("base_dir") or cc.data_root())
+            steps = args["steps"]
+            base = cc.safe_path(args["base_dir"]) if args.get("base_dir") else cc.data_root().resolve()
         else:
             raise ToolError("serve spec_path o steps")
+        steps = cc.safe_card(steps, base)
         if args.get("in_reply_to"):
             s = _sender()
             n = tt.send_card(s.token, _reply_chat(args["in_reply_to"]), steps, base,
@@ -206,8 +207,7 @@ def call_tool(name: str, args: dict) -> Any:
         return push_gate.deliver("", args.get("kind") or "message", _sender(),
                                  card={"steps": steps, "base": str(base)})
     if name == "telegram_send_file":
-        path = Path(args["path"])
-        path = path if path.is_absolute() else cc.data_root() / path
+        path = cc.safe_path(args["path"])
         if not path.is_file():
             raise ToolError(f"file non trovato: {path}")
         if not args.get("in_reply_to") and _is_night():
@@ -218,8 +218,7 @@ def call_tool(name: str, args: dict) -> Any:
         return {"status": "sent", "file": path.name}
     if name == "telegram_send_player":
         import workout_player as wp
-        path = Path(args["player_json"])
-        path = path if path.is_absolute() else cc.data_root() / path
+        path = cc.safe_path(args["player_json"])
         w = json.loads(path.read_text(encoding="utf-8"))
         errs = wp.validate_workout(w)
         if errs:
@@ -294,6 +293,7 @@ def handle(req: dict) -> dict | None:
                 result = {"content": [{"type": "text", "text": json.dumps(out, ensure_ascii=False, default=str)}],
                           "isError": False}
             except (ToolError, tt.TelegramError, RuntimeError, OSError, ValueError, KeyError) as e:
+                # PathNotAllowed è un ValueError: il messaggio dice perché, senza inviare nulla
                 result = {"content": [{"type": "text", "text": f"Errore: {e}"}], "isError": True}
         else:
             return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": f"metodo sconosciuto: {method}"}}

@@ -113,11 +113,17 @@ def keychain_get(account: str, runner: Runner = subprocess.run) -> str | None:
 
 
 def keychain_set(account: str, token: str, runner: Runner = subprocess.run) -> bool:
-    """Salva (o aggiorna, -U) il token nel portachiavi di login."""
+    """Salva (o aggiorna, -U) il token nel portachiavi di login.
+
+    Il token NON va in argv (sarebbe visibile in `ps`): `-w` ultimo e senza valore fa
+    chiedere a `security` la password, che legge da stdin (password + conferma).
+    """
+    if "\n" in token or "\r" in token:
+        return False
     try:
         r = runner(["security", "add-generic-password", "-U", "-s", KEYCHAIN_SERVICE, "-a", account,
-                    "-l", "Telegram bot (wellness-agents)", "-w", token],
-                   capture_output=True, text=True, timeout=10)
+                    "-l", "Telegram bot (wellness-agents)", "-w"],
+                   input=f"{token}\n{token}\n", capture_output=True, text=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return False
     return r.returncode == 0
@@ -213,3 +219,50 @@ def rhythm(root: Path | None = None) -> dict:
     if not cfg.get("bedtime"):
         cfg["bedtime"] = bed
     return cfg
+
+
+# --- confini dei file che possono uscire sul canale ------------------------------------
+
+class PathNotAllowed(ValueError):
+    pass
+
+
+def allowed_roots(images: bool = False, root: Path | None = None) -> list[Path]:
+    """Solo `data/` e `kb/` del repo dati; per le immagini anche gli asset di coach-longevita."""
+    base = (root or data_root()).resolve()
+    roots = [base / "data", base / "kb"]
+    if images:
+        try:
+            from _plugins import plugin_scripts
+            d = plugin_scripts("coach-longevita")
+            if d:
+                roots.append((d.parent / "assets").resolve())
+        except Exception:  # noqa: BLE001
+            pass
+    return roots
+
+
+def safe_path(p: str | Path, base: Path | None = None, images: bool = False) -> Path:
+    """Path risolto (symlink compresi) e dentro le cartelle ammesse, o PathNotAllowed.
+
+    Difesa dal prompt injection: niente ~/.ssh, .env, file fuori dal repo dati.
+    """
+    q = Path(p).expanduser()
+    q = q if q.is_absolute() else (base or data_root()) / q
+    r = q.resolve()
+    if r.name == ".env" or not any(r.is_relative_to(a) for a in allowed_roots(images)):
+        raise PathNotAllowed(f"{p}: fuori dalle cartelle ammesse (data/, kb/ del repo dati"
+                             + (", asset dei plugin" if images else "") + ")")
+    return r
+
+
+def safe_card(steps: list[dict], base: Path) -> list[dict]:
+    """Scheda con le foto risolte e verificate (path assoluti)."""
+    out = []
+    for st in steps:
+        if not isinstance(st, dict):
+            raise PathNotAllowed("passo della scheda non valido")
+        if "photos" in st:
+            st = {**st, "photos": [str(safe_path(ph, base=base, images=True)) for ph in st["photos"]]}
+        out.append(st)
+    return out

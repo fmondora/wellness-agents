@@ -66,11 +66,55 @@ def test_send_passa_dal_cancello(data, tmp_path):
 
 def test_player_dry_run_e_validazione(data, tmp_path):
     fix = Path(__file__).resolve().parent / "fixtures"
-    out = run(data, [call(1, "telegram_send_player", {"player_json": str(fix / "demo.player.json"), "dry_run": True}),
-                     call(2, "telegram_send_player", {"player_json": str(fix / "2026-11-06.webappdata.txt")})],
+    daily = data / "data" / "coach-longevita" / "daily"
+    daily.mkdir(parents=True)
+    (daily / "demo.player.json").write_text((fix / "demo.player.json").read_text())
+    (daily / "rotto.player.json").write_text('{"blocks": []}')
+    out = run(data, [call(1, "telegram_send_player", {"player_json": "data/coach-longevita/daily/demo.player.json",
+                                                      "dry_run": True}),
+                     call(2, "telegram_send_player", {"player_json": str(daily / "rotto.player.json")}),
+                     call(3, "telegram_send_player", {"player_json": str(fix / "demo.player.json"), "dry_run": True})],
               tmp_path / "log.jsonl")
     assert payload(out[0])["url_length"] > 20
     assert out[1]["result"]["isError"]
+    assert out[2]["result"]["isError"] and "fuori" in out[2]["result"]["content"][0]["text"]
+
+
+def test_file_fuori_dal_repo_dati_mai_spediti(data, tmp_path):
+    secret = tmp_path / "fuori" / "id_rsa"
+    secret.parent.mkdir()
+    secret.write_text("PRIVATA")
+    (data / "data" / "link").symlink_to(secret)             # symlink che esce dal repo dati
+    (data / "data" / "ok.pdf").write_text("pdf")
+    mid = tq.enqueue(42, "mandami il pdf")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [
+        call(1, "telegram_send_file", {"path": str(secret), "in_reply_to": mid}),
+        call(2, "telegram_send_file", {"path": "data/link", "in_reply_to": mid}),
+        call(3, "telegram_send_file", {"path": "../fuori/id_rsa", "in_reply_to": mid}),
+        call(4, "telegram_send_file", {"path": ".env", "in_reply_to": mid}),
+        call(5, "telegram_send_card", {"steps": [{"photos": [str(secret)]}], "in_reply_to": mid}),
+        call(6, "telegram_send_card", {"steps": [{"text": "x"}], "base_dir": str(secret.parent), "in_reply_to": mid}),
+        call(7, "telegram_send_file", {"path": "data/ok.pdf", "in_reply_to": mid}),
+    ], log)
+    assert all(r["result"]["isError"] for r in out[:6])
+    assert payload(out[6])["status"] == "sent"
+    sent = log.read_text()
+    assert "id_rsa" not in sent and "PRIVATA" not in sent and "ok.pdf" in sent
+
+
+def test_scheda_con_foto_nel_repo_dati(data, tmp_path):
+    img = data / "data" / "coach-longevita" / "daily" / "img"
+    img.mkdir(parents=True)
+    (img / "a.png").write_bytes(b"x")
+    mid = tq.enqueue(42, "scheda?")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_send_card", {"steps": [{"text": "<b>Scheda</b>"},
+                                                              {"photos": ["img/a.png"], "caption": "Plank"}],
+                                                    "base_dir": "data/coach-longevita/daily",
+                                                    "in_reply_to": mid})], log)
+    assert payload(out[0])["steps"] == 2
+    assert "sendPhoto" in log.read_text()
 
 
 def test_servizio_acceso_poi_spento_alla_chiusura(data, tmp_path):

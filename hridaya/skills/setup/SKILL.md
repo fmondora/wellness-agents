@@ -78,9 +78,11 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
    `python3.12 $S/telegram_setup.py check` → bot riconosciuto, webhook vuoto,
    `getUpdates` senza 409. Webhook presente → va tolto (deleteWebhook) prima di
    proseguire; 409 → c'è un altro processo: trovalo e spegnilo, poi ricontrolla.
-4. **Chat autorizzata** — «Scrivi /start al bot adesso»:
-   `python3.12 $S/telegram_setup.py wait-start --register` → registra il chat_id come
-   unico `ALLOWED_CHAT_IDS` e risponde sul canale. Chiedi conferma che sia arrivato.
+4. **Chat autorizzata** — fai lanciare alla persona, nel terminale,
+   `python3.12 $S/telegram_setup.py wait-start --register`: svuota i messaggi arrivati
+   prima, mostra un codice monouso e aspetta `/start CODICE` in chat privata. Solo chi
+   vede il terminale può diventare l'unico `ALLOWED_CHAT_IDS`; la conferma arriva sul
+   canale. Chiedi che sia arrivata. (Il codice non passa da te né dalla chat della sessione.)
 5. **Avvio automatico** — il repo dati ha uno shim `scripts/telegram_bot.py` che lancia
    `$S/telegram_bot.py` (crealo se manca, come gli altri shim). Poi
    `python3.12 $S/telegram_setup.py launchd --shim scripts/telegram_bot.py --install`

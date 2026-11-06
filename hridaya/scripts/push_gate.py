@@ -193,9 +193,17 @@ def _send_rows(rows: list[dict], sender: Sender, head: tuple[str, str | None] | 
             sender.text(out, pm)
     for r in rows:
         if r.get("card"):
+            # le foto devono stare nel repo dati o negli asset dei plugin (difesa in profondità:
+            # una riga di push.jsonl può averla scritta chiunque)
+            base = Path(r["card"].get("base") or cc.data_root())
+            try:
+                steps = cc.safe_card(r["card"]["steps"], base)
+            except cc.PathNotAllowed as e:
+                print(f"scheda scartata: {e}", file=sys.stderr)
+                continue
             if r.get("text"):
                 sender.text(r["text"], r.get("parse_mode"))
-            sender.card(r["card"]["steps"], Path(r["card"].get("base") or "."))
+            sender.card(steps, base)
     return out
 
 

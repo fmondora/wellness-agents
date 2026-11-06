@@ -13,8 +13,9 @@ Un passo per comando, ognuno idempotente. Repo dati: cwd o WELLNESS_DATA.
         getUpdates senza 409 (nessun altro processo legge lo stesso token). Col bot già acceso
         il probe va saltato (--skip-poll): darebbe 409 contro sé stesso.
   wait-start [--seconds 120] [--register]
-        aspetta un /start, mostra chi l'ha mandato; con --register lo scrive come unico
-        ALLOWED_CHAT_IDS e risponde sul canale.
+        svuota il backlog del bot, mostra in locale un codice monouso e aspetta
+        `/start CODICE` in chat privata (chi ha scritto prima, o senza il codice, non
+        conta); con --register lo scrive come unico ALLOWED_CHAT_IDS e risponde sul canale.
   commands
         pubblica il menu comandi (setMyCommands).
   launchd --label L --shim PATH [--python P] [--install]
@@ -27,6 +28,7 @@ import argparse
 import getpass
 import platform
 import plistlib
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -78,14 +80,34 @@ def check(token: str, call: Callable[..., dict] = tt.call, poll: bool = True) ->
     return out
 
 
-def wait_start(token: str, seconds: int = 120, call: Callable[..., dict] = tt.call,
-               sleep: Callable[[float], None] = time.sleep) -> dict | None:
-    offset, deadline = 0, time.monotonic() + seconds
+def new_code() -> str:
+    return secrets.token_hex(3).upper()   # 6 caratteri, mostrati solo nel terminale locale
+
+
+def flush_backlog(token: str, call: Callable[..., dict] = tt.call) -> int:
+    """Conferma (e scarta) tutto ciò che è arrivato al bot prima del setup. → offset da cui leggere."""
+    last = call(token, "getUpdates", offset=-1, timeout=0).get("result") or []
+    if not last:
+        return 0
+    offset = last[-1]["update_id"] + 1
+    call(token, "getUpdates", offset=offset, timeout=0)
+    return offset
+
+
+def wait_start(token: str, code: str, seconds: int = 120, call: Callable[..., dict] = tt.call,
+               sleep: Callable[[float], None] = time.sleep, clock: Callable[[], float] = time.time) -> dict | None:
+    """Aspetta `/start <code>` in privato, arrivato dopo l'inizio della finestra."""
+    started = int(clock())
+    offset = flush_backlog(token, call)
+    deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
         for upd in call(token, "getUpdates", timeout=10, offset=offset, _timeout=30).get("result") or []:
             offset = max(offset, upd["update_id"] + 1)
             msg = upd.get("message") or {}
-            if (msg.get("text") or "").startswith("/start") and (msg.get("chat") or {}).get("type") == "private":
+            parts = (msg.get("text") or "").split()
+            if (len(parts) == 2 and parts[0].split("@")[0] == "/start" and parts[1].upper() == code.upper()
+                    and (msg.get("chat") or {}).get("type") == "private"
+                    and int(msg.get("date") or 0) >= started - 5):
                 call(token, "getUpdates", offset=offset, timeout=0)   # conferma: non lo rilegge il bot
                 c = msg["chat"]
                 return {"id": c["id"], "name": c.get("first_name", ""), "username": c.get("username", "")}
@@ -173,10 +195,12 @@ def main() -> int:
                   f"getUpdates: {r['poll_error']}" + (" — un altro processo usa questo token" if r.get("conflict") else ""))
         return 0 if r["webhook_ok"] and r.get("poll_ok", True) else 2
     if a.cmd == "wait-start":
-        print(f"Aspetto un /start al bot per {a.seconds} s…")
-        who = wait_start(token, a.seconds)
+        code = new_code()
+        print(f"Scrivi al bot, in chat privata, esattamente:  /start {code}")
+        print(f"(aspetto {a.seconds} s; i messaggi arrivati prima e quelli senza codice non contano)")
+        who = wait_start(token, code, a.seconds)
         if not who:
-            print("Nessun /start ricevuto.")
+            print("Nessun /start col codice giusto.")
             return 1
         print(f"/start da {who['name']} @{who['username']} — chat_id {who['id']}")
         if a.register:
