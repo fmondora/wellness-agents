@@ -189,6 +189,22 @@ Dettagli in [`adapters/README.md`](adapters/README.md).
 
 ---
 
+## Roadmap — Hṛdaya (in lavorazione)
+
+Design approvato il 6/11/2026: [`docs/specs/2026-11-06-hridaya-refactor-design.md`](docs/specs/2026-11-06-hridaya-refactor-design.md).
+
+- **`generalista` diventa `hridaya`** — un solo frontman e coordinatore («il cuore»): voce unica verso la
+  persona, tiene il quadro della giornata, convoca gli specialisti e consegna il loro lavoro firmato; non decide
+  al posto loro e non diagnostica.
+- **Il canale Telegram passa al plugin** come strumento di Hṛdaya (server MCP + bot launchd), con bootstrap guidato
+  del bot nella skill `setup`. Un solo Claude: risponde la sessione attiva nel repo dati, niente LLM headless.
+- **Ritmo**: la sera il Kaula propone la meditazione del mattino dopo; dopo l'alzata Hṛdaya racconta la notte e le
+  scadenze; di notte silenzio.
+- **Specialisti**: il workout player (Telegram Mini App con timer, voce, illustrazioni, log seduta incrociato col
+  Fitbit) entra in `coach-longevita`; nasce **DreamAgent** (sonno) dal coach olistico; la pipeline dati del corpo
+  passa a `health`; review settimanali e mensili dei coach.
+- **Pulizia**: via `functional-training` (non pubblicato) e `adapters/hermes` (stesso token Telegram del canale).
+
 ## Specs
 
 Il repo è spec-first: ogni agente ha (o avrà) una spec in [`specs/`](specs/)
