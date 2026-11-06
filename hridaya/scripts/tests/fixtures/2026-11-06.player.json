@@ -1,0 +1,123 @@
+{
+  "v": 1,
+  "date": "2026-11-06",
+  "title": "Forza al box + primo metcon (verde)",
+  "blocks": [
+    {
+      "type": "timed",
+      "name": "Riscaldamento",
+      "exercises": [
+        {
+          "name": "Row",
+          "time_s": 300,
+          "note": "respiro nasale",
+          "img": "rowing"
+        },
+        {
+          "name": "Cat-Cow",
+          "reps": 8,
+          "img": "cat-cow-stretch"
+        },
+        {
+          "name": "World's Greatest Stretch",
+          "reps": "3 per lato",
+          "img": "worlds-greatest-stretch"
+        }
+      ]
+    },
+    {
+      "type": "sets",
+      "name": "Deadlift",
+      "exercises": [
+        {
+          "name": "Deadlift",
+          "sets": [
+            {
+              "reps": 5,
+              "kg": 60,
+              "rest_s": 90,
+              "note": "rampa"
+            },
+            {
+              "reps": 3,
+              "kg": 80,
+              "rest_s": 120,
+              "note": "rampa"
+            },
+            {
+              "reps": 2,
+              "kg": 90,
+              "rest_s": 180,
+              "note": "rampa: veloce, schiena ferma = verde"
+            },
+            {
+              "reps": 3,
+              "kg": 100,
+              "rest_s": 180
+            },
+            {
+              "reps": 3,
+              "kg": 100,
+              "note": "solo se la prima lascia 2 in canna"
+            }
+          ],
+          "img": "deadlift"
+        }
+      ]
+    },
+    {
+      "type": "sets",
+      "name": "Superserie",
+      "rounds": 3,
+      "rest_s": 90,
+      "exercises": [
+        {
+          "name": "Strict Press",
+          "reps": 8,
+          "kg": 30,
+          "note": "spalla che punge: solo negative",
+          "img": "overhead-press"
+        },
+        {
+          "name": "Pull-up Negative",
+          "reps": 3,
+          "note": "presa supina, discesa 6″",
+          "img": "negative-pull-up"
+        }
+      ]
+    },
+    {
+      "type": "emom",
+      "name": "Metcon EMOM",
+      "minutes": 10,
+      "exercises": [
+        {
+          "name": "Row",
+          "reps": "8 cal",
+          "note": "spingi con le gambe",
+          "img": "rowing"
+        },
+        {
+          "name": "Goblet Squat",
+          "reps": 10,
+          "kg": 24,
+          "img": "goblet-squat"
+        }
+      ]
+    },
+    {
+      "type": "interval",
+      "name": "Plank 40/20",
+      "optional": true,
+      "work_s": 40,
+      "rest_s": 20,
+      "rounds": 4,
+      "exercises": [
+        {
+          "name": "Plank",
+          "img": "plank"
+        }
+      ]
+    }
+  ]
+}

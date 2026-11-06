@@ -1,0 +1,65 @@
+{
+  "v": 1,
+  "date": "2026-11-06",
+  "title": "Demo player (3')",
+  "demo": true,
+  "blocks": [
+    {
+      "type": "timed",
+      "name": "Timed",
+      "prep_s": 5,
+      "exercises": [
+        {
+          "name": "Walk in Place",
+          "time_s": 30,
+          "img": "walking"
+        }
+      ]
+    },
+    {
+      "type": "interval",
+      "name": "Intervalli 20/10",
+      "prep_s": 3,
+      "work_s": 20,
+      "rest_s": 10,
+      "rounds": 3,
+      "exercises": [
+        {
+          "name": "Air Squat",
+          "img": "bodyweight-squat"
+        }
+      ]
+    },
+    {
+      "type": "emom",
+      "name": "EMOM 2'",
+      "prep_s": 3,
+      "minutes": 2,
+      "exercises": [
+        {
+          "name": "Jumping Jack",
+          "reps": 10
+        },
+        {
+          "name": "Push-up",
+          "reps": 5,
+          "img": "push-up"
+        }
+      ]
+    },
+    {
+      "type": "sets",
+      "name": "Serie",
+      "prep_s": 3,
+      "rest_after_s": 20,
+      "exercises": [
+        {
+          "name": "Lunge",
+          "reps": 6,
+          "note": "tocca Fatto a fine serie",
+          "img": "forward-lunge"
+        }
+      ]
+    }
+  ]
+}

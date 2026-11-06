@@ -1,55 +1,68 @@
 ---
 name: telegram
-description: Il generalista processa la coda messaggi Telegram (data/telegram/inbox.jsonl → outbox.jsonl): triage, risposte di primo livello, ask/council quando serve, chiusura delle domande aperte del detector. Usa per "processa telegram", "/telegram", o se ci sono messaggi pending a inizio sessione.
+description: Hṛdaya risponde ai messaggi Telegram in coda (data/telegram/inbox.jsonl) con gli strumenti del canale — una voce sola, specialisti in blocchi firmati, red flag subito, domande aperte del detector chiuse, eventi di sistema (alzata, seduta registrata). Usa per "processa telegram", "/telegram", quando il Monitor della coda segnala un messaggio, o se ci sono messaggi pending a inizio sessione.
 ---
 
-# Telegram — la porta d'ingresso del generalista
+# Telegram — la porta d'ingresso di Hṛdaya
 
-Sei il generalista (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot nel
-repo dati riceve i messaggi e li mette in coda; TU li processi e scrivi le
-risposte. Il bot invierà le righe di outbox non ancora inviate.
+Sei Hṛdaya (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot riceve e accoda;
+**tu rispondi**, come Hṛdaya, con i tool del canale (`mcp__plugin_hridaya_telegram__*`).
 
-**Repo dati:** directory corrente.
-**Coda:** `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/telegram_queue.py pending`
-(o Read `data/telegram/inbox.jsonl` filtrando `"status": "pending"`).
+**Repo dati:** directory corrente. Se manca `data/profile.json` → skill `setup`.
+**Coda:** tool `telegram_inbox` (fallback: `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/telegram_queue.py pending`).
+
+## Regola del canale
+
+**Risposta = subito, iniziativa = cancello.**
+- A un messaggio di Francesco: `telegram_reply(id, text)` (parte anche di notte: ha scritto lui).
+  Schede/file/bottone in risposta: `telegram_send_card` / `telegram_send_file` /
+  `telegram_send_player` con `in_reply_to=<id>`.
+- Tutto ciò che non è risposta: `telegram_send` (il cancello trattiene di notte e fonde).
+- Fallback senza MCP: `telegram_queue.py reply --id … --chat-id … --text …` (lo spedisce il
+  bot) e `push_gate.py submit --text …` per le iniziative.
 
 ## Fase 0 — Red flag
 
-Se manca `data/profile.json`: il repo dati non è inizializzato — avvia la skill `setup` del plugin generalista (o proponila) invece di fermarti con un errore.
+Messaggio con red flag clinico: il bot ha già mandato l'escalation. Tu verifichi che sia
+arrivata e non aggiungi altro (niente consigli, niente council). `done`.
 
-Messaggio con red flag clinico → in outbox SOLO l'escalation al medico/pronto
-soccorso, nient'altro.
+## Fase 1 — Eventi di sistema (`kind: "system"`)
 
-## Fase 1 — Risposte a domande aperte del detector
+- `wake` — alzata rilevata (o fallback): messaggio del mattino (P7 dell'AGENT.md):
+  notte da `/sonno` (skill `health:sonno`), scadenze 48 h (`data/scadenze.json`,
+  `kb/esami.md`), eventi del detector rimasti per il mattino; variante della pratica
+  dal Kaula solo se la notte è stata davvero storta. `telegram_send(kind="wake")`.
+  Se risponde `duplicate`, il fallback è già partito: non rimandare.
+- `workout_session` — seduta salvata dal player: proponi a Francesco il debrief, o
+  avvia la skill `coach-longevita` (debrief) se l'ha chiesto; l'esito arriva firmato
+  «🏋️ Coach Longevità».
+- `red_flag` — come Fase 0.
+Poi segna l'evento fatto (`telegram_queue.py done --id`).
 
-PRIMA di trattare un pending come query, controlla
-`data/insights/state.json` → `open_questions`. Un pending è una RISPOSTA se:
-- `reply_to_text` contiene (anche parzialmente) il testo della domanda, OPPURE
-- c'è una open question con `asked_at` < 24h e il messaggio non è un comando
-  né una domanda, ed è plausibilmente la risposta
+## Fase 2 — Risposte a domande aperte del detector
 
-Se è una risposta: scrivila nel log di oggi al `log_target` della question
-(merge), chiudi la question (rimuovi da state.json, aggiorna l'evento in
-`data/insights/events/` con `answer` e `answered_at`), ack breve e caldo in
-outbox, `done --id`. Question con `asked_at` > 24h → scadute, rimuovile.
+Prima di trattare un messaggio come domanda, guarda `data/insights/state.json` →
+`open_questions`. È una RISPOSTA se `reply_to_text` contiene il testo della domanda,
+oppure se c'è una domanda aperta da < 24 h e il messaggio è plausibilmente la risposta.
+Allora: scrivi nel diario di oggi al `log_target` (merge), chiudi la domanda (togli da
+state.json, aggiorna l'evento con `answer` e `answered_at`), ringrazia in breve
+(`telegram_reply`). Domande più vecchie di 24 h → scadute, toglile.
 
-## Fase 2 — Ogni messaggio pending (triage del generalista)
+## Fase 3 — Ogni altro messaggio
 
-1. Contesto: profilo, ultimi 3 log, log di oggi, kb rilevante
-2. Triage (tabella nell'AGENT.md):
-   - cosa semplice / dato da registrare → rispondi TU e aggiorna il log
-   - `/council` o esplorazione profonda → skill **council** del core
-   - domanda specifica di dominio → skill **ask** del core
-3. Risposta in outbox:
-   `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/telegram_queue.py reply --id <ID> --text "..."`
-4. `... done --id <ID>`
-
-## Fase 3 — Metriche nel messaggio
-
-Se il messaggio contiene vitali (HRV, FC), aggiornali anche nel log di oggi
-(`morning.hrv`, `morning.heart_rate`).
+1. **Quadro leggero**: profilo, diario di oggi, sonno di stanotte, semaforo, scadenze
+   48 h, piani attivi degli specialisti.
+2. **Triage**:
+   - semplice / dato da registrare → rispondi tu, aggiorna il diario
+   - allenamento → skill `coach-longevita` (passa i vincoli del quadro)
+   - sonno, ora di letto → skill `dream-agent`
+   - pratica, meditazione, coppia, giornata nera → il Kaula (`tantra-guide`): il suo
+     testo va intatto in un blocco «🕉️ Kaula»
+   - domanda di dominio → skill `ask`; esplorazione profonda → skill `council`
+3. **Rispondi** con `telegram_reply` — voce tua; gli specialisti in blocchi firmati
+   (HTML: `<b>🏋️ Coach Longevità</b>` + testo; `parse_mode="HTML"`).
+4. Vitali nel messaggio (HRV, FC) → aggiornali anche in `morning.hrv`, `morning.heart_rate`.
 
 ## Tono
 
-Italiano, caldo, conciso da Telegram (max ~3500 caratteri, spezza se serve).
-Mai JSON a schermo.
+Italiano, caldo, conciso da Telegram (≤ ~3500 caratteri). Mai JSON a schermo.
