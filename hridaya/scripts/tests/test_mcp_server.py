@@ -84,23 +84,56 @@ def test_file_fuori_dal_repo_dati_mai_spediti(data, tmp_path):
     secret = tmp_path / "fuori" / "id_rsa"
     secret.parent.mkdir()
     secret.write_text("PRIVATA")
-    (data / "data" / "link").symlink_to(secret)             # symlink che esce dal repo dati
-    (data / "data" / "ok.pdf").write_text("pdf")
+    reports = data / "data" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "link").symlink_to(secret)                    # symlink che esce dal repo dati
+    (reports / "ok.pdf").write_text("pdf")
+    (data / "data" / "altro.pdf").write_text("pdf")          # nel repo dati ma fuori dall'allowlist
     mid = tq.enqueue(42, "mandami il pdf")
     log = tmp_path / "log.jsonl"
     out = run(data, [
         call(1, "telegram_send_file", {"path": str(secret), "in_reply_to": mid}),
-        call(2, "telegram_send_file", {"path": "data/link", "in_reply_to": mid}),
+        call(2, "telegram_send_file", {"path": "data/reports/link", "in_reply_to": mid}),
         call(3, "telegram_send_file", {"path": "../fuori/id_rsa", "in_reply_to": mid}),
-        call(4, "telegram_send_file", {"path": ".env", "in_reply_to": mid}),
+        call(4, "telegram_send_file", {"path": "data/altro.pdf", "in_reply_to": mid}),
         call(5, "telegram_send_card", {"steps": [{"photos": [str(secret)]}], "in_reply_to": mid}),
         call(6, "telegram_send_card", {"steps": [{"text": "x"}], "base_dir": str(secret.parent), "in_reply_to": mid}),
-        call(7, "telegram_send_file", {"path": "data/ok.pdf", "in_reply_to": mid}),
+        call(7, "telegram_send_file", {"path": "data/reports/ok.pdf", "in_reply_to": mid}),
     ], log)
-    assert all(r["result"]["isError"] for r in out[:6])
+    assert all(r["result"]["isError"] for r in out[:6]), out
     assert payload(out[6])["status"] == "sent"
     sent = log.read_text()
     assert "id_rsa" not in sent and "PRIVATA" not in sent and "ok.pdf" in sent
+
+
+def test_segreti_rifiutati_anche_via_symlink(data, tmp_path):
+    (data / "data" / "fitbit").mkdir(parents=True)
+    (data / "data" / "fitbit" / "token.json").write_text('{"access_token": "SEGRETO"}')
+    (data / "scripts").mkdir()
+    (data / "scripts" / "server.key").write_text("CHIAVE")
+    daily = data / "data" / "coach-longevita" / "daily"
+    (daily / "img").mkdir(parents=True)
+    # file sensibili copiati o linkati dentro le cartelle ammesse: rifiutati per nome
+    (daily / "token.json").write_text('{"x": "SEGRETO"}')
+    (daily / "server.key").write_text("CHIAVE")
+    (daily / "scheda.pdf").symlink_to(data / "scripts" / "server.key")
+    (daily / "img" / "foto.png").symlink_to(data / ".env")
+    (daily / "notte.log").write_text("log")
+    (daily / "img" / "nota.txt").write_text("x")
+    mid = tq.enqueue(42, "?")
+    log = tmp_path / "log.jsonl"
+    reqs = [call(i, "telegram_send_file", {"path": pth, "in_reply_to": mid}) for i, pth in enumerate([
+        "data/fitbit/token.json", "scripts/server.key", ".env",
+        "data/coach-longevita/daily/token.json", "data/coach-longevita/daily/server.key",
+        "data/coach-longevita/daily/scheda.pdf", "data/coach-longevita/daily/notte.log"], 1)]
+    reqs += [call(20, "telegram_send_card", {"steps": [{"photos": ["img/foto.png"]}],
+                                             "base_dir": "data/coach-longevita/daily", "in_reply_to": mid}),
+             call(21, "telegram_send_card", {"steps": [{"photos": ["img/nota.txt"]}],
+                                             "base_dir": "data/coach-longevita/daily", "in_reply_to": mid}),
+             call(22, "telegram_send_card", {"spec_path": "data/fitbit/token.json", "in_reply_to": mid})]
+    out = run(data, reqs, log)
+    assert all(r["result"]["isError"] for r in out), [r["id"] for r in out if not r["result"]["isError"]]
+    assert not log.exists() or ("SEGRETO" not in log.read_text() and "CHIAVE" not in log.read_text())
 
 
 def test_scheda_con_foto_nel_repo_dati(data, tmp_path):

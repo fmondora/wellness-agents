@@ -18,6 +18,9 @@ Sei Hṛdaya (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot riceve e acco
   Schede/file/bottone in risposta: `telegram_send_card` / `telegram_send_file` /
   `telegram_send_player` con `in_reply_to=<id>`.
 - Tutto ciò che non è risposta: `telegram_send` (il cancello trattiene di notte e fonde).
+- File e foto escono solo da cartelle di export (`data/coach-longevita/daily/`,
+  `data/reports/`, `data/reviews/`, `data/dream-agent/reviews/`, `data/exports/`) e dagli
+  asset dei plugin; segreti, chiavi e log mai. Un documento da mandare va prima scritto lì.
 - Fallback senza MCP: `telegram_queue.py reply --id … --chat-id … --text …` (lo spedisce il
   bot) e `push_gate.py submit --text …` per le iniziative.
 

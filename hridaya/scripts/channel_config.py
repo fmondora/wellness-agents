@@ -222,16 +222,36 @@ def rhythm(root: Path | None = None) -> dict:
 
 
 # --- confini dei file che possono uscire sul canale ------------------------------------
+#
+# Allowlist stretta per uso (difesa dal prompt injection: nel repo dati ci sono anche token
+# OAuth, chiavi, service account, log). Un path si risolve (symlink compresi) e deve cadere
+# in una delle cartelle ammesse per quell'uso; i nomi sensibili sono rifiutati comunque.
+#
+#   file    (telegram_send_file, spec delle schede): data/coach-longevita/daily/, data/reports/,
+#           data/reviews/, data/dream-agent/reviews/, data/exports/
+#   image   (foto delle schede): le stesse + asset dei plugin (coach-longevita/assets/),
+#           solo .png .jpg .jpeg .webp .gif
+#   player  (telegram_send_player): data/coach-longevita/daily/*.player.json
+
+import fnmatch  # noqa: E402
+
+FILE_DIRS = ("data/coach-longevita/daily", "data/reports", "data/reviews",
+             "data/dream-agent/reviews", "data/exports")
+IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+DENY = ("*.key", "*.pem", "*token*.json", "*credentials*", "service-account*.json",
+        ".env*", "*.log", "*secret*", "id_rsa*", "*.p12")
+
 
 class PathNotAllowed(ValueError):
     pass
 
 
-def allowed_roots(images: bool = False, root: Path | None = None) -> list[Path]:
-    """Solo `data/` e `kb/` del repo dati; per le immagini anche gli asset di coach-longevita."""
+def allowed_roots(kind: str = "file", root: Path | None = None) -> list[Path]:
     base = (root or data_root()).resolve()
-    roots = [base / "data", base / "kb"]
-    if images:
+    if kind == "player":
+        return [base / "data" / "coach-longevita" / "daily"]
+    roots = [base / d for d in FILE_DIRS]
+    if kind == "image":
         try:
             from _plugins import plugin_scripts
             d = plugin_scripts("coach-longevita")
@@ -242,27 +262,36 @@ def allowed_roots(images: bool = False, root: Path | None = None) -> list[Path]:
     return roots
 
 
-def safe_path(p: str | Path, base: Path | None = None, images: bool = False) -> Path:
-    """Path risolto (symlink compresi) e dentro le cartelle ammesse, o PathNotAllowed.
-
-    Difesa dal prompt injection: niente ~/.ssh, .env, file fuori dal repo dati.
-    """
+def safe_path(p: str | Path, base: Path | None = None, kind: str = "file", dir_ok: bool = False) -> Path:
+    """Path risolto e ammesso per `kind` (file | image | player), o PathNotAllowed."""
     q = Path(p).expanduser()
     q = q if q.is_absolute() else (base or data_root()) / q
     r = q.resolve()
-    if r.name == ".env" or not any(r.is_relative_to(a) for a in allowed_roots(images)):
-        raise PathNotAllowed(f"{p}: fuori dalle cartelle ammesse (data/, kb/ del repo dati"
-                             + (", asset dei plugin" if images else "") + ")")
+    names = {q.name.lower(), r.name.lower()}
+    if any(fnmatch.fnmatch(n, pat) for n in names for pat in DENY):
+        raise PathNotAllowed(f"{p}: nome riservato (segreti, chiavi, log): non esce sul canale")
+    if not any(r == a or r.is_relative_to(a) for a in allowed_roots(kind)):
+        raise PathNotAllowed(f"{p}: fuori dalle cartelle ammesse per {kind} ("
+                             + ", ".join(FILE_DIRS if kind != "player" else ("data/coach-longevita/daily",))
+                             + (", asset dei plugin" if kind == "image" else "") + ")")
+    if r.is_dir() and not dir_ok:
+        raise PathNotAllowed(f"{p}: è una cartella")
+    if kind == "image" and not r.is_dir() and r.suffix.lower() not in IMAGE_EXT:
+        raise PathNotAllowed(f"{p}: non è un'immagine ({', '.join(sorted(IMAGE_EXT))})")
+    if kind == "player" and not r.name.endswith(".player.json"):
+        raise PathNotAllowed(f"{p}: non è un player.json")
     return r
 
 
 def safe_card(steps: list[dict], base: Path) -> list[dict]:
     """Scheda con le foto risolte e verificate (path assoluti)."""
+    if not isinstance(steps, list):
+        raise PathNotAllowed("la scheda deve essere una lista di passi")
     out = []
     for st in steps:
         if not isinstance(st, dict):
             raise PathNotAllowed("passo della scheda non valido")
         if "photos" in st:
-            st = {**st, "photos": [str(safe_path(ph, base=base, images=True)) for ph in st["photos"]]}
+            st = {**st, "photos": [str(safe_path(ph, base=base, kind="image")) for ph in st["photos"]]}
         out.append(st)
     return out

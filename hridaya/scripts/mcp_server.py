@@ -118,11 +118,14 @@ TOOLS = [
                              "urgent": {"type": "boolean"}, "in_reply_to": REPLY_TO}, ["text"])},
     {"name": "telegram_send_card",
      "description": "Manda una scheda: testo HTML + album di immagini (es. la scheda del Coach Longevità). "
-                    "spec_path = JSON lista di passi {text} | {photos, caption}, foto relative alla spec.",
+                    "spec_path = JSON lista di passi {text} | {photos, caption}, foto relative alla spec; "
+                    "foto solo .png/.jpg/.jpeg/.webp/.gif dalle cartelle di export o dagli asset dei plugin.",
      "inputSchema": _schema({"spec_path": {"type": "string"}, "steps": {"type": "array"},
                              "base_dir": {"type": "string"}, "kind": KIND, "in_reply_to": REPLY_TO})},
     {"name": "telegram_send_file",
-     "description": "Manda un documento (PDF, immagine…). Di notte senza in_reply_to non parte.",
+     "description": "Manda un documento (PDF, immagine…) solo da data/coach-longevita/daily/, data/reports/, "
+                    "data/reviews/, data/dream-agent/reviews/, data/exports/ (mai segreti, chiavi, log). "
+                    "Di notte senza in_reply_to non parte.",
      "inputSchema": _schema({"path": {"type": "string"}, "caption": {"type": "string"},
                              "in_reply_to": REPLY_TO}, ["path"])},
     {"name": "telegram_send_player",
@@ -191,11 +194,14 @@ def call_tool(name: str, args: dict) -> Any:
                                  parse_mode=args.get("parse_mode"), urgent=bool(args.get("urgent")))
     if name == "telegram_send_card":
         if args.get("spec_path"):
-            spec = cc.safe_path(args["spec_path"])
+            spec = cc.safe_path(args["spec_path"], kind="file")
+            if spec.suffix != ".json":
+                raise ToolError("spec_path deve essere un .json")
             steps, base = json.loads(spec.read_text(encoding="utf-8")), spec.parent
         elif args.get("steps"):
             steps = args["steps"]
-            base = cc.safe_path(args["base_dir"]) if args.get("base_dir") else cc.data_root().resolve()
+            base = (cc.safe_path(args["base_dir"], kind="image", dir_ok=True) if args.get("base_dir")
+                    else cc.data_root().resolve() / "data" / "coach-longevita" / "daily")
         else:
             raise ToolError("serve spec_path o steps")
         steps = cc.safe_card(steps, base)
@@ -207,7 +213,7 @@ def call_tool(name: str, args: dict) -> Any:
         return push_gate.deliver("", args.get("kind") or "message", _sender(),
                                  card={"steps": steps, "base": str(base)})
     if name == "telegram_send_file":
-        path = cc.safe_path(args["path"])
+        path = cc.safe_path(args["path"], kind="file")
         if not path.is_file():
             raise ToolError(f"file non trovato: {path}")
         if not args.get("in_reply_to") and _is_night():
@@ -218,7 +224,7 @@ def call_tool(name: str, args: dict) -> Any:
         return {"status": "sent", "file": path.name}
     if name == "telegram_send_player":
         import workout_player as wp
-        path = cc.safe_path(args["player_json"])
+        path = cc.safe_path(args["player_json"], kind="player")
         w = json.loads(path.read_text(encoding="utf-8"))
         errs = wp.validate_workout(w)
         if errs:
