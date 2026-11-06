@@ -1,9 +1,11 @@
 #!/usr/bin/env python3.12
 """Insight engine — il detector deterministico della pipeline responsiva.
 
-Regole su dati Fitbit intraday/giornalieri → eventi → notifiche Telegram
-(outbox) con dedup, quiet hours e budget. Nessun LLM: testi template.
-Le soglie vivono in config/insights.json, mai qui.
+Regole su dati Fitbit intraday/giornalieri → eventi → richieste di push al
+cancello di Hṛdaya (`data/telegram/push.jsonl`, vedi push_request.py) con dedup
+e budget. Il silenzio notturno (dall'ora di letto all'alzata rilevata) lo
+applica il cancello, non più le quiet hours fisse di questo file.
+Nessun LLM: testi template. Le soglie vivono in config/insights.json, mai qui.
 
 Uso:
   python3.12 scripts/insights_engine.py                       # valuta oggi e notifica
@@ -34,7 +36,7 @@ from health_metrics import (DEFAULT_NIGHT_PRACTICE, env_flag,  # noqa: E402
                             main_sleep_session, night_practice_windows,
                             primary_chat_id, rmssd_or_none, robust_baseline,
                             robust_zscore, sleep_stage_minutes)
-from telegram_queue import write_reply  # noqa: E402
+from push_request import request_push  # noqa: E402
 
 TZ = ZoneInfo("Europe/Rome")
 CONFIG_FILE = PROJECT_ROOT / "config" / "insights.json"
@@ -115,6 +117,8 @@ def _now() -> datetime:
 
 
 def _in_quiet_hours(cfg: dict, now: datetime) -> bool:
+    """Quiet hours fisse di config (legacy). Non governano più la delivery:
+    il silenzio notturno lo decide il cancello di Hṛdaya sull'alzata rilevata."""
     quiet = cfg.get("quiet_hours") or {}
     start, end = quiet.get("start", "21:00"), quiet.get("end", "07:00")
     hhmm = now.strftime("%H:%M")
@@ -553,9 +557,11 @@ def process_events(events: list[dict], cfg: dict, state: dict,
                    now: datetime | None = None, dry_run: bool = False) -> list[dict]:
     """Dedup → registrazione jsonl → eventuale notifica immediata.
 
-    Guardie hard (budget, quiet hours, shadow) applicate QUI, qualunque
-    sia la regola chiamante. Gli eventi `morning` restano nel jsonl con
-    delivered=false: li consegna morning_message.
+    Guardie hard (budget, shadow) applicate QUI, qualunque sia la regola
+    chiamante. Gli `immediate` diventano richieste di push al cancello di
+    Hṛdaya, che li trattiene durante il silenzio notturno e li fonde. Gli
+    eventi `morning` restano nel jsonl con delivered=false: li consegna il
+    messaggio dopo l'alzata (sessione di Hṛdaya o fallback deterministico).
     """
     now = now or _now()
     env = load_env()
@@ -576,8 +582,6 @@ def process_events(events: list[dict], cfg: dict, state: dict,
         if deliver == "immediate":
             if _in_shadow(cfg, now):
                 deliver, requalified = "morning", "shadow"
-            elif _in_quiet_hours(cfg, now):
-                deliver, requalified = "morning", "quiet_hours"
             elif notified["count"] >= cfg.get("daily_budget", 3):
                 deliver, requalified = "morning", "budget"
 
@@ -589,24 +593,24 @@ def process_events(events: list[dict], cfg: dict, state: dict,
                  "delivered_at": None}
 
         if deliver == "immediate" and not dry_run:
-            if chat_id:
-                text = event["message"]
-                write_reply(f"insight-{event['id']}", chat_id, text)
-                event["delivered"] = True
-                event["delivered_at"] = now.isoformat()
-                notified["count"] += 1
-                if event.get("question") and event.get("log_target"):
-                    questions = state.setdefault("open_questions", [])
-                    questions.append({
-                        "event_id": event["id"],
-                        "rule": event["rule"],
-                        "question": event["question"],
-                        "log_target": event["log_target"],
-                        "asked_at": now.isoformat(),
-                        "chat_id": chat_id,
-                    })
-            else:
-                print("  ALLOWED_CHAT_IDS mancante: notifica saltata", file=sys.stderr)
+            # consegna = richiesta al cancello di Hṛdaya (che sceglie il momento)
+            request_push(event["message"], source="insights", kind="detector",
+                         push_id=f"insight-{event['id']}",
+                         meta={"rule": event.get("rule"), "event_id": event["id"]})
+            event["delivered"] = True
+            event["delivered_at"] = now.isoformat()
+            event["delivered_via"] = "push_gate"
+            notified["count"] += 1
+            if event.get("question") and event.get("log_target"):
+                questions = state.setdefault("open_questions", [])
+                questions.append({
+                    "event_id": event["id"],
+                    "rule": event["rule"],
+                    "question": event["question"],
+                    "log_target": event["log_target"],
+                    "asked_at": now.isoformat(),
+                    "chat_id": chat_id,
+                })
 
         if not dry_run:
             append_event(event["date"], event)
@@ -743,6 +747,12 @@ def _minutes_since(state: dict, key: str, now: datetime) -> float:
     return (now - prev).total_seconds() / 60
 
 
+def _script(name: str) -> str:
+    """Lo script del repo dati se c'è (shim: CA bundle e ambiente locale), se no il fratello nel plugin."""
+    local = PROJECT_ROOT / "scripts" / name
+    return str(local if local.exists() else Path(__file__).resolve().parent / name)
+
+
 def insights_tick(env: dict[str, str] | None = None) -> None:
     """Chiamata dal daemon a ogni tick: si auto-throttla via stato."""
     env = env or load_env()
@@ -755,7 +765,7 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
     hhmm = now.strftime("%H:%M")
 
     # Push ricevuti: consumati SEMPRE, anche fuori dalla finestra attiva —
-    # un push 'sleep' all'alba deve poter far partire il buongiorno.
+    # un push 'sleep' all'alba forza il sync appena la finestra si apre.
     pushed = consume_webhook_inbox()
     if pushed:
         print(f"insights: push webhook per {', '.join(sorted(pushed))}")
@@ -763,29 +773,10 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
         state["last_eval"] = None
         save_state(state)
 
-    # Buongiorno guidato dal push del sonno. Un push 'sleep' (a QUALSIASI ora)
-    # marca il buongiorno come 'dovuto' per oggi; poi parte al primo tick dopo
-    # 'earliest'. Così un push delle 03:58 non viene sprecato: viene tenuto e
-    # consegnato alle 05:30. Il launchd 07:30 resta come fallback se il push non
-    # arriva mai (guardia morning_sent condivisa → chi parte primo vince).
-    mp = cfg.get("morning_push") or {}
-    if mp.get("enabled") and mp.get("trigger_on", "sleep") in pushed:
-        state["morning_pending"] = today
-        save_state(state)
-    if (mp.get("enabled") and state.get("morning_pending") == today
-            and hhmm >= mp.get("earliest", "05:30")
-            and state.get("morning_sent") != today):
-        result = subprocess.run(
-            [sys.executable, str(PROJECT_ROOT / "scripts" / "morning_message.py"),
-             "--trigger", "push"],
-            capture_output=True, text=True, timeout=300)
-        if result.returncode != 0:
-            print(f"insights: buongiorno da push fallito: {result.stderr[-300:]}", file=sys.stderr)
-        else:
-            print("insights: buongiorno inviato (trigger push, sonno chiuso)")
-        state = load_state()  # morning_message ha scritto morning_sent
-        state.pop("morning_pending", None)
-        save_state(state)
+    # Il buongiorno guidato dal push del sonno e il nudge serale dell'ora di
+    # letto non partono più da qui: il messaggio dopo l'alzata e quello della
+    # sera sono di Hṛdaya (cancello unico, plugin hridaya). Il push 'sleep'
+    # serve solo a forzare il sync qui sopra.
 
     window = cfg.get("active_window") or {}
     if not (window.get("start", "07:00") <= hhmm < window.get("end", "21:00")):
@@ -793,7 +784,7 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
 
     if _minutes_since(state, "last_intraday_sync", now) >= cfg.get("intraday_sync_minutes", 30):
         result = subprocess.run(
-            [sys.executable, str(PROJECT_ROOT / "scripts" / "health_sync.py"), "--intraday"],
+            [sys.executable, _script("health_sync.py"), "--intraday"],
             capture_output=True, text=True, timeout=180)
         if result.returncode != 0:
             print(f"insights: sync intraday fallito: {result.stderr[-300:]}", file=sys.stderr)
@@ -803,7 +794,7 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
     # trends + goals di ieri: una volta al giorno, dopo il sync completo delle 08:00
     if state.get("trends_generated") != today and hhmm >= "08:15":
         result = subprocess.run(
-            [sys.executable, str(PROJECT_ROOT / "scripts" / "trends.py")],
+            [sys.executable, _script("trends.py")],
             capture_output=True, text=True, timeout=120)
         if result.returncode == 0:
             state["trends_generated"] = today
@@ -817,7 +808,7 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
             fitbit_yesterday = load_fitbit_day(yesterday) or {}
             if fitbit_yesterday.get("synced_at", "") < f"{today}T":
                 subprocess.run(
-                    [sys.executable, str(PROJECT_ROOT / "scripts" / "health_sync.py"),
+                    [sys.executable, _script("health_sync.py"),
                      "--date", yesterday],
                     capture_output=True, text=True, timeout=300)
             added = fill_goals_tracking(yesterday)
@@ -825,21 +816,6 @@ def insights_tick(env: dict[str, str] | None = None) -> None:
                 print(f"insights: goals_tracking {yesterday}: +{added} entry")
         except Exception as e:
             print(f"insights: goals_tracking fallito: {e}", file=sys.stderr)
-
-    # Nudge serale dell'ora di letto (una volta al giorno, dopo evening_nudge_time)
-    circ = cfg.get("circadian") or {}
-    nudge_time = circ.get("evening_nudge_time", "21:00")
-    if state.get("circadian_nudge_sent") != today and hhmm >= nudge_time:
-        try:
-            from circadian_plan import evening_plan
-            chat_id = primary_chat_id(env)
-            if chat_id:
-                write_reply(f"bedtime-{today}", chat_id, evening_plan(circ)["text"])
-                print("insights: nudge serale ora di letto inviato")
-        except Exception as e:
-            print(f"insights: nudge serale fallito: {e}", file=sys.stderr)
-        state["circadian_nudge_sent"] = today
-        save_state(state)
 
     if _minutes_since(state, "last_eval", now) >= cfg.get("eval_minutes", 15):
         events = evaluate(today, cfg, state, now)

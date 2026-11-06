@@ -1,0 +1,120 @@
+{
+ "_nota": "Fixture di test: soglie generiche del detector (nessun dato personale).",
+ "quiet_hours": {
+  "start": "23:00",
+  "end": "04:30"
+ },
+ "daily_budget": 3,
+ "intraday_sync_minutes": 30,
+ "eval_minutes": 15,
+ "active_window": {
+  "start": "04:30",
+  "end": "23:00"
+ },
+ "circadian": {
+  "target_wake": "06:00",
+  "cycle_min": 90,
+  "onset_latency_min": 15,
+  "cycles_options": [
+   5,
+   4
+  ],
+  "wake_window_before_min": 40,
+  "wake_window_after_min": 20
+ },
+ "shadow_until": null,
+ "rules": {
+  "long_walk": {
+   "enabled": true,
+   "bucket_active_steps": 800,
+   "min_duration_min": 90,
+   "min_total_steps": 6000,
+   "max_gap_buckets": 2,
+   "deliver": "immediate",
+   "ask": true,
+   "log_target": "movement.walk_note"
+  },
+  "intense_session": {
+   "enabled": true,
+   "hr_avg_bucket": 115,
+   "hr_peak_bucket": 125,
+   "hr_max_bucket": 140,
+   "min_buckets": 2,
+   "max_duration_min": 75,
+   "max_steps_in_window": 2000,
+   "end_below_hr": 100,
+   "deliver": "immediate",
+   "ask": true,
+   "log_target": "movement.intense_note"
+  },
+  "hrv_low": {
+   "enabled": true,
+   "mode": "rolling",
+   "short_days": 7,
+   "short_min": 5,
+   "baseline_days": 60,
+   "baseline_min": 30,
+   "k_zona2": 0.5,
+   "k_recovery": 1.0,
+   "sd_floor": 2.0,
+   "rmssd_full": 45,
+   "rmssd_recovery": 39,
+   "deliver": "morning"
+  },
+  "hrv_two_mornings": {
+   "enabled": true,
+   "rmssd_threshold": 39,
+   "consecutive": 2,
+   "deliver": "morning"
+  },
+  "sleep_anomaly": {
+   "enabled": true,
+   "min_asleep_min": 360,
+   "max_awake_min": 60,
+   "min_deep_min": 45,
+   "zscore_vs_7d": -1.5,
+   "deliver": "morning"
+  },
+  "sleep_critical": {
+   "enabled": true,
+   "min_asleep_min": 300,
+   "deliver": "immediate"
+  },
+  "night_practice": {
+   "enabled": true,
+   "wake_steps_min": 5,
+   "wake_steps_max": 80,
+   "pre_buckets": 2,
+   "hr_rise_min": 4,
+   "hr_plateau_max": 75,
+   "min_duration_min": 30,
+   "ratification_window_min": 90,
+   "deliver": "morning",
+   "ask": true,
+   "log_target": "practice.night_note"
+  },
+  "streak_positive": {
+   "enabled": true,
+   "rmssd_good": 48,
+   "days": 3,
+   "steps_avg_7d": 8000,
+   "cooldown_days": 3,
+   "deliver": "immediate"
+  },
+  "sedentary_day": {
+   "enabled": false,
+   "check_at": "18:00",
+   "max_steps": 3000,
+   "deliver": "immediate"
+  },
+  "hard_hike": {
+   "enabled": false,
+   "min_steps": 6000,
+   "hr_avg_bucket": 115,
+   "min_cardio_peak_min": 45,
+   "deliver": "immediate",
+   "ask": true,
+   "log_target": "movement.hike_note"
+  }
+ }
+}
