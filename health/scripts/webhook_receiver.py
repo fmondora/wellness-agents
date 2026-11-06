@@ -24,6 +24,7 @@ Dipendenze: fastapi + uvicorn (già richieste dal ricevitore, non dal resto del 
 
 from __future__ import annotations
 
+import hmac
 import json
 import sys
 from datetime import datetime, timezone
@@ -51,12 +52,15 @@ def _secret() -> str:
     return env.get("HEALTH_WEBHOOK_SECRET") or env.get("LUCIA_WEBHOOK_SECRET", "")
 
 
-def _authorized(request: Request) -> bool:
-    secret = _secret()
+def auth_ok(auth: str | None, secret: str) -> bool:
+    """Bearer a tempo costante (hmac.compare_digest): l'endpoint è pubblico via tunnel."""
     if not secret:
         return False  # senza secret configurato non si accetta nulla
-    auth = request.headers.get("authorization", "")
-    return auth == f"Bearer {secret}"
+    return hmac.compare_digest((auth or "").encode(), f"Bearer {secret}".encode())
+
+
+def _authorized(request: Request) -> bool:
+    return auth_ok(request.headers.get("authorization"), _secret())
 
 
 @app.post("/webhook")
