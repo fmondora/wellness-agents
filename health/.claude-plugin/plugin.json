@@ -1,7 +1,7 @@
 {
   "name": "health",
   "description": "Agente Salute del Wellness Council: triage sintomi, interpretazione referti, monitoraggio parametri vitali e red flags cliniche. Include /sonno (sonno sul baseline personale) e la pipeline dati del corpo: sync wearable, insights engine, trends, FC al minuto, webhook.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Francesco Mondora"
   }

@@ -75,18 +75,19 @@ async def webhook(request: Request) -> Response:
         return Response(status_code=400)
 
     # Handshake di verifica alla creazione del subscriber
-    if payload.get("type") == "verification":
+    if isinstance(payload, dict) and payload.get("type") == "verification":
         return Response(status_code=200)
 
-    record = {
-        "received_at": datetime.now(timezone.utc).isoformat(),
-        "signature": request.headers.get("google-health-api-signature"),
-        "payload": payload,
-        "processed": False,
-    }
+    # Google può mandare una notifica (oggetto) o un lotto (lista): una riga per notifica.
+    # Prima le liste facevano crashare l'handler (500 → retry infiniti, notifiche perse).
+    items = payload if isinstance(payload, list) else [payload]
+    now = datetime.now(timezone.utc).isoformat()
+    sig = request.headers.get("google-health-api-signature")
     INBOX.parent.mkdir(parents=True, exist_ok=True)
     with INBOX.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        for item in items:
+            record = {"received_at": now, "signature": sig, "payload": item, "processed": False}
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     return Response(status_code=204)
 
