@@ -108,13 +108,22 @@ def submit(text: str, source: str, kind: str = "push", priority: str = "normal",
     return row["id"]
 
 
-def _claim(pred: Callable[[dict], bool]) -> list[dict]:
-    """Segna 'sending' le righe pending che soddisfano pred e le restituisce."""
+MAX_ATTEMPTS = 5
+
+
+def _due(r: dict, now_utc: str) -> bool:
+    return not r.get("next_try_at") or r["next_try_at"] <= now_utc
+
+
+def _claim(pred: Callable[[dict], bool], fresh_only: bool = False) -> list[dict]:
+    """Segna 'sending' le righe pending (pronte, non in backoff) che soddisfano pred."""
+    now_utc = datetime.now(timezone.utc).isoformat()
     with tq.locked():
         rows = tq.read_jsonl(push_path())
         got = []
         for r in rows:
-            if r.get("status") == "pending" and pred(r):
+            if r.get("status") == "pending" and _due(r, now_utc) and pred(r) \
+                    and not (fresh_only and r.get("attempts")):
                 r["status"] = "sending"
                 got.append(dict(r))
         if got:
@@ -122,19 +131,54 @@ def _claim(pred: Callable[[dict], bool]) -> list[dict]:
     return got
 
 
-def _finish(ids: list[str], ok: bool, merged_into: str | None = None) -> None:
+def _mark(results: dict[str, tuple[str, Exception | None]], merged_into: str | None = None) -> list[dict]:
+    """Chiude riga per riga: sent | failed (scartata, 4xx) | retry (backoff, poi failed) | release.
+    Ritorna le righe appena scartate."""
+    if not results:
+        return []
+    now = datetime.now(timezone.utc)
+    dead = []
     with tq.locked():
         rows = tq.read_jsonl(push_path())
-        now = datetime.now(timezone.utc).isoformat()
         for r in rows:
-            if r.get("id") in ids and r.get("status") == "sending":
-                if ok:
-                    r.update(status="sent", sent_at=now)
-                    if merged_into:
-                        r["merged_into"] = merged_into
+            out = results.get(r.get("id"))
+            if not out or r.get("status") != "sending":
+                continue
+            outcome, err = out
+            if outcome == "sent":
+                r.update(status="sent", sent_at=now.isoformat())
+                if merged_into:
+                    r["merged_into"] = merged_into
+            elif outcome == "release":
+                r["status"] = "pending"
+            else:
+                r["attempts"] = int(r.get("attempts") or 0) + 1
+                r["last_error"] = str(err)[:300] if err else None
+                if outcome == "failed" or r["attempts"] >= MAX_ATTEMPTS:
+                    r.update(status="failed", failed_at=now.isoformat())
+                    dead.append(dict(r))
                 else:
                     r["status"] = "pending"
+                    r["next_try_at"] = (now + timedelta(minutes=min(60, 2 ** r["attempts"]))).isoformat()
         tq.write_jsonl(push_path(), rows)
+    return dead
+
+
+def _finish(ids: list[str], ok: bool, merged_into: str | None = None) -> None:
+    """Compatibilità: tutte sent oppure tutte rimesse in coda senza contare il tentativo."""
+    _mark({i: ("sent" if ok else "release", None) for i in ids}, merged_into)
+
+
+def _alert_dead(dead: list[dict], now: datetime) -> None:
+    """Un messaggio scartato: log sempre, un solo avviso al giorno su Telegram (passa dal cancello)."""
+    real = [r for r in dead if not (r.get("meta") or {}).get("alert")]
+    for r in dead:
+        print(f"push scartato {r['id']} ({r.get('source')}): {r.get('last_error')}", file=sys.stderr)
+    if real:
+        submit("⚠️ Un messaggio d'iniziativa non è partito (Telegram l'ha rifiutato: "
+               f"{(real[0].get('last_error') or '')[:120]}). L'ho scartato invece di ripeterlo; "
+               "dettagli in data/telegram/push.jsonl.", source="gate", kind="alert",
+               meta={"alert": True}, push_id=f"alert-dead-{now.date().isoformat()}")
 
 
 # --- tempo ------------------------------------------------------------------------
@@ -183,70 +227,170 @@ def merge(parts: list[tuple[str, str | None]]) -> tuple[str, str | None]:
     return "\n\n".join(t for t, _ in parts), None
 
 
-def _send_rows(rows: list[dict], sender: Sender, head: tuple[str, str | None] | None = None) -> str:
-    """Testi fusi in un messaggio (con `head` davanti), poi le schede una per una."""
-    texts = ([head] if head else []) + [(r["text"], r.get("parse_mode")) for r in rows if not r.get("card")]
+def _outcome(e: Exception) -> str:
+    return "failed" if tt_permanent(e) else "retry"
+
+
+def tt_permanent(e: Exception) -> bool:
+    import tg_transport as tt
+    return isinstance(e, cc.PathNotAllowed) or tt.is_permanent(e)
+
+
+def _is_partial(e: Exception) -> bool:
+    import tg_transport as tt
+    return isinstance(e, tt.PartialSendError)
+
+
+def _dispatch(rows: list[dict], sender: Sender, head: tuple[str, str | None] | None = None
+              ) -> tuple[dict[str, tuple[str, Exception | None]], Exception | None, str]:
+    """Invia: testi fusi in un messaggio (con `head` davanti), poi le schede una per una.
+
+    Esito riga per riga (mai tutto il lotto indietro): un invio parziale conta come
+    consegnato (ritentare farebbe doppioni); un 4xx sul messaggio fuso fa ripartire i pezzi
+    da soli per isolare la riga avvelenata. → (esiti, errore della testa o None, testo fuso)
+    """
+    res: dict[str, tuple[str, Exception | None]] = {}
+    head_err: Exception | None = None
+    texts = [r for r in rows if not r.get("card") and (r.get("text") or "").strip()]
+    for r in rows:   # righe vuote senza scheda: niente da mandare
+        if not r.get("card") and not (r.get("text") or "").strip():
+            res[r["id"]] = ("sent", None)
+    parts = ([head] if head and (head[0] or "").strip() else []) + [(r["text"], r.get("parse_mode")) for r in texts]
     out = ""
-    if texts:
-        out, pm = merge(texts)
-        if out:
+    if parts:
+        out, pm = merge(parts)
+        try:
             sender.text(out, pm)
+            res.update({r["id"]: ("sent", None) for r in texts})
+        except Exception as e:  # noqa: BLE001
+            if _is_partial(e):
+                print(f"invio parziale, non ritento: {e}", file=sys.stderr)
+                res.update({r["id"]: ("sent", None) for r in texts})
+            elif tt_permanent(e) and len(parts) > 1:
+                out = ""
+                if head and (head[0] or "").strip():
+                    try:
+                        sender.text(*head)
+                        out = head[0]
+                    except Exception as e2:  # noqa: BLE001
+                        if not _is_partial(e2):
+                            head_err = e2
+                for r in texts:
+                    try:
+                        sender.text(r["text"], r.get("parse_mode"))
+                        res[r["id"]] = ("sent", None)
+                    except Exception as e3:  # noqa: BLE001
+                        res[r["id"]] = ("sent", None) if _is_partial(e3) else (_outcome(e3), e3)
+            else:
+                if head and (head[0] or "").strip():
+                    head_err = e
+                res.update({r["id"]: (_outcome(e), e) for r in texts})
     for r in rows:
-        if r.get("card"):
-            # le foto devono stare nel repo dati o negli asset dei plugin (difesa in profondità:
-            # una riga di push.jsonl può averla scritta chiunque)
-            base = Path(r["card"].get("base") or cc.data_root())
-            try:
-                steps = cc.safe_card(r["card"]["steps"], base)
-            except cc.PathNotAllowed as e:
-                print(f"scheda scartata: {e}", file=sys.stderr)
-                continue
-            if r.get("text"):
+        if not r.get("card"):
+            continue
+        # le foto devono stare nelle cartelle ammesse (una riga di push.jsonl può averla scritta chiunque)
+        base = Path(r["card"].get("base") or cc.data_root())
+        try:
+            steps = cc.safe_card(r["card"]["steps"], base)
+            if (r.get("text") or "").strip():
                 sender.text(r["text"], r.get("parse_mode"))
             sender.card(steps, base)
+            res[r["id"]] = ("sent", None)
+        except Exception as e:  # noqa: BLE001
+            res[r["id"]] = ("sent", None) if _is_partial(e) else (_outcome(e), e)
+    return res, head_err, out
+
+
+def _send_rows(rows: list[dict], sender: Sender, head: tuple[str, str | None] | None = None) -> str:
+    """Compatibilità: invia e chiude riga per riga."""
+    res, head_err, out = _dispatch(rows, sender, head)
+    _alert_dead(_mark(res), datetime.now(cc.tz()))
+    if head_err:
+        raise head_err
     return out
+
+
+def _sending_recent(st: dict, kind: str, now: datetime) -> bool:
+    raw = st.get(f"{kind}_sending")
+    if not raw:
+        return False
+    try:
+        return now - datetime.fromisoformat(raw) < timedelta(minutes=5)
+    except ValueError:
+        return False
 
 
 def deliver(text: str, kind: str, sender: Sender, now: datetime | None = None, cfg: dict | None = None,
             parse_mode: str | None = None, urgent: bool = False, source: str = "session",
             card: dict | None = None) -> dict:
-    """Un messaggio d'iniziativa. kind: evening | wake | review | detector | push | message.
+    """Un messaggio d'iniziativa. kind: evening | wake | review | detector | push | message | reply.
 
-    → {"status": "sent"|"held"|"duplicate"|"too_late"|"silent", "merged": n}
+    → {"status": "sent"|"held"|"duplicate"|"too_late"|"silent"|"failed", "merged": n}
+    Sera e mattino: controllo «già partito / in partenza» sotto lock (due bot, due tick).
+    Il mattino ha una scadenza (`wake.late_cutoff`) dopo la quale non parte da nessuna strada.
     """
     cfg = cfg or cc.rhythm()
     now = now or datetime.now(cc.tz())
     today = now.date().isoformat()
-    st = load_state()
-    if kind in ("evening", "wake") and st.get(f"{kind}_sent") == today:
-        return {"status": "duplicate", "note": f"messaggio {kind} di oggi già partito"}
-    silent = is_silent(now, cfg, st) and not urgent
-    if silent:
-        if kind == "evening":
-            _update_state(lambda s: s.__setitem__("evening_skipped", today))
-            return {"status": "too_late", "note": "è già ora di letto: la sera non parte di notte"}
-        if kind == "wake":
-            return {"status": "silent", "note": "alzata non ancora vista: niente messaggio del mattino"}
+    gated = kind in ("evening", "wake")
+    verdict: dict | None = None
+    hold = False
+    with tq.locked():
+        st = load_state()
+        if gated and st.get(f"{kind}_sent") == today:
+            verdict = {"status": "duplicate", "note": f"messaggio {kind} di oggi già partito"}
+        elif gated and _sending_recent(st, kind, now):
+            verdict = {"status": "duplicate", "note": f"messaggio {kind} già in partenza"}
+        elif kind == "wake" and (now >= _at(now.date(), cfg["wake"]["late_cutoff"], now.tzinfo)
+                                 or st.get("wake_skipped") == today):
+            verdict = {"status": "too_late", "note": "il messaggio del mattino ha passato la scadenza"}
+        elif is_silent(now, cfg, st) and not urgent:
+            if kind == "evening":
+                st["evening_skipped"] = today
+                save_state(st)
+                verdict = {"status": "too_late", "note": "è già ora di letto: la sera non parte di notte"}
+            elif kind == "wake":
+                verdict = {"status": "silent", "note": "alzata non ancora vista: niente messaggio del mattino"}
+            else:
+                hold = True
+        elif gated:
+            st[f"{kind}_sending"] = now.isoformat()
+            save_state(st)
+    if verdict:
+        return verdict
+    if hold:
         pid = submit(text, source=source, kind=kind, parse_mode=parse_mode, card=card, created_at=now)
         return {"status": "held", "id": pid, "note": "finestra di silenzio: esce dopo l'alzata"}
-    absorbed = _claim(lambda r: r.get("priority") != "red_flag")
-    row = {"text": text, "parse_mode": parse_mode}
-    if card:
-        row["card"] = card
-    try:
-        sent = _send_rows([row] + absorbed, sender)
-    except Exception:
-        _finish([r["id"] for r in absorbed], ok=False)
-        raise
+
+    # nel messaggio si fondono i push in attesa mai tentati (quelli già falliti restano al loro backoff)
+    absorbed = _claim(lambda r: r.get("priority") != "red_flag", fresh_only=True)
     mid = f"{kind}-{now.strftime('%Y%m%d-%H%M%S')}"
-    _finish([r["id"] for r in absorbed], ok=True, merged_into=mid)
-    if kind in ("evening", "wake"):
-        _update_state(lambda s: s.__setitem__(f"{kind}_sent", today))
+    head_card = {"id": "__head__", "text": text, "parse_mode": parse_mode, "card": card} if card else None
+    try:
+        res, head_err, sent = _dispatch(absorbed + ([head_card] if head_card else []), sender,
+                                        head=(text, parse_mode) if not card else None)
+    except Exception:
+        _mark({r["id"]: ("release", None) for r in absorbed})
+        if gated:
+            _update_state(lambda s: s.pop(f"{kind}_sending", None))
+        raise
+    if card:
+        out = res.pop("__head__", ("sent", None))
+        head_err = out[1] if out[0] != "sent" else None
+    if head_err is not None:
+        # la testa non è partita: le righe assorbite non fuse tornano in coda senza colpa
+        _mark({i: (o if o[0] in ("sent", "failed") else ("release", None)) for i, o in res.items()})
+        if gated:
+            _update_state(lambda s: s.pop(f"{kind}_sending", None))
+        return {"status": "failed", "error": str(head_err)}
+    _alert_dead(_mark(res, merged_into=mid), now)
+    if gated:
+        _update_state(lambda s: (s.__setitem__(f"{kind}_sent", today), s.pop(f"{kind}_sending", None)))
     try:
         tq.record_sent(mid, cc.primary_chat_id(), sent or text, via=f"gate:{source}")
     except OSError:
         pass
-    return {"status": "sent", "merged": len(absorbed), "id": mid}
+    return {"status": "sent", "merged": sum(1 for o in res.values() if o[0] == "sent"), "id": mid}
 
 
 # --- tick (dal bot, ogni ~25 s) -------------------------------------------------------
@@ -270,13 +414,9 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
     # 1. red flag: subito
     reds = _claim(lambda r: r.get("priority") == "red_flag")
     if reds:
-        try:
-            _send_rows(reds, sender)
-            _finish([r["id"] for r in reds], ok=True)
-            done.append(f"red_flag×{len(reds)}")
-        except Exception:
-            _finish([r["id"] for r in reds], ok=False)
-            raise
+        res, _, _ = _dispatch(reds, sender)
+        _alert_dead(_mark(res), now)
+        done.append(f"red_flag×{sum(1 for o in res.values() if o[0] == 'sent')}")
 
     st = load_state()
     m = morning_of(now, cfg)
@@ -285,7 +425,9 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
     if m == now.date() and today not in (st.get("wake") or {}) \
             and now >= _at(m, w["watch_from"], now.tzinfo):
         found = None
-        if now >= _at(m, w["fallback_max"], now.tzinfo):
+        mins = None
+        restarted_late = now >= _at(m, w["fallback_max"], now.tzinfo)
+        if restarted_late:
             found = {"at": now.strftime("%H:%M"), "source": "fallback"}   # bot fermo al mattino: niente rilevazioni tardive
         else:
             last = st.get("last_fetch")
@@ -293,7 +435,11 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
             mins = minutes_loader(today, fetch)
             if fetch:
                 _update_state(lambda s: s.__setitem__("last_fetch", now.isoformat()))
-            found = wd.detect_wake(mins, session_loader(today), now, w)
+            try:
+                sess = session_loader(today, w.get("session_end_from", "04:00"))
+            except TypeError:   # loader iniettato senza il secondo argomento
+                sess = session_loader(today)
+            found = wd.detect_wake(mins, sess, now, w)
         if not found and now >= fallback_at(m, cfg, now.tzinfo, st):
             if now < _at(m, w["fallback_max"], now.tzinfo) and wd.still_asleep(mins, now, w):
                 _update_state(lambda s: s.__setitem__("deferred", today))
@@ -305,7 +451,8 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
             _update_state(lambda s: (s.setdefault("wake", {}).__setitem__(today, rec), s.pop("deferred", None)))
             st = load_state()
             done.append(f"alzata {found['at']} ({found['source']})")
-            if session_active:
+            # niente invito alla sessione se il mattino è già passato (bot riavviato tardi)
+            if session_active and not restarted_late and now < _at(m, w["late_cutoff"], now.tzinfo):
                 notify("wake", f"Alzata {'rilevata' if found['source'] != 'fallback' else 'non vista: fallback'} "
                                f"alle {found['at']}. Tocca al messaggio del mattino (notte + scadenze 48 h).",
                        {"date": today, **found}, dedup_key=f"wake-{today}")
@@ -321,37 +468,39 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
     elif wk and not late and not skipped and st.get("wake_sent") != today \
             and not _waiting_wake_message(now, cfg, st, session_active):
         wake_text = (texts or _fallback_texts())[0]
-        r = deliver(wake_text(today), "wake", sender, now=now, cfg=cfg, source="fallback")
+        r = deliver(wake_text(today, active=session_active), "wake", sender, now=now, cfg=cfg, source="fallback")
         done.append(f"mattino fallback: {r['status']}")
         st = load_state()
 
-    # 4. sera: fallback dopo la scadenza, mai dopo l'ora di letto
+    # 4. sera: fallback dopo la scadenza, mai dopo l'ora di letto. Con la sessione accesa
+    #    (il Kaula può metterci minuti) si aspetta fino all'ora di letto meno un minuto.
     ev, bed = cfg["evening_message"], cfg["bedtime"]
     if bed > ev and st.get("evening_sent") != today and st.get("evening_skipped") != today:
         e_at = _at(now.date(), ev, now.tzinfo)
-        deadline = min(e_at + timedelta(minutes=cfg["evening_fallback_delay_min"]),
-                       _at(now.date(), bed, now.tzinfo) - timedelta(minutes=1))
+        last_call = _at(now.date(), bed, now.tzinfo) - timedelta(minutes=1)
+        deadline = last_call if session_active else \
+            min(e_at + timedelta(minutes=cfg["evening_fallback_delay_min"]), last_call)
         if now >= deadline:
             evening_text = (texts or _fallback_texts())[1]
-            r = deliver(evening_text(today), "evening", sender, now=now, cfg=cfg, source="fallback")
+            r = deliver(evening_text(today, active=session_active), "evening", sender, now=now, cfg=cfg,
+                        source="fallback")
             done.append(f"sera fallback: {r['status']}")
             st = load_state()
 
     # 5. push in attesa: fuori dal silenzio, fusi, dopo la finestra di fusione
     if not is_silent(now, cfg, st) and not _waiting_wake_message(now, cfg, st, session_active):
-        rows = [r for r in tq.read_jsonl(push_path()) if r.get("status") == "pending"]
+        now_utc = datetime.now(timezone.utc).isoformat()
+        rows = [r for r in tq.read_jsonl(push_path()) if r.get("status") == "pending" and _due(r, now_utc)]
         if rows:
             oldest = min(datetime.fromisoformat(r["created_at"]) for r in rows)
             if (now - oldest).total_seconds() >= cfg["merge_window_s"]:
                 claimed = _claim(lambda r: True)
                 if claimed:
-                    try:
-                        _send_rows(claimed, sender)
-                        _finish([r["id"] for r in claimed], ok=True)
-                        done.append(f"push×{len(claimed)}")
-                    except Exception:
-                        _finish([r["id"] for r in claimed], ok=False)
-                        raise
+                    res, _, _ = _dispatch(claimed, sender)
+                    dead = _mark(res)
+                    _alert_dead(dead, now)
+                    done.append(f"push×{sum(1 for o in res.values() if o[0] == 'sent')}"
+                                + (f" scartati×{len(dead)}" if dead else ""))
     return done
 
 

@@ -38,8 +38,9 @@ DEFAULTS: dict = {
         "fallback_max": "11:30",   # se i dati dicono che dorme ancora, si rimanda fino a qui
         "late_cutoff": "14:00",    # dopo, il messaggio del mattino non parte più (bot fermo al mattino)
         "fetch_every_min": 5,
-        # con la sessione di sonno del wearable chiusa: movimento dopo la fine
-        "session_window_min": 10, "session_steps": 30,
+        # con la sessione di sonno del wearable chiusa: movimento sostenuto dopo la fine
+        "session_end_from": "04:00",
+        "sustain_window_min": 30, "sustain_steps": 40, "sustain_active_min": 3, "sustain_span_min": 8,
         # senza sessione: blocco quieto prima, movimento che dura dopo
         "quiet_block_min": 120, "quiet_max_steps": 60,
         "confirm_min": 20, "confirm_steps": 100, "confirm_active_min": 5,

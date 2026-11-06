@@ -29,6 +29,21 @@ class TelegramError(RuntimeError):
         self.method, self.code, self.description = method, code, description
 
 
+class PartialSendError(RuntimeError):
+    """Una parte del messaggio è già arrivata: ritentare manderebbe doppioni."""
+
+    def __init__(self, sent_parts: int, cause: Exception):
+        super().__init__(f"inviate {sent_parts} parti, poi: {cause}")
+        self.sent_parts, self.cause = sent_parts, cause
+
+
+def is_permanent(e: Exception) -> bool:
+    """4xx di Telegram (escluso 429): ritentare non serve, il messaggio va scartato."""
+    if isinstance(e, PartialSendError):
+        e = e.cause
+    return isinstance(e, TelegramError) and e.code is not None and 400 <= e.code < 500 and e.code != 429
+
+
 def _decode(method: str, raw: bytes) -> dict:
     try:
         out = json.loads(raw.decode("utf-8", "replace"))
@@ -110,31 +125,48 @@ def send_text(token: str, chat_id: int | str, text: str, parse_mode: str | None 
     parts = chunks(text)
     res = []
     for i, part in enumerate(parts):
-        res.append(call(token, "sendMessage", chat_id=chat_id, text=part, parse_mode=parse_mode,
-                        disable_web_page_preview="true",
-                        reply_markup=reply_markup if i == len(parts) - 1 else None))
+        try:
+            res.append(call(token, "sendMessage", chat_id=chat_id, text=part, parse_mode=parse_mode,
+                            disable_web_page_preview="true",
+                            reply_markup=reply_markup if i == len(parts) - 1 else None))
+        except Exception as e:
+            if i:
+                raise PartialSendError(i, e) from e
+            raise
     return res
+
+
+def _send_step(token: str, chat_id: int | str, step: dict, base: Path, call: Call, multipart: Multipart) -> None:
+    if "text" in step:
+        send_text(token, chat_id, step["text"], parse_mode="HTML", call=call)
+        return
+    paths = [Path(p) if Path(p).is_absolute() else base / p for p in step["photos"]]
+    cap = (step.get("caption") or "")[:MAX_CAPTION]
+    if len(paths) == 1:
+        multipart(token, "sendPhoto", {"chat_id": chat_id, "photo": "attach://p0",
+                                       "caption": cap, "parse_mode": "HTML"}, {"p0": paths[0]})
+    else:
+        media = [{"type": "photo", "media": f"attach://p{i}"} for i in range(len(paths))]
+        if cap:
+            media[0].update(caption=cap, parse_mode="HTML")
+        multipart(token, "sendMediaGroup", {"chat_id": chat_id, "media": media},
+                  {f"p{i}": p for i, p in enumerate(paths)})
 
 
 def send_card(token: str, chat_id: int | str, steps: list[dict], base: Path,
               call: Call = call, multipart: Multipart = multipart) -> int:
-    """Scheda: lista di passi {"text": html} | {"photos": [path...], "caption": html}."""
+    """Scheda: lista di passi {"text": html} | {"photos": [path...], "caption": html}.
+    Se un passo fallisce dopo che altri sono partiti → PartialSendError (non ritentare)."""
     n = 0
     for step in steps:
-        if "text" in step:
-            send_text(token, chat_id, step["text"], parse_mode="HTML", call=call)
-        else:
-            paths = [Path(p) if Path(p).is_absolute() else base / p for p in step["photos"]]
-            cap = (step.get("caption") or "")[:MAX_CAPTION]
-            if len(paths) == 1:
-                multipart(token, "sendPhoto", {"chat_id": chat_id, "photo": "attach://p0",
-                                               "caption": cap, "parse_mode": "HTML"}, {"p0": paths[0]})
-            else:
-                media = [{"type": "photo", "media": f"attach://p{i}"} for i in range(len(paths))]
-                if cap:
-                    media[0].update(caption=cap, parse_mode="HTML")
-                multipart(token, "sendMediaGroup", {"chat_id": chat_id, "media": media},
-                          {f"p{i}": p for i, p in enumerate(paths)})
+        try:
+            _send_step(token, chat_id, step, base, call, multipart)
+        except PartialSendError:
+            raise
+        except Exception as e:
+            if n:
+                raise PartialSendError(n, e) from e
+            raise
         n += 1
     return n
 

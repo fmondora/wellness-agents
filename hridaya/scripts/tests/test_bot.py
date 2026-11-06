@@ -88,11 +88,13 @@ def test_allenamento_rimanda_il_bottone(data, fake_call, monkeypatch):
     assert p["reply_markup"]["keyboard"][0][0]["web_app"]["url"].startswith("https://x.pages.dev/#")
 
 
-def test_409_ripetuti_un_solo_avviso(data, fake_call):
+def test_409_ripetuti_un_solo_avviso_dal_cancello(data, fake_call):
     b = make(fake_call)
     fired = [b.on_conflict() for _ in range(6)]
     assert fired == [False, False, True, False, False, False]
-    assert fake_call.texts() == [tb.CONFLICT_ALERT]
+    assert fake_call.texts() == []                      # niente invio diretto (di notte aspetterebbe)
+    alerts = [r for r in tq.read_jsonl(pg.push_path()) if r.get("kind") == "alert"]
+    assert len(alerts) == 1 and alerts[0]["text"] == tb.CONFLICT_ALERT
     assert pg.load_state()["conflict"]["notified"]
     for _ in range(tb.CONFLICT_RESET_OK_POLLS):
         b.on_poll_ok()

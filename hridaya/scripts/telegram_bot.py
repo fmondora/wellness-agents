@@ -305,12 +305,9 @@ class Bot:
             return False
         msg = f"409 Conflict ripetuti ({self.conflicts}): un altro processo usa questo token"
         print(f"[{now_local().strftime('%H:%M')}] {msg}", file=sys.stderr)
-        chat = cc.primary_chat_id()
-        if chat:
-            try:
-                self.send(chat, CONFLICT_ALERT)
-            except tt.TelegramError as e:
-                print(f"avviso conflitto non inviato: {e}", file=sys.stderr)
+        # l'avviso è un'iniziativa: passa dal cancello (di notte aspetta l'alzata)
+        push_gate.submit(CONFLICT_ALERT, source="bot", kind="alert", meta={"alert": True},
+                         push_id=f"conflict-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}")
         push_gate._update_state(lambda s: s.__setitem__(
             "conflict", {"notified": True, "since": datetime.now(timezone.utc).isoformat(), "count": self.conflicts}))
         return True

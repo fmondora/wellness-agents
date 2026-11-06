@@ -1,6 +1,10 @@
 """Alzata: mai prima della fine del sonno. Bagno, cuscino e dormiveglia non sono alzate."""
+import os
 import random
 from datetime import datetime
+from pathlib import Path
+
+import pytest
 from zoneinfo import ZoneInfo
 
 import channel_config as cc
@@ -122,3 +126,56 @@ def test_proprieta_mai_prima_della_fine_del_sonno():
             if w:
                 assert m_(w["at"]) >= wake, (events, hm(wake), w)
                 break
+
+
+# --- regressioni della revisione finale: notte spezzata, movimento sostenuto ----------
+
+def test_notte_spezzata_conta_la_sessione_del_mattino():
+    sessions = [{"start": "22:30", "end": "02:45", "minutes_asleep": 250},     # più lunga, ma finisce di notte
+                {"start": "03:45", "end": "08:30", "minutes_asleep": 240},
+                {"start": "14:57", "end": "16:43", "minutes_asleep": 80}]      # pisolino
+    assert wd.main_morning_session(sessions)["end"] == "08:30"
+    assert wd.main_morning_session(sessions[:1]) is None                       # solo il pezzo notturno: modo B
+
+
+def test_bagno_dopo_la_fine_di_un_pezzo_non_e_alzata():
+    # il wearable ha chiuso un pezzo alle 05:20; bagno alle 05:40 (35 passi in 2′), poi di nuovo a letto
+    mins = night([("05:40", [20, 15], 70)], until="08:00")
+    sess = {"start": "22:30", "end": "05:20", "minutes_asleep": 400}
+    assert wd.detect_wake(mins, sess, at("08:00"), CFG) is None
+    # e senza sessione del mattino (pezzo notturno escluso) la regola stretta non scatta
+    assert wd.detect_wake(mins, None, at("08:00"), CFG) is None
+
+
+def test_movimento_sostenuto_dopo_la_sessione():
+    sess = {"start": "22:49", "end": "06:45", "minutes_asleep": 396}
+    lone = night(until="08:00", wake_steps={})
+    lone["steps"].update({"06:50": 25})                                        # un passo isolato
+    lone["steps"].update({"07:40": 20, "07:44": 15, "07:52": 12})              # poi l'alzata vera
+    w = wd.detect_wake(lone, sess, at("08:00"), CFG)
+    assert w["at"] == "07:40"
+
+
+REAL_DATA = Path(os.environ.get("WAKE_REAL_DATA", str(Path.home() / "wip/personal/lucia")))
+
+
+@pytest.mark.skipif(not (REAL_DATA / "data/fitbit/minute").is_dir(), reason="repo dati reale assente")
+def test_dati_veri_mai_prima_della_fine_della_sessione():
+    """Sola lettura sul repo dati: su ogni mattino con sessione, alzata ≥ fine sonno e ≥ primo passo dopo."""
+    import json as _j
+    n = 0
+    for f in sorted((REAL_DATA / "data/fitbit/minute").glob("*.json")):
+        day = f.stem
+        try:
+            fb = _j.loads((REAL_DATA / "data/fitbit" / f"{day}.json").read_text())
+        except OSError:
+            continue
+        sess = wd.main_morning_session(fb.get("sleep") or [])
+        if not sess:
+            continue
+        mins = _j.loads(f.read_text())
+        w = wd.detect_wake(mins, sess, datetime.fromisoformat(f"{day}T11:59").replace(tzinfo=TZ), CFG)
+        if w:
+            n += 1
+            assert m_(w["at"]) >= max(m_(sess["end"]), m_(CFG["earliest"])), (day, sess, w)
+    assert n >= 10

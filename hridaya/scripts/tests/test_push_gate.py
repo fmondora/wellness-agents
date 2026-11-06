@@ -10,7 +10,7 @@ from test_wake_detect import REAL, night
 
 TZ = ZoneInfo("Europe/Rome")
 D, D1 = "2026-11-06", "2026-11-07"
-TEXTS = (lambda d: f"MATTINO {d}", lambda d: f"SERA {d}")
+TEXTS = (lambda d, **k: f"MATTINO {d}", lambda d, **k: f"SERA {d}")
 
 
 class Sender:
@@ -188,3 +188,176 @@ def test_bot_acceso_nel_pomeriggio_mattino_saltato_per_sempre(data):
     assert s.sent == []
     st = pg.load_state()
     assert st["wake_skipped"] == D1 and st.get("wake_sent") != D1
+
+
+# --- regressioni della revisione finale ----------------------------------------------
+
+import tg_transport as tt  # noqa: E402
+
+
+class Flaky(Sender):
+    """Rifiuta (400) i testi con BAD e le schede; 500 se transient=True."""
+
+    def __init__(self, transient=False, partial=False):
+        super().__init__()
+        self.transient, self.partial = transient, partial
+
+    def text(self, text, parse_mode=None):
+        if self.partial:
+            self.sent.append(text)
+            raise tt.PartialSendError(1, tt.TelegramError("sendMessage", 400, "boh"))
+        if "BAD" in text:
+            raise tt.TelegramError("sendMessage", 500 if self.transient else 400, "can't parse entities")
+        self.sent.append(text)
+
+    def card(self, steps, base):
+        raise tt.TelegramError("sendPhoto", 400, "PHOTO_INVALID_DIMENSIONS")
+
+
+def _day_state():
+    pg.save_state({"wake": {D: {"at": "06:30", "source": "minuto", "recorded_at": t(D, "06:50").isoformat()}},
+                   "wake_sent": D, "evening_sent": D})
+
+
+def _rows():
+    return {r["id"]: r for r in tq.read_jsonl(pg.push_path())}
+
+
+def test_scheda_rifiutata_non_fa_ripetere_il_testo(data):
+    _day_state()
+    img = data / "data" / "coach-longevita" / "daily" / "img"
+    img.mkdir(parents=True)
+    (img / "a.png").write_bytes(b"x")
+    pg.submit("domanda del detector", source="x", push_id="q", created_at=t(D, "15:00"))
+    pg.submit("", source="coach", push_id="c", created_at=t(D, "15:00"),
+              card={"steps": [{"photos": ["img/a.png"]}], "base": str(img.parent)})
+    s = Flaky()
+    for k in range(4):
+        tick(t(D, f"15:0{2 + k}"), s)
+    assert sum("domanda del detector" in x for x in s.sent) == 1
+    rows = _rows()
+    assert rows["q"]["status"] == "sent" and rows["c"]["status"] == "failed"
+    alerts = [r for r in rows.values() if r.get("kind") == "alert"]
+    assert len(alerts) == 1 and "non è partito" in alerts[0]["text"]   # un solo avviso, dal cancello
+
+
+def test_html_rotto_isolato_il_resto_parte_una_volta(data):
+    _day_state()
+    pg.submit("buono", source="a", push_id="ok", created_at=t(D, "15:00"))
+    pg.submit("BAD <b", source="b", push_id="ko", parse_mode="HTML", created_at=t(D, "15:00"))
+    s = Flaky()
+    tick(t(D, "15:02"), s)
+    tick(t(D, "15:03"), s)
+    assert s.sent.count("buono") == 1
+    assert _rows()["ko"]["status"] == "failed"
+
+
+def test_errore_transitorio_backoff_poi_scarto(data):
+    _day_state()
+    pg.submit("BAD rete", source="a", push_id="r", created_at=t(D, "15:00"))
+    s = Flaky(transient=True)
+    tick(t(D, "15:02"), s)
+    row = _rows()["r"]
+    assert row["status"] == "pending" and row["attempts"] == 1 and row["next_try_at"]
+    tick(t(D, "15:03"), s)                                           # in backoff: nessun nuovo tentativo
+    assert _rows()["r"]["attempts"] == 1
+    for _ in range(pg.MAX_ATTEMPTS):                                 # scaduto il backoff ogni volta
+        rows = tq.read_jsonl(pg.push_path())
+        for r in rows:
+            r.pop("next_try_at", None)
+        tq.write_jsonl(pg.push_path(), rows)
+        tick(t(D, "15:10"), s)
+    assert _rows()["r"]["status"] == "failed"
+
+
+def test_invio_parziale_conta_come_consegnato(data):
+    _day_state()
+    pg.submit("lungo", source="a", push_id="p", created_at=t(D, "15:00"))
+    s = Flaky(partial=True)
+    tick(t(D, "15:02"), s)
+    tick(t(D, "15:03"), s)
+    assert len(s.sent) == 1 and _rows()["p"]["status"] == "sent"
+
+
+def test_il_mattino_non_assorbe_righe_gia_fallite(data):
+    pg.submit("BAD rete", source="a", push_id="r", created_at=t(D, "23:00"))
+    rows = tq.read_jsonl(pg.push_path())
+    rows[0]["attempts"] = 1
+    tq.write_jsonl(pg.push_path(), rows)
+    pg.save_state({"wake": {D1: {"at": "06:51", "source": "minuto", "recorded_at": t(D1, "07:00").isoformat()}}})
+    s = Sender()
+    assert pg.deliver("buongiorno", "wake", s, now=t(D1, "07:05"))["status"] == "sent"
+    assert s.sent == ["buongiorno"] and _rows()["r"]["status"] == "pending"
+
+
+def test_sera_con_sessione_accesa_aspetta_il_kaula(data):
+    _day_state()
+    st = pg.load_state()
+    st.pop("evening_sent")
+    pg.save_state(st)
+    s = Sender()
+    tick(t(D, "22:10"), s, active=True)
+    tick(t(D, "22:12"), s, active=True)
+    assert s.sent == []
+    r = pg.deliver("🕉️ Kaula: domattina…", "evening", s, now=t(D, "22:12"))
+    assert r["status"] == "sent" and s.sent == ["🕉️ Kaula: domattina…"]
+    tick(t(D, "22:14"), s, active=True)
+    assert len(s.sent) == 1
+
+
+def test_sera_sessione_accesa_muta_fallback_all_ultimo_minuto_senza_non_attivo(data):
+    import morning_message as mm
+    _day_state()
+    st = pg.load_state()
+    st.pop("evening_sent")
+    pg.save_state(st)
+    s = Sender()
+    tick(t(D, "22:13"), s, active=True)
+    assert s.sent == []
+    tick(t(D, "22:14"), s, active=True)
+    assert s.sent == [f"SERA {D}"]
+    assert "non è attivo" not in mm.evening_text(D, active=True)
+    assert "non è attivo" in mm.evening_text(D, active=False)
+
+
+def test_mattino_in_partenza_altrove_e_doppione(data):
+    pg.save_state({"wake": {D1: {"at": "06:51", "source": "minuto", "recorded_at": t(D1, "07:00").isoformat()}}})
+    inner = []
+
+    class Reentrant(Sender):
+        def text(self, text, parse_mode=None):     # un secondo bot che prova mentre il primo invia
+            inner.append(pg.deliver("doppio", "wake", Sender(), now=t(D1, "07:05")))
+            super().text(text, parse_mode)
+    s = Reentrant()
+    assert pg.deliver("buongiorno", "wake", s, now=t(D1, "07:05"))["status"] == "sent"
+    assert inner[0]["status"] == "duplicate" and s.sent == ["buongiorno"]
+    assert "wake_sending" not in pg.load_state()
+
+
+def test_mattino_dopo_la_scadenza_non_parte_da_nessuna_strada(data):
+    pg.save_state({"wake": {D1: {"at": "13:50", "source": "fallback", "recorded_at": t(D1, "13:50").isoformat()}}})
+    s = Sender()
+    assert pg.deliver("buongiorno", "wake", s, now=t(D1, "17:16"))["status"] == "too_late"
+    pg.save_state({"wake": {D1: {"at": "06:51", "source": "minuto", "recorded_at": t(D1, "07:00").isoformat()}},
+                   "wake_skipped": D1})
+    assert pg.deliver("buongiorno", "wake", s, now=t(D1, "09:00"))["status"] == "too_late"
+    assert s.sent == []
+
+
+def test_bot_riavviato_tardi_non_invita_la_sessione(data):
+    s, notes = Sender(), []
+    tick(t(D1, "17:15"), s, active=True, mins=None, notes=notes)
+    assert notes == [] and s.sent == []
+
+
+def test_testo_della_sessione_rifiutato_non_brucia_il_mattino(data):
+    pg.save_state({"wake": {D1: {"at": "06:51", "source": "minuto", "recorded_at": t(D1, "07:00").isoformat()}}})
+    pg.submit("push della notte", source="x", push_id="n", created_at=t(D, "23:30"))
+    s = Flaky()
+    r = pg.deliver("BAD <b>buongiorno", "wake", s, now=t(D1, "07:05"), parse_mode="HTML")
+    assert r["status"] == "failed"
+    st = pg.load_state()
+    assert st.get("wake_sent") != D1 and "wake_sending" not in st       # la sessione può riprovare
+    assert _rows()["n"]["status"] in ("sent", "pending")                   # mai perso, mai doppio
+    r2 = pg.deliver("buongiorno", "wake", Sender(), now=t(D1, "07:06"))
+    assert r2["status"] == "sent"

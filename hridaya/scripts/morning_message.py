@@ -190,9 +190,9 @@ def therapy_reminders(day: str) -> list[str]:
     return [i["text"] for i in cfg.get("items") or [] if i.get("text") and wd in (i.get("days") or [])]
 
 
-def evening_text(day: str) -> str:
+def evening_text(day: str, active: bool = False) -> str:
     r = cc.rhythm()
-    lines = [f"{cc_auto()} · 🌙 Ora di letto: {r['bedtime']}"
+    lines = [f"{cc_auto(active)} · 🌙 Ora di letto: {r['bedtime']}"
              + (f" (sveglia {r['target_wake']})" if r.get("target_wake") else "")]
     tomorrow = (date.fromisoformat(day) + timedelta(days=1)).isoformat()
     draws = [it for it in deadlines(day, 1) if it["due"] == tomorrow and is_blood_draw(it)]
@@ -205,8 +205,8 @@ def evening_text(day: str) -> str:
     return "\n".join(lines)
 
 
-def wake_text(day: str, mark: bool = True) -> str:
-    lines = [f"{cc_auto()} · buongiorno"] + night_lines(day)
+def wake_text(day: str, mark: bool = True, active: bool = False) -> str:
+    lines = [f"{cc_auto(active)} · buongiorno"] + night_lines(day)
     ev = morning_events(day, mark=mark)
     if ev:
         lines += [""] + ev
@@ -216,8 +216,9 @@ def wake_text(day: str, mark: bool = True) -> str:
     return "\n".join(lines)
 
 
-def cc_auto() -> str:
-    return "🤖 automatico (Hṛdaya non è attivo)"
+def cc_auto(active: bool = False) -> str:
+    """«non attivo» solo se la sessione davvero non c'è (con la sessione accesa ma muta: solo automatico)."""
+    return "🤖 automatico" if active else "🤖 automatico (Hṛdaya non è attivo)"
 
 
 def main() -> int:

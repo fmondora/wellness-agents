@@ -7,9 +7,18 @@ passi, FC che sale e poi riscende. Questo non è un'alzata.
 
 Due modi, dal più affidabile:
 
-A. **Sessione di sonno del wearable chiusa** (`data/fitbit/<giorno>.json`, la più
-   lunga): l'alzata è il primo minuto ≥ fine sessione con almeno `session_steps`
-   passi nei `session_window_min` minuti seguenti. Mai prima della fine sessione.
+A. **Sessione di sonno del wearable chiusa** (`data/fitbit/<giorno>.json`): la
+   sessione principale è la più lunga fra quelle che **finiscono al mattino** (fine fra
+   `session_end_from`, default 04:00, e mezzogiorno). In una notte spezzata (22:30–02:45,
+   veglia sul cuscino, 03:45–08:30) il primo pezzo non conta: finisce di notte.
+   L'alzata è il primo minuto ≥ fine sessione (e ≥ `earliest`) da cui parte un
+   **movimento sostenuto**: nei `sustain_window_min` minuti (30) almeno `sustain_steps`
+   passi (40) in almeno `sustain_active_min` minuti distinti (3), con il primo e l'ultimo
+   minuto attivo distanti almeno `sustain_span_min` minuti (8). Il bagno (30-40 passi in
+   1-3 minuti e poi di nuovo a letto) non basta. Tarato sui 58 mattini di set-nov 2026
+   del repo dati (sola lettura): mediana del ritardo dal primo passo dopo la sessione 0′;
+   quando il primo passo è isolato (ci si siede a meditare) si aspetta il movimento vero,
+   e al limite decide il fallback a orario. Mai prima della fine sessione.
 B. **Solo dati al minuto** (la sessione non è ancora arrivata): serve
    1. un blocco quieto prima (`quiet_block_min` minuti con ≤ `quiet_max_steps` passi:
       il bagno delle 3 ci sta, una passeggiata no);
@@ -89,13 +98,14 @@ def detect_wake(minutes: dict | None, session: dict | None, now: datetime, cfg: 
         if end > now_m or end > 12 * 60:
             end = None
     if end is not None:
-        win = cfg["session_window_min"]
-        for m in range(max(end, earliest), horizon - win + 1):
+        win, span = cfg["sustain_window_min"], cfg["sustain_span_min"]
+        for m in range(max(end, earliest), horizon + 1):
             if not st.get(m):
                 continue
-            tot, _ = _steps(st, m, m + win)
-            if tot >= cfg["session_steps"]:
-                return {"at": _hhmm(m), "confirmed_at": _hhmm(m + win), "source": "sessione+minuto",
+            act = [x for x in range(m, min(m + win, horizon + 1)) if st.get(x)]
+            if sum(st[x] for x in act) >= cfg["sustain_steps"] and len(act) >= cfg["sustain_active_min"] \
+                    and act[-1] - act[0] >= span:
+                return {"at": _hhmm(m), "confirmed_at": _hhmm(act[-1]), "source": "sessione+minuto",
                         "sleep_end": session["end"]}
         return None
 
@@ -155,12 +165,19 @@ def load_minutes(day: str, fetch: bool = True) -> dict | None:
         return None
 
 
-def load_sleep_session(day: str) -> dict | None:
-    """Sessione di sonno principale (la più lunga) dal file del wearable del giorno."""
+def main_morning_session(sessions: list, end_from: str = "04:00") -> dict | None:
+    """La più lunga fra le sessioni che finiscono al mattino (fra end_from e mezzogiorno)."""
+    lo, hi = _m(end_from), 12 * 60
+    valid = [s for s in sessions or [] if isinstance(s, dict) and s.get("minutes_asleep") and s.get("end")
+             and lo <= _m(s["end"]) <= hi]
+    return max(valid, key=lambda s: s.get("minutes_asleep") or 0) if valid else None
+
+
+def load_sleep_session(day: str, end_from: str = "04:00") -> dict | None:
+    """Sessione di sonno principale del mattino dal file del wearable del giorno."""
     f = _root() / "data" / "fitbit" / f"{day}.json"
     try:
         d = json.loads(f.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
-    valid = [s for s in d.get("sleep") or [] if isinstance(s, dict) and s.get("minutes_asleep")]
-    return max(valid, key=lambda s: s.get("minutes_asleep") or 0) if valid else None
+    return main_morning_session(d.get("sleep") or [], end_from)
