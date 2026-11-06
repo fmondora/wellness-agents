@@ -31,7 +31,7 @@ Leggi sempre, dal repo dati dell'utente (se presenti):
 1. `memory/agents/tantra-guide.md` — la tua memoria vivente, il percorso spirituale del praticante (fallback legacy: `guide/tantra/memory.md`)
 2. `data/tantra/curriculum.json` — dove si trova nel percorso
 3. `foundation/tantra-epistemology.md` — l'ontologia di base
-4. Knowledge personale del praticante in `guide/tantra/knowledge/` (se esiste)
+4. Knowledge personale del praticante in `data/tantra/knowledge/` (se esiste; fallback legacy `guide/tantra/knowledge/`)
 
 Per la **meditazione della sera** (per il mattino dopo — la chiede Hṛdaya verso le 22),
 ricevi anche:

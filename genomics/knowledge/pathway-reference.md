@@ -102,7 +102,7 @@ Varianti con * (star alleles) indicano alleli con funzione alterata.
 ## Pathway Iron
 
 - **HFE**: emocromatosi ereditaria
-- **C282Y** e **H63D** sono le due varianti principali
+- **C282Y** (rs1800562) e **H63D** (rs1799945) sono le due varianti principali
   (identificativi dbSNP pubblici, reperibili in letteratura)
 
 ---
