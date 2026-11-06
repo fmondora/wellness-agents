@@ -177,3 +177,14 @@ def test_scheda_in_coda_con_foto_fuori_viene_scartata(data, tmp_path):
               created_at=t(D, "15:00"))
     tick(t(D, "15:05"), s)
     assert s.sent == []
+
+
+def test_bot_acceso_nel_pomeriggio_mattino_saltato_per_sempre(data):
+    """Regressione 6/11: bot (ri)avviato dopo il late_cutoff. Il primo giro segna il
+    mattino saltato; i giri dopo NON devono mandare il fallback del mattino."""
+    s = Sender()
+    for hhmm in ("17:15", "17:16", "17:30", "18:00"):
+        tick(t(D1, hhmm), s)
+    assert s.sent == []
+    st = pg.load_state()
+    assert st["wake_skipped"] == D1 and st.get("wake_sent") != D1

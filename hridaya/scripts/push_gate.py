@@ -313,11 +313,13 @@ def tick(now: datetime, sender: Sender, session_active: bool, cfg: dict | None =
     # 3. messaggio dopo l'alzata: fallback se la sessione non c'è o non arriva in tempo
     wk = (st.get("wake") or {}).get(today)
     late = now >= _at(now.date(), w["late_cutoff"], now.tzinfo)
-    if wk and late and st.get("wake_sent") != today and st.get("wake_skipped") != today:
+    skipped = st.get("wake_skipped") == today
+    if wk and late and st.get("wake_sent") != today and not skipped:
         _update_state(lambda s: s.__setitem__("wake_skipped", today))
         done.append("mattino saltato: troppo tardi")
         st = load_state()
-    elif wk and st.get("wake_sent") != today and not _waiting_wake_message(now, cfg, st, session_active):
+    elif wk and not late and not skipped and st.get("wake_sent") != today \
+            and not _waiting_wake_message(now, cfg, st, session_active):
         wake_text = (texts or _fallback_texts())[0]
         r = deliver(wake_text(today), "wake", sender, now=now, cfg=cfg, source="fallback")
         done.append(f"mattino fallback: {r['status']}")
