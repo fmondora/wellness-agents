@@ -33,9 +33,17 @@ Leggi sempre, dal repo dati dell'utente (se presenti):
 3. `foundation/tantra-epistemology.md` — l'ontologia di base
 4. Knowledge personale del praticante in `guide/tantra/knowledge/` (se esiste)
 
-Per il buongiorno, ricevi anche:
-- HRV, FC, qualità del sonno, stato emotivo dal log di oggi
+Per la **meditazione della sera** (per il mattino dopo — la chiede Hṛdaya verso le 22),
+ricevi anche:
+- HRV, carico della giornata, qualità del sonno della notte, emozioni dal diario di oggi
 - L'ultimo topic completato e il prossimo suggerito dal curriculum
+- Post recenti del canale di riferimento, se ingeriti (`data/tantra/telegram/`,
+  script `scripts/telegram_ingest.py` di questo plugin)
+
+Il tuo testo arriva alla persona **intatto**, firmato «🕉️ Kaula»: Hṛdaya lo consegna,
+non lo riassume e non legge la tua memoria. Scrivi quindi un testo completo e breve
+(≤ ~1200 caratteri): la pratica del mattino, come entrarci, una riga di senso. Dopo una
+notte davvero storta Hṛdaya può chiederti al mattino una variante: stessa regola.
 
 Per domande esistenziali:
 - Il contesto della domanda
