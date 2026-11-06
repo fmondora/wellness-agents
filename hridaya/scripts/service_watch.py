@@ -61,7 +61,9 @@ def scheduled_cues(now: datetime, cues: dict, plugins: set[str] | None = None) -
             and st.get("evening_sent") != today:
         cues["evening"] = today
         out.append(f"SERA {today}")
-    if (st.get("wake") or {}).get(today) and st.get("wake_sent") != today and cues.get("wake") != today:
+    late = hhmm >= cfg["wake"]["late_cutoff"]
+    if (st.get("wake") or {}).get(today) and st.get("wake_sent") != today and cues.get("wake") != today \
+            and st.get("wake_skipped") != today and not late:
         cues["wake"] = today
         out.append(f"MATTINO {today}")
     import hridaya_calendar as hc
@@ -74,11 +76,17 @@ def scheduled_cues(now: datetime, cues: dict, plugins: set[str] | None = None) -
 
 
 def queue_events(seen: set[str]) -> list[str]:
+    """Righe in coda mai emesse (anche fra un riarmo e l'altro: `seen` è persistito)."""
     out = []
     for r in tq.list_pending():
         if r["id"] in seen:
             continue
         seen.add(r["id"])
+        if r.get("kind") == "system" and r.get("event") == "wake":
+            day = (r.get("data") or {}).get("date")
+            st = push_gate.load_state()
+            if day and (st.get("wake_sent") == day or st.get("wake_skipped") == day):
+                continue   # il mattino è già chiuso: non invitare a scriverlo
         text = " ".join(str(r.get("text", "")).split())[:200]
         if r.get("kind") == "system":
             out.append(f"SYS {r.get('event')} {r['id']} {text}")
@@ -101,16 +109,20 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         plugins = None
     end = time.monotonic() + a.max_minutes * 60
-    seen: set[str] = set()
+    seen: set[str] = set(load_cues().get("seen") or [])
     last_beat = 0.0
     last_sched = 0.0
     while time.monotonic() < end:
+        before = len(seen)
         lines = queue_events(seen)
-        if time.monotonic() - last_sched >= 60:
+        if len(seen) != before or time.monotonic() - last_sched >= 60:
             cues = load_cues()
-            lines += scheduled_cues(datetime.now(cc.tz()), cues, plugins)
+            if time.monotonic() - last_sched >= 60:
+                lines += scheduled_cues(datetime.now(cc.tz()), cues, plugins)
+                last_sched = time.monotonic()
+            pending = {r["id"] for r in tq.list_pending()}
+            cues["seen"] = sorted(i for i in seen if i in pending)[-500:]   # solo le ancora in coda
             save_cues(cues)
-            last_sched = time.monotonic()
         for line in lines:
             print(line, flush=True)
         if time.monotonic() - last_beat >= 30:

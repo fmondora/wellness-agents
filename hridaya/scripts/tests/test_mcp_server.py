@@ -161,3 +161,68 @@ def test_servizio_acceso_poi_spento_alla_chiusura(data, tmp_path):
 def test_fuori_dal_repo_dati_errore_chiaro(tmp_path):
     out = run(tmp_path, [call(1, "telegram_inbox")], tmp_path / "log.jsonl")
     assert out[0]["result"]["isError"] and "repo dati" in out[0]["result"]["content"][0]["text"]
+
+
+# --- regressioni della revisione finale ----------------------------------------------
+
+def _night(data):
+    """Ritmo che rende «notte» qualunque ora del test (silenzio fino alle 23:59)."""
+    (data / "config" / "hridaya.json").write_text(json.dumps(
+        {"bedtime": "00:01", "wake": {"fallback": "23:59", "fallback_max": "23:59", "late_cutoff": "23:59"}}))
+
+
+def test_agli_eventi_di_sistema_non_si_risponde(data, tmp_path):
+    sid = tq.enqueue_system("red_flag", "Red flag da Telegram: …")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_reply", {"id": sid, "text": "ok"}),
+                     call(2, "telegram_send", {"text": "ok", "in_reply_to": sid})], log)
+    assert all(r["result"]["isError"] for r in out)
+    assert "evento di sistema" in out[0]["result"]["content"][0]["text"]
+    assert not log.exists()
+
+
+def test_di_notte_la_risposta_passa_dal_cancello_e_segna_fatto(data, tmp_path):
+    _night(data)
+    mid = tq.enqueue(42, "ci sei?")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_reply", {"id": mid, "text": "Domattina ne parliamo."})], log)
+    r = payload(out[0])
+    assert r["status"] == "held" and r["done"]
+    assert not log.exists()                                  # nessun invio di notte
+    assert tq.list_pending() == []
+    held = tq.read_jsonl(data / "data" / "telegram" / "push.jsonl")
+    assert held[0]["text"] == "Domattina ne parliamo." and held[0]["kind"] == "reply"
+
+
+def test_di_notte_urgent_solo_con_red_flag(data, tmp_path):
+    _night(data)
+    rf = tq.enqueue(42, "ho un dolore toracico")
+    plain = tq.enqueue(42, "non dormo")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_reply", {"id": plain, "text": "x", "urgent": True}),
+                     call(2, "telegram_reply", {"id": rf, "text": "Chiama il 112.", "urgent": True})], log)
+    assert out[0]["result"]["isError"]
+    assert payload(out[1])["status"] == "sent" and "Chiama il 112." in log.read_text()
+
+
+def test_scheda_in_risposta_segna_fatto(data, tmp_path):
+    img = data / "data" / "coach-longevita" / "daily" / "img"
+    img.mkdir(parents=True)
+    (img / "a.png").write_bytes(b"x")
+    pg_state = data / "data" / "telegram"
+    pg_state.mkdir(parents=True, exist_ok=True)
+    mid = tq.enqueue(42, "mandami la scheda")
+    out = run(data, [call(1, "telegram_send_card", {"steps": [{"photos": ["img/a.png"]}],
+                                                    "base_dir": "data/coach-longevita/daily",
+                                                    "in_reply_to": mid})], tmp_path / "log.jsonl")
+    r = payload(out[0])
+    assert r["done"] and tq.list_pending() == []
+
+
+def test_json_non_oggetto_e_batch_non_uccidono_il_server(data, tmp_path):
+    out = run(data, [[], 3, "x", [{"jsonrpc": "2.0", "id": 7, "method": "ping"},
+                                  {"jsonrpc": "2.0", "method": "notifications/initialized"}],
+                     {"jsonrpc": "2.0", "id": 8, "method": "ping"}], tmp_path / "log.jsonl")
+    assert [o["error"]["code"] for o in out[:3]] == [-32600, -32600, -32600]
+    assert out[3] == [{"jsonrpc": "2.0", "id": 7, "result": {}}]
+    assert out[4]["id"] == 8                                  # il server è ancora vivo

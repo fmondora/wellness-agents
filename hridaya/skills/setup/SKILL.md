@@ -86,6 +86,8 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
 5. **Avvio automatico** — il repo dati ha uno shim `scripts/telegram_bot.py` che lancia
    `$S/telegram_bot.py` (crealo se manca, come gli altri shim). Poi
    `python3.12 $S/telegram_setup.py launchd --shim scripts/telegram_bot.py --install`
+   (se esiste già un job che lancia `telegram_bot.py` lo riconosce e ne riusa l'etichetta;
+   un'etichetta diversa o due job → si ferma: un solo bot per token)
    e `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<label>.plist`.
    Controlla `data/telegram/bot.log` (riga «bot Telegram avviato»).
 6. **Menu comandi** — `python3.12 $S/telegram_setup.py commands`

@@ -136,3 +136,45 @@ def test_servizio_cue_una_volta_al_giorno(data):
     ev = sw.queue_events(seen)
     assert ev[0] == f"MSG {mid} ciao come va" and ev[1].startswith("SYS wake ")
     assert sw.queue_events(seen) == []
+
+
+
+def test_setup_riusa_il_job_del_bot_esistente(tmp_path):
+    agents = tmp_path / "LaunchAgents"
+    agents.mkdir()
+    (agents / "com.francesco.lucia.telegram.plist").write_bytes(plistlib.dumps(
+        {"Label": "com.francesco.lucia.telegram", "ProgramArguments": ["/py", "/x/scripts/telegram_bot.py"]}))
+    (agents / "altro.plist").write_bytes(plistlib.dumps({"Label": "altro", "ProgramArguments": ["/bin/true"]}))
+    jobs = ts.existing_bot_jobs(agents)
+    assert [j["label"] for j in jobs] == ["com.francesco.lucia.telegram"]
+    assert ts.choose_label(None, jobs) == "com.francesco.lucia.telegram"
+    assert ts.choose_label("com.francesco.lucia.telegram", jobs) == "com.francesco.lucia.telegram"
+    import pytest
+    with pytest.raises(SystemExit):
+        ts.choose_label("com.wellness.hridaya.telegram", jobs)
+    assert ts.choose_label(None, []) == "com.wellness.hridaya.telegram"
+
+
+def test_servizio_non_riemette_dopo_il_riarmo(data):
+    import service_watch as sw
+    import telegram_queue as tq
+    mid = tq.enqueue(42, "ciao")
+    seen = set(sw.load_cues().get("seen") or [])
+    assert sw.queue_events(seen) == [f"MSG {mid} ciao"]
+    cues = sw.load_cues()
+    cues["seen"] = sorted(seen)
+    sw.save_cues(cues)
+    seen2 = set(sw.load_cues().get("seen") or [])           # nuovo processo dopo il riarmo
+    assert sw.queue_events(seen2) == []
+
+
+def test_servizio_non_invita_al_mattino_chiuso(data):
+    import push_gate as pg
+    import service_watch as sw
+    import telegram_queue as tq
+    pg.save_state({"wake": {"2026-11-07": {"at": "14:30", "source": "fallback"}}, "wake_skipped": "2026-11-07"})
+    tq.enqueue_system("wake", "alzata", {"date": "2026-11-07"})
+    assert sw.queue_events(set()) == []
+    tz = cc.tz()
+    assert not any(c.startswith("MATTINO") for c in
+                   sw.scheduled_cues(datetime(2026, 11, 7, 17, 16, tzinfo=tz), {}, plugins=set()))

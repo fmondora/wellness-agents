@@ -122,6 +122,35 @@ def register_chat(chat_id: int, token: str, root: Path | None = None,
                                  "solo tu puoi scrivermi qui.", call=call)
 
 
+def existing_bot_jobs(agents_dir: Path | None = None) -> list[dict]:
+    """Job launchd che lanciano già un telegram_bot.py: {label, path, args}."""
+    agents_dir = agents_dir or Path.home() / "Library" / "LaunchAgents"
+    out = []
+    for f in sorted(agents_dir.glob("*.plist")):
+        try:
+            pl = plistlib.loads(f.read_bytes())
+        except Exception:  # noqa: BLE001
+            continue
+        args = pl.get("ProgramArguments") or ([pl["Program"]] if pl.get("Program") else [])
+        if any("telegram_bot" in str(a) for a in args):
+            out.append({"label": pl.get("Label") or f.stem, "path": f, "args": args})
+    return out
+
+
+def choose_label(requested: str | None, jobs: list[dict]) -> str:
+    """Un solo bot per token: se c'è già un job del bot si riusa la sua etichetta; un'altra → errore."""
+    if not jobs:
+        return requested or "com.wellness.hridaya.telegram"
+    labels = sorted({j["label"] for j in jobs})
+    if len(labels) > 1:
+        raise SystemExit(f"Ci sono già più job del bot ({', '.join(labels)}): due lettori dello stesso token "
+                         "rubano i messaggi (409). Tienine uno solo, poi rilancia.")
+    if requested and requested != labels[0]:
+        raise SystemExit(f"Esiste già il job del bot {labels[0]}: riusalo (--label {labels[0]}) "
+                         "invece di installarne un secondo.")
+    return labels[0]
+
+
 def launchd_plist(label: str, shim: Path, python: str, data_root: Path) -> bytes:
     logs = data_root / "data" / "telegram"
     return plistlib.dumps({
@@ -151,7 +180,8 @@ def main() -> int:
     w.add_argument("--register", action="store_true")
     sub.add_parser("commands")
     ld = sub.add_parser("launchd")
-    ld.add_argument("--label", default="com.wellness.hridaya.telegram")
+    ld.add_argument("--label", default=None,
+                    help="etichetta del job; se ne esiste già uno del bot si riusa quello")
     ld.add_argument("--shim", required=True, help="scripts/telegram_bot.py del repo dati (shim)")
     ld.add_argument("--python", default="/opt/homebrew/bin/python3.12")
     ld.add_argument("--install", action="store_true")
@@ -173,11 +203,16 @@ def main() -> int:
         return 0
     if a.cmd == "launchd":
         root = cc.data_root().resolve()
+        label = choose_label(a.label, existing_bot_jobs())
+        if label != (a.label or label):
+            print(f"riuso il job esistente {label}", file=sys.stderr)
+        a.label = label
         data = launchd_plist(a.label, Path(a.shim).resolve(), a.python, root)
         if a.install:
             dest = Path.home() / "Library" / "LaunchAgents" / f"{a.label}.plist"
             dest.write_bytes(data)
-            print(f"scritto {dest} — avvio: launchctl bootstrap gui/$(id -u) {dest}")
+            print(f"scritto {dest} — se era già caricato: launchctl bootout gui/$(id -u)/{a.label}; "
+                  f"poi launchctl bootstrap gui/$(id -u) {dest}")
         else:
             sys.stdout.write(data.decode())
         return 0

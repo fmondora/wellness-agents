@@ -31,7 +31,7 @@ import session_state  # noqa: E402
 import telegram_queue as tq  # noqa: E402
 import tg_transport as tt  # noqa: E402
 
-SERVER = {"name": "hridaya-telegram", "version": "0.3.0"}
+SERVER = {"name": "hridaya-telegram", "version": "0.4.0"}
 PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 HEARTBEAT_S = 30
 
@@ -106,7 +106,8 @@ def _schema(props: dict, required: list[str] | None = None) -> dict:
 
 KIND = {"type": "string", "enum": ["message", "push", "review", "detector", "evening", "wake"],
         "description": "evening/wake: i due messaggi programmati (uno al giorno, idempotenti)"}
-REPLY_TO = {"type": "string", "description": "id del messaggio della inbox a cui si risponde: parte subito"}
+REPLY_TO = {"type": "string", "description": "id di un messaggio di Francesco nella inbox (non di un evento di sistema): "
+                                           "di giorno parte subito, di notte passa dal cancello; il messaggio è segnato fatto"}
 
 TOOLS = [
     {"name": "telegram_send",
@@ -115,7 +116,8 @@ TOOLS = [
                     "urgent=true solo per red flag clinici.",
      "inputSchema": _schema({"text": {"type": "string"}, "kind": KIND,
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
-                             "urgent": {"type": "boolean"}, "in_reply_to": REPLY_TO}, ["text"])},
+                             "urgent": {"type": "boolean"}, "in_reply_to": REPLY_TO,
+                             "done": {"type": "boolean"}}, ["text"])},
     {"name": "telegram_send_card",
      "description": "Manda una scheda: testo HTML + album di immagini (es. la scheda del Coach Longevità). "
                     "spec_path = JSON lista di passi {text} | {photos, caption}, foto relative alla spec; "
@@ -138,10 +140,12 @@ TOOLS = [
                     "alzata rilevata, seduta registrata, red flag).",
      "inputSchema": _schema({"include_system": {"type": "boolean"}})},
     {"name": "telegram_reply",
-     "description": "Risponde a un messaggio della inbox (parte subito, nessun cancello) e lo segna fatto.",
+     "description": "Risponde a un messaggio di Francesco della inbox e lo segna fatto. Di giorno parte subito; "
+                    "nella finestra di silenzio passa dal cancello (esce dopo l'alzata), salvo urgent=true su un "
+                    "messaggio con red flag. Agli eventi di sistema (kind=system) non si risponde.",
      "inputSchema": _schema({"id": {"type": "string"}, "text": {"type": "string"},
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
-                             "done": {"type": "boolean"}}, ["id", "text"])},
+                             "done": {"type": "boolean"}, "urgent": {"type": "boolean"}}, ["id", "text"])},
     {"name": "hridaya_service",
      "description": "Accende/spegne il servizio nella sessione (battito che dice al bot che Hṛdaya c'è) "
                     "e riporta cosa si sta ascoltando.",
@@ -163,15 +167,51 @@ class ToolError(Exception):
     pass
 
 
-def _reply_chat(msg_id: str) -> int:
+def _reply_target(msg_id: str) -> tuple[int, dict]:
+    """Chat e riga del messaggio a cui si risponde. Agli eventi di sistema non si risponde."""
     row = tq.get_message(msg_id)
     if not row:
         raise ToolError(f"messaggio {msg_id} non trovato nella inbox")
-    return int(row.get("chat_id") or cc.primary_chat_id())
+    if row.get("kind") == "system":
+        raise ToolError(f"{msg_id} è un evento di sistema ({row.get('event')}), non un messaggio di Francesco: "
+                        "non si risponde a un evento. Per un'iniziativa usa telegram_send senza in_reply_to "
+                        "(passa dal cancello); poi segna l'evento fatto.")
+    return int(row.get("chat_id") or cc.primary_chat_id()), row
+
+
+def _reply_chat(msg_id: str) -> int:
+    return _reply_target(msg_id)[0]
 
 
 def _is_night() -> bool:
     return push_gate.is_silent(datetime.now(cc.tz()), cc.rhythm(), push_gate.load_state())
+
+
+def _reply_held(row: dict, urgent: bool) -> bool:
+    """Di notte anche le risposte passano dal cancello; subito solo una red flag."""
+    if not _is_night():
+        return False
+    if urgent:
+        from telegram_bot import check_red_flags
+        if check_red_flags(row.get("text") or ""):
+            return False
+        raise ToolError("urgent vale solo per rispondere a un messaggio con red flag clinico")
+    return True
+
+
+def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, done: bool) -> dict:
+    chat, row = _reply_target(msg_id)
+    if _reply_held(row, urgent):
+        r = push_gate.deliver(text, "reply", _sender(), parse_mode=parse_mode, source=f"reply:{msg_id}")
+        if done:
+            tq.mark_done(msg_id)
+        return {**r, "as": "reply", "done": done}
+    s = _sender()
+    tt.send_text(s.token, chat, text, parse_mode=parse_mode, call=transport_call)
+    tq.record_sent(msg_id, chat, text)
+    if done:
+        tq.mark_done(msg_id)
+    return {"status": "sent", "as": "reply", "done": done}
 
 
 def _installed_plugins() -> set[str]:
@@ -185,11 +225,8 @@ def call_tool(name: str, args: dict) -> Any:
                         "apri la sessione nel repo dati o imposta WELLNESS_DATA")
     if name == "telegram_send":
         if args.get("in_reply_to"):
-            s = _sender()
-            tt.send_text(s.token, _reply_chat(args["in_reply_to"]), args["text"],
-                         parse_mode=args.get("parse_mode"), call=transport_call)
-            tq.record_sent(args["in_reply_to"], s.chat_id, args["text"])
-            return {"status": "sent", "as": "reply"}
+            return _reply_text(args["in_reply_to"], args["text"], args.get("parse_mode"),
+                               bool(args.get("urgent")), args.get("done", True))
         return push_gate.deliver(args["text"], args.get("kind") or "message", _sender(),
                                  parse_mode=args.get("parse_mode"), urgent=bool(args.get("urgent")))
     if name == "telegram_send_card":
@@ -206,22 +243,31 @@ def call_tool(name: str, args: dict) -> Any:
             raise ToolError("serve spec_path o steps")
         steps = cc.safe_card(steps, base)
         if args.get("in_reply_to"):
+            chat, row = _reply_target(args["in_reply_to"])
+            if _reply_held(row, False):
+                r = push_gate.deliver("", "reply", _sender(), card={"steps": steps, "base": str(base)},
+                                      source=f"reply:{args['in_reply_to']}")
+                tq.mark_done(args["in_reply_to"])
+                return {**r, "as": "reply", "done": True}
             s = _sender()
-            n = tt.send_card(s.token, _reply_chat(args["in_reply_to"]), steps, base,
-                             call=transport_call, multipart=transport_multipart)
-            return {"status": "sent", "as": "reply", "steps": n}
+            n = tt.send_card(s.token, chat, steps, base, call=transport_call, multipart=transport_multipart)
+            tq.mark_done(args["in_reply_to"])
+            return {"status": "sent", "as": "reply", "steps": n, "done": True}
         return push_gate.deliver("", args.get("kind") or "message", _sender(),
                                  card={"steps": steps, "base": str(base)})
     if name == "telegram_send_file":
         path = cc.safe_path(args["path"], kind="file")
         if not path.is_file():
             raise ToolError(f"file non trovato: {path}")
-        if not args.get("in_reply_to") and _is_night():
-            return {"status": "silent", "note": "finestra di silenzio: riprova dopo l'alzata"}
+        reply = args.get("in_reply_to")
+        chat = _reply_target(reply)[0] if reply else None
+        if _is_night():   # di notte un file non parte, nemmeno in risposta: si riprova dopo l'alzata
+            return {"status": "silent", "note": "finestra di silenzio: riprova dopo l'alzata (messaggio lasciato in coda)"}
         s = _sender()
-        chat = _reply_chat(args["in_reply_to"]) if args.get("in_reply_to") else s.chat_id
-        tt.send_file(s.token, chat, path, args.get("caption") or "", multipart=transport_multipart)
-        return {"status": "sent", "file": path.name}
+        tt.send_file(s.token, chat or s.chat_id, path, args.get("caption") or "", multipart=transport_multipart)
+        if reply:
+            tq.mark_done(reply)
+        return {"status": "sent", "file": path.name, "done": bool(reply)}
     if name == "telegram_send_player":
         import workout_player as wp
         path = cc.safe_path(args["player_json"], kind="player")
@@ -235,23 +281,21 @@ def call_tool(name: str, args: dict) -> Any:
         url = wp.build_url(base, w)
         if args.get("dry_run"):
             return {"status": "ok", "url_length": len(url)}
-        if not args.get("in_reply_to") and _is_night():
-            return {"status": "silent", "note": "finestra di silenzio: riprova dopo l'alzata"}
+        reply = args.get("in_reply_to")
+        chat = _reply_target(reply)[0] if reply else None
+        if _is_night():
+            return {"status": "silent", "note": "finestra di silenzio: riprova dopo l'alzata (messaggio lasciato in coda)"}
         s = _sender()
-        chat = _reply_chat(args["in_reply_to"]) if args.get("in_reply_to") else s.chat_id
-        wp.send_player_button(s.token, chat, w, base, call=transport_call, text=args.get("text"))
-        return {"status": "sent", "url_length": len(url)}
+        wp.send_player_button(s.token, chat or s.chat_id, w, base, call=transport_call, text=args.get("text"))
+        if reply:
+            tq.mark_done(reply)
+        return {"status": "sent", "url_length": len(url), "done": bool(reply)}
     if name == "telegram_inbox":
         rows = tq.list_pending(include_system=args.get("include_system", True))
         return {"pending": rows, "count": len(rows)}
     if name == "telegram_reply":
-        chat = _reply_chat(args["id"])
-        s = _sender()
-        tt.send_text(s.token, chat, args["text"], parse_mode=args.get("parse_mode"), call=transport_call)
-        tq.record_sent(args["id"], chat, args["text"])
-        if args.get("done", True):
-            tq.mark_done(args["id"])
-        return {"status": "sent", "done": args.get("done", True)}
+        return _reply_text(args["id"], args["text"], args.get("parse_mode"), bool(args.get("urgent")),
+                           args.get("done", True))
     if name == "hridaya_service":
         act = args["action"]
         listening = [f"coda: {tq.inbox_path()}", "cancello: silenzio notturno, alzata, sera",
@@ -278,7 +322,14 @@ def call_tool(name: str, args: dict) -> Any:
 
 # --- JSON-RPC ---------------------------------------------------------------------------
 
-def handle(req: dict) -> dict | None:
+def handle(req: Any) -> dict | list | None:
+    if isinstance(req, list):   # batch JSON-RPC (lecito nel protocollo 2025-03-26)
+        if not req:
+            return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "batch vuoto"}}
+        out = [r for r in (handle(x) for x in req) if r is not None]
+        return out or None
+    if not isinstance(req, dict):
+        return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "richiesta non valida"}}
     method, rid = req.get("method"), req.get("id")
     if rid is None:   # notifica (es. notifications/initialized): nessuna risposta
         return None
