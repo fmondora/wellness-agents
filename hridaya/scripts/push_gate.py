@@ -50,7 +50,7 @@ AUTO_TAG = "🤖 automatico"
 
 
 class Sender(Protocol):
-    def text(self, text: str, parse_mode: str | None = None) -> None: ...
+    def text(self, text: str, parse_mode: str | None = None) -> None: ...   # + reply_markup= se ha bottoni
     def card(self, steps: list[dict], base: Path) -> None: ...
 
 
@@ -91,7 +91,8 @@ def _update_state(fn: Callable[[dict], Any]) -> Any:
 
 def submit(text: str, source: str, kind: str = "push", priority: str = "normal",
            meta: dict | None = None, push_id: str | None = None, parse_mode: str | None = None,
-           card: dict | None = None, created_at: datetime | None = None) -> str:
+           card: dict | None = None, created_at: datetime | None = None,
+           reply_markup: dict | None = None) -> str:
     row = {"id": push_id or f"{source}-{uuid.uuid4().hex[:12]}",
            "created_at": (created_at or datetime.now(timezone.utc)).isoformat(), "source": source, "kind": kind,
            "priority": priority, "text": text, "status": "pending", "meta": meta or {}}
@@ -99,6 +100,8 @@ def submit(text: str, source: str, kind: str = "push", priority: str = "normal",
         row["parse_mode"] = parse_mode
     if card:
         row["card"] = card
+    if reply_markup:
+        row["reply_markup"] = reply_markup   # bottoni: la riga parte da sola, mai fusa
     with tq.locked():
         rows = tq.read_jsonl(push_path())
         if push_id and any(r.get("id") == push_id for r in rows):
@@ -251,9 +254,9 @@ def _dispatch(rows: list[dict], sender: Sender, head: tuple[str, str | None] | N
     """
     res: dict[str, tuple[str, Exception | None]] = {}
     head_err: Exception | None = None
-    texts = [r for r in rows if not r.get("card") and (r.get("text") or "").strip()]
+    texts = [r for r in rows if not r.get("card") and not r.get("reply_markup") and (r.get("text") or "").strip()]
     for r in rows:   # righe vuote senza scheda: niente da mandare
-        if not r.get("card") and not (r.get("text") or "").strip():
+        if not r.get("card") and not r.get("reply_markup") and not (r.get("text") or "").strip():
             res[r["id"]] = ("sent", None)
     parts = ([head] if head and (head[0] or "").strip() else []) + [(r["text"], r.get("parse_mode")) for r in texts]
     out = ""
@@ -285,6 +288,14 @@ def _dispatch(rows: list[dict], sender: Sender, head: tuple[str, str | None] | N
                 if head and (head[0] or "").strip():
                     head_err = e
                 res.update({r["id"]: (_outcome(e), e) for r in texts})
+    for r in rows:   # con bottoni: un messaggio a sé, i bottoni sotto il suo testo
+        if r.get("card") or not r.get("reply_markup"):
+            continue
+        try:
+            sender.text(r.get("text") or "", r.get("parse_mode"), reply_markup=r["reply_markup"])
+            res[r["id"]] = ("sent", None)
+        except Exception as e:  # noqa: BLE001
+            res[r["id"]] = ("sent", None) if _is_partial(e) else (_outcome(e), e)
     for r in rows:
         if not r.get("card"):
             continue
@@ -322,7 +333,7 @@ def _sending_recent(st: dict, kind: str, now: datetime) -> bool:
 
 def deliver(text: str, kind: str, sender: Sender, now: datetime | None = None, cfg: dict | None = None,
             parse_mode: str | None = None, urgent: bool = False, source: str = "session",
-            card: dict | None = None) -> dict:
+            card: dict | None = None, reply_markup: dict | None = None) -> dict:
     """Un messaggio d'iniziativa. kind: evening | wake | review | detector | push | message | reply.
 
     → {"status": "sent"|"held"|"duplicate"|"too_late"|"silent"|"failed", "merged": n}
@@ -359,22 +370,25 @@ def deliver(text: str, kind: str, sender: Sender, now: datetime | None = None, c
     if verdict:
         return verdict
     if hold:
-        pid = submit(text, source=source, kind=kind, parse_mode=parse_mode, card=card, created_at=now)
+        pid = submit(text, source=source, kind=kind, parse_mode=parse_mode, card=card, created_at=now,
+                     reply_markup=reply_markup)
         return {"status": "held", "id": pid, "note": "finestra di silenzio: esce dopo l'alzata"}
 
     # nel messaggio si fondono i push in attesa mai tentati (quelli già falliti restano al loro backoff)
     absorbed = _claim(lambda r: r.get("priority") != "red_flag", fresh_only=True)
     mid = f"{kind}-{now.strftime('%Y%m%d-%H%M%S')}"
-    head_card = {"id": "__head__", "text": text, "parse_mode": parse_mode, "card": card} if card else None
+    alone = bool(card or reply_markup)   # testa con scheda o bottoni: riga a sé, dopo i fusi
+    head_card = ({"id": "__head__", "text": text, "parse_mode": parse_mode, "card": card,
+                  "reply_markup": reply_markup} if alone else None)
     try:
         res, head_err, sent = _dispatch(absorbed + ([head_card] if head_card else []), sender,
-                                        head=(text, parse_mode) if not card else None)
+                                        head=(text, parse_mode) if not alone else None)
     except Exception:
         _mark({r["id"]: ("release", None) for r in absorbed})
         if gated:
             _update_state(lambda s: s.pop(f"{kind}_sending", None))
         raise
-    if card:
+    if alone:
         out = res.pop("__head__", ("sent", None))
         head_err = out[1] if out[0] != "sent" else None
     if head_err is not None:
@@ -532,8 +546,9 @@ class TelegramSender:
         if not self.token or not self.chat_id:
             raise RuntimeError("token del bot o ALLOWED_CHAT_IDS mancanti (vedi skill setup)")
 
-    def text(self, text: str, parse_mode: str | None = None) -> None:
-        self.tt.send_text(self.token, self.chat_id, text, parse_mode=parse_mode, call=self.call)
+    def text(self, text: str, parse_mode: str | None = None, reply_markup: dict | None = None) -> None:
+        self.tt.send_text(self.token, self.chat_id, text, parse_mode=parse_mode, reply_markup=reply_markup,
+                          call=self.call)
 
     def card(self, steps: list[dict], base: Path) -> None:
         self.tt.send_card(self.token, self.chat_id, steps, base, call=self.call, multipart=self.multipart)

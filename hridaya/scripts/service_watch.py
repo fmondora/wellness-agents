@@ -99,10 +99,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-minutes", type=float, default=29)
     ap.add_argument("--interval", type=float, default=2)
+    ap.add_argument("--force", action="store_true", help="ascolta anche se il servizio batte altrove")
     a = ap.parse_args()
     if not cc.is_data_repo():
         print(f"ERRORE: {cc.data_root()} non è un repo dati (manca data/profile.json)")
         return 1
+    why = None if a.force else session_state.guard(cc.rhythm()["session_heartbeat_max_age_s"])
+    if why:
+        print(f"ERRORE: {why}. Non riarmare il Monitor.", flush=True)
+        return 3
     try:
         from _plugins import plugin_scripts
         plugins = {p for p in ("coach-longevita", "dream-agent") if plugin_scripts(p)}
@@ -126,6 +131,9 @@ def main() -> int:
         for line in lines:
             print(line, flush=True)
         if time.monotonic() - last_beat >= 30:
+            if not a.force and session_state.dedicated_elsewhere(cc.rhythm()["session_heartbeat_max_age_s"]):
+                print("ERRORE: è subentrata la sessione dedicata di Hṛdaya. Non riarmare il Monitor.", flush=True)
+                return 3
             session_state.beat(LISTENING)
             last_beat = time.monotonic()
         time.sleep(a.interval)

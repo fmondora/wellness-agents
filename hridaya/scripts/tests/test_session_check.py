@@ -1,4 +1,4 @@
-"""Hook SessionStart: chiede di accendere Hṛdaya solo nel repo dati e solo se non batte."""
+"""Hook SessionStart: accende Hṛdaya solo nella sessione dedicata; le altre sono di lavoro e non lo toccano."""
 import importlib.util
 import json
 import os
@@ -11,9 +11,13 @@ from pathlib import Path
 HOOK = Path(__file__).resolve().parents[2] / "hooks" / "session_check.py"
 
 
-def run(root: Path) -> str:
+def run(root: Path, service: bool = False, source: str = "startup") -> str:
     env = dict(os.environ, WELLNESS_DATA=str(root))
-    return subprocess.run([sys.executable, str(HOOK)], capture_output=True, text=True, env=env, check=True).stdout
+    env.pop("HRIDAYA_SERVICE", None)
+    if service:
+        env["HRIDAYA_SERVICE"] = "1"
+    return subprocess.run([sys.executable, str(HOOK)], capture_output=True, text=True, env=env, check=True,
+                          input=json.dumps({"source": source})).stdout
 
 
 class SessionCheckTest(unittest.TestCase):
@@ -21,11 +25,15 @@ class SessionCheckTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(run(Path(d)), "")
 
-    def test_spento_chiede_di_accendere_acceso_lo_dice(self):
+    def test_sessione_dedicata_accende_o_riarma(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); (root / "data").mkdir(); (root / "data" / "profile.json").write_text("{}")
-            ctx = json.loads(run(root))["hookSpecificOutput"]["additionalContext"]
-            self.assertIn("NON è in ascolto", ctx)
+            ctx = lambda **k: json.loads(run(root, **k))["hookSpecificOutput"]["additionalContext"]
+            self.assertIn("Accendi il servizio", ctx(service=True))
+            self.assertIn("sessione di lavoro", ctx())
+            self.assertNotIn("Accendi il servizio", ctx())
+            (root / "data" / "hridaya").mkdir(); (root / "data" / "hridaya" / "handoff.md").write_text("x")
+            self.assertIn("handoff.md", ctx(service=True))
             spec = importlib.util.spec_from_file_location("session_state", HOOK.parents[1] / "scripts" / "session_state.py")
             ss = importlib.util.module_from_spec(spec)
             os.environ["WELLNESS_DATA"] = str(root)
@@ -33,4 +41,14 @@ class SessionCheckTest(unittest.TestCase):
                 spec.loader.exec_module(ss); ss.beat(["test"])
             finally:
                 del os.environ["WELLNESS_DATA"]
-            self.assertIn("risulta attivo", json.loads(run(root))["hookSpecificOutput"]["additionalContext"])
+            self.assertIn("Accendi il servizio", ctx(service=True))          # startup: sempre la skill intera
+            self.assertIn("telegram_inbox", ctx(service=True, source="clear"))
+            self.assertIn("non dedicata", ctx())                              # il battito di prova non è dedicato
+            os.environ["WELLNESS_DATA"] = str(root); os.environ["HRIDAYA_SERVICE"] = "1"
+            try:
+                ss.beat(["test"])
+            finally:
+                del os.environ["WELLNESS_DATA"]; del os.environ["HRIDAYA_SERVICE"]
+            work = ctx()
+            self.assertIn("gira nella sessione dedicata", work)
+            self.assertIn("NON armare il Monitor", work)

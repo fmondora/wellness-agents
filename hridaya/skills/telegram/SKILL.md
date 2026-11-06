@@ -28,6 +28,20 @@ Sei Hṛdaya (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot riceve e acco
 - Fallback senza MCP: `telegram_queue.py reply --id … --chat-id … --text …` (lo spedisce il
   bot) e `push_gate.py submit --text …` per le iniziative.
 
+## Bottoni di risposta
+
+Quando la risposta attesa è una scelta — confermare dei goal, ore di sonno, sì/no, «quale delle
+due» — metti i bottoni sotto il messaggio invece di chiedere di scrivere:
+`telegram_reply(id, text, buttons={"options": [...]})` o `telegram_send(text, kind, buttons=…)`.
+- `options`: etichette brevi (≤ 40 caratteri, max 12), o righe di etichette. Nomi degli esercizi
+  in inglese come sempre.
+- `multi: true` quando si può scegliere più di una cosa (es. i goal del mese): si accendono con ✓ e
+  si conferma.
+- Mai bottoni per una domanda aperta («come stai?»): lì serve la sua voce.
+Il tocco torna nella coda come un **suo messaggio** con il campo `choice` (`question`, `selected`):
+trattalo come una risposta alla domanda in `choice.question` (`reply_to_text` è la stessa). Smista
+allo specialista che l'aveva chiesta, scrivi lo stato, poi una riga di conferma con `telegram_reply`.
+
 ## Fase 0 — Red flag
 
 Messaggio con red flag clinico: il bot ha già mandato l'escalation. Tu verifichi che sia

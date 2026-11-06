@@ -68,11 +68,13 @@ class Service:
     def __init__(self):
         self.on = False
         self.listening: list[str] = []
+        self.yield_to_dedicated = True
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    def start(self, listening: list[str]) -> None:
+    def start(self, listening: list[str], yield_to_dedicated: bool = True) -> None:
         self.listening = listening
+        self.yield_to_dedicated = yield_to_dedicated
         session_state.beat(listening)
         if self._thread and self._thread.is_alive():
             return
@@ -84,6 +86,10 @@ class Service:
     def _loop(self) -> None:
         while not self._stop.wait(HEARTBEAT_S):
             try:
+                if self.yield_to_dedicated and session_state.dedicated_elsewhere():
+                    print("battito: è subentrata la sessione dedicata, smetto", file=sys.stderr)
+                    self.on = False
+                    return
                 session_state.beat(self.listening)
             except OSError as e:
                 print(f"battito: {e}", file=sys.stderr)
@@ -106,6 +112,11 @@ def _schema(props: dict, required: list[str] | None = None) -> dict:
 
 KIND = {"type": "string", "enum": ["message", "push", "review", "detector", "evening", "wake"],
         "description": "evening/wake: i due messaggi programmati (uno al giorno, idempotenti)"}
+BUTTONS = {"type": "object", "additionalProperties": False, "required": ["options"],
+           "description": "Bottoni di risposta sotto il messaggio. options: etichette (max 12, ≤40 caratteri) "
+                          "o righe di etichette; multi=true: si accendono più opzioni e si conferma. "
+                          "Il tocco torna nella inbox come messaggio di Francesco con il campo `choice`.",
+           "properties": {"options": {"type": "array"}, "multi": {"type": "boolean"}}}
 REPLY_TO = {"type": "string", "description": "id di un messaggio di Francesco nella inbox (non di un evento di sistema): "
                                            "di giorno parte subito, di notte passa dal cancello; il messaggio è segnato fatto"}
 
@@ -117,7 +128,7 @@ TOOLS = [
      "inputSchema": _schema({"text": {"type": "string"}, "kind": KIND,
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
                              "urgent": {"type": "boolean"}, "in_reply_to": REPLY_TO,
-                             "done": {"type": "boolean"}}, ["text"])},
+                             "done": {"type": "boolean"}, "buttons": BUTTONS}, ["text"])},
     {"name": "telegram_send_card",
      "description": "Manda una scheda: testo HTML + album di immagini (es. la scheda del Coach Longevità). "
                     "spec_path = JSON lista di passi {text} | {photos, caption}, foto relative alla spec; "
@@ -145,11 +156,15 @@ TOOLS = [
                     "messaggio con red flag. Agli eventi di sistema (kind=system) non si risponde.",
      "inputSchema": _schema({"id": {"type": "string"}, "text": {"type": "string"},
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
-                             "done": {"type": "boolean"}, "urgent": {"type": "boolean"}}, ["id", "text"])},
+                             "done": {"type": "boolean"}, "urgent": {"type": "boolean"},
+                             "buttons": BUTTONS}, ["id", "text"])},
     {"name": "hridaya_service",
      "description": "Accende/spegne il servizio nella sessione (battito che dice al bot che Hṛdaya c'è) "
                     "e riporta cosa si sta ascoltando.",
-     "inputSchema": _schema({"action": {"type": "string", "enum": ["on", "off", "status"]}}, ["action"])},
+     "inputSchema": _schema({"action": {"type": "string", "enum": ["on", "off", "status"]},
+                             "force": {"type": "boolean", "description": "accendi anche se il servizio batte "
+                                       "già in un'altra sessione (solo su richiesta esplicita di Francesco)"}},
+                            ["action"])},
     {"name": "gate_status",
      "description": "Stato del cancello: silenzio, ora di letto, alzata rilevata, messaggi della sera/mattino "
                     "partiti, push trattenuti, conflitti 409.",
@@ -199,19 +214,64 @@ def _reply_held(row: dict, urgent: bool) -> bool:
     return True
 
 
-def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, done: bool) -> dict:
+def _buttons(spec: Any, text: str) -> tuple[str | None, dict | None]:
+    """Registra la scelta → (cid, reply_markup); (None, None) se non ci sono bottoni."""
+    if spec is None:
+        return None, None
+    import choices
+    if not isinstance(spec, dict) or not isinstance(spec.get("multi", False), bool):
+        raise ToolError('buttons: {"options": [...], "multi": true|false}')
+    if not (text or "").strip():
+        raise ToolError("i bottoni stanno sotto un testo: serve text")
+    if len(text) > tt.MAX_TEXT:
+        # spezzato in più messaggi, i bottoni finirebbero sull'ultimo pezzo e un errore lì li perderebbe
+        raise ToolError(f"con i bottoni il testo sta in un messaggio solo (≤ {tt.MAX_TEXT} caratteri): "
+                        "accorcia o manda prima il testo lungo e poi la domanda coi bottoni")
+    try:
+        return choices.create(spec.get("options"), text, multi=spec.get("multi", False))
+    except choices.ChoiceError as e:
+        raise ToolError(str(e)) from e
+
+
+def _with_buttons(cid: str | None, fn):
+    """Invio con bottoni: se non è partito di sicuro, la scelta non resta aperta.
+    Su un errore di rete non definitivo il messaggio può essere arrivato: la scelta resta aperta."""
+    try:
+        out = fn()
+    except Exception as e:
+        if cid and (isinstance(e, ToolError) or tt.is_permanent(e)):
+            import choices
+            choices.discard(cid)
+        raise
+    if cid:
+        if out.get("status") not in ("sent", "held"):
+            import choices
+            choices.discard(cid)
+        else:
+            out["choice_id"] = cid
+    return out
+
+
+def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, done: bool,
+                buttons: dict | None = None) -> dict:
     chat, row = _reply_target(msg_id)
-    if _reply_held(row, urgent):
-        r = push_gate.deliver(text, "reply", _sender(), parse_mode=parse_mode, source=f"reply:{msg_id}")
-        if done:
-            tq.mark_done(msg_id)
-        return {**r, "as": "reply", "done": done}
-    s = _sender()
-    tt.send_text(s.token, chat, text, parse_mode=parse_mode, call=transport_call)
-    tq.record_sent(msg_id, chat, text)
+    held = _reply_held(row, urgent)
+    cid, markup = _buttons(buttons, text)
+
+    def go() -> dict:
+        if held:
+            r = push_gate.deliver(text, "reply", _sender(), parse_mode=parse_mode, source=f"reply:{msg_id}",
+                                  reply_markup=markup)
+            return {**r, "as": "reply"}
+        s = _sender()
+        tt.send_text(s.token, chat, text, parse_mode=parse_mode, reply_markup=markup, call=transport_call)
+        tq.record_sent(msg_id, chat, text)
+        return {"status": "sent", "as": "reply"}
+
+    out = _with_buttons(cid, go)
     if done:
         tq.mark_done(msg_id)
-    return {"status": "sent", "as": "reply", "done": done}
+    return {**out, "done": done}
 
 
 def _installed_plugins() -> set[str]:
@@ -226,9 +286,11 @@ def call_tool(name: str, args: dict) -> Any:
     if name == "telegram_send":
         if args.get("in_reply_to"):
             return _reply_text(args["in_reply_to"], args["text"], args.get("parse_mode"),
-                               bool(args.get("urgent")), args.get("done", True))
-        return push_gate.deliver(args["text"], args.get("kind") or "message", _sender(),
-                                 parse_mode=args.get("parse_mode"), urgent=bool(args.get("urgent")))
+                               bool(args.get("urgent")), args.get("done", True), args.get("buttons"))
+        cid, markup = _buttons(args.get("buttons"), args["text"])
+        return _with_buttons(cid, lambda: push_gate.deliver(
+            args["text"], args.get("kind") or "message", _sender(), parse_mode=args.get("parse_mode"),
+            urgent=bool(args.get("urgent")), reply_markup=markup))
     if name == "telegram_send_card":
         if args.get("spec_path"):
             spec = cc.safe_path(args["spec_path"], kind="file")
@@ -295,13 +357,16 @@ def call_tool(name: str, args: dict) -> Any:
         return {"pending": rows, "count": len(rows)}
     if name == "telegram_reply":
         return _reply_text(args["id"], args["text"], args.get("parse_mode"), bool(args.get("urgent")),
-                           args.get("done", True))
+                           args.get("done", True), args.get("buttons"))
     if name == "hridaya_service":
         act = args["action"]
         listening = [f"coda: {tq.inbox_path()}", "cancello: silenzio notturno, alzata, sera",
                      f"review: {', '.join(sorted(_installed_plugins())) or 'nessun coach installato'}"]
         if act == "on":
-            SERVICE.start(listening)
+            why = None if args.get("force") else session_state.guard(cc.rhythm()["session_heartbeat_max_age_s"])
+            if why:
+                raise ToolError(why + ". Questa è una sessione di lavoro: niente Monitor, niente risposte su Telegram.")
+            SERVICE.start(listening, yield_to_dedicated=not args.get("force"))
         elif act == "off":
             SERVICE.stop()
         return {"on": SERVICE.on, "active_for_bot": session_state.is_active(), "listening": listening,

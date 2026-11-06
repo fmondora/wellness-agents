@@ -1,7 +1,12 @@
 #!/usr/bin/env python3.12
 """Battito della sessione accesa: come il bot sa se Hṛdaya c'è.
 
-`data/telegram/session.json` = {"on": bool, "pid", "started_at", "heartbeat_at", "listening": [...]}
+`data/telegram/session.json` = {"on": bool, "pid", "started_at", "heartbeat_at", "listening": [...],
+                                 "dedicated": bool, "session_id"}
+
+`dedicated` = il battito viene dalla sessione dedicata (HRIDAYA_SERVICE=1, service_session.sh);
+`session_id` = CLAUDE_CODE_SESSION_ID di chi batte (diagnosi). `guard()`: una sessione di lavoro
+non ascolta mentre batte la dedicata, e se la vede comparire smette (watcher e server MCP).
 
 Lo scrive il server MCP del plugin (un battito ogni 30 s) solo dopo che la skill
 `servizio` l'ha acceso; quando la sessione Claude si chiude il server muore e il
@@ -47,8 +52,30 @@ def beat(listening: list[str] | None = None, now: datetime | None = None) -> dic
     st["heartbeat_at"] = now.isoformat()
     if listening is not None:
         st["listening"] = listening
+    st["dedicated"] = is_dedicated()
+    st["session_id"] = os.environ.get("CLAUDE_CODE_SESSION_ID")
     _write(st)
     return st
+
+
+def is_dedicated() -> bool:
+    return os.environ.get("HRIDAYA_SERVICE") == "1"
+
+
+def dedicated_elsewhere(max_age_s: float = 150) -> bool:
+    """Il servizio batte dalla sessione dedicata e questo processo non è lei."""
+    return not is_dedicated() and is_active(max_age_s=max_age_s) and bool(read().get("dedicated"))
+
+
+def guard(max_age_s: float = 150) -> str | None:
+    """None se questo processo può ascoltare; altrimenti il perché no.
+
+    La sessione dedicata ha sempre la precedenza (ce n'è una sola: tmux la tiene unica).
+    Una sessione di lavoro non ascolta mentre batte la dedicata."""
+    if dedicated_elsewhere(max_age_s):
+        return ("il servizio gira nella sessione dedicata (tmux -L hridaya attach -t hridaya): "
+                "qui non parte un secondo ascoltatore")
+    return None
 
 
 def off(now: datetime | None = None) -> None:

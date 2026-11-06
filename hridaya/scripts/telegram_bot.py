@@ -7,7 +7,8 @@ Fa solo trasporto e cose deterministiche:
   3. red flag clinici → escalation immediata, sempre
   4. messaggi di Francesco → coda data/telegram/inbox.jsonl (li legge la sessione accesa)
      sessione spenta → una riga sola «Hṛdaya non è attivo adesso…» (una volta per assenza)
-  5. web_app_data del player → seduta salvata (formato del coach) + evento per la sessione
+  5. bottoni di risposta (callback_query, choices.py) → la scelta va in coda come un suo messaggio
+  5b. web_app_data del player → seduta salvata (formato del coach) + evento per la sessione
   6. outbox: risposte scritte via CLI (sent=false) → Telegram; quelle non di risposta
      passano dal cancello come push
   7. a ogni giro il cancello dei push (push_gate.tick): silenzio notturno, alzata, fallback
@@ -318,7 +319,58 @@ class Bot:
         if self.ok_polls >= CONFLICT_RESET_OK_POLLS and (push_gate.load_state().get("conflict")):
             push_gate._update_state(lambda s: s.pop("conflict", None))
 
+    def handle_callback(self, cq: dict, allowed: set[int]) -> str:
+        """Tocco su un bottone di risposta (choices.py): la scelta va in coda come un suo messaggio.
+
+        Prima la coda, poi Telegram: le chiamate di risposta al tocco sono cosmetiche e un loro
+        errore (anche di rete) non deve far perdere la scelta."""
+        import choices
+        msg = cq.get("message") or {}
+        chat_id = (msg.get("chat") or {}).get("id")
+        if chat_id not in allowed:
+            print(f"Ignorato callback da chat_id {chat_id}")
+            return "ignorato"
+        res = choices.tap(cq.get("data") or "", tap_id=cq.get("id"))
+        outcome = f"bottone-{res['action']}"
+        if res["action"] == "answer":
+            user = (cq.get("from") or {}).get("username", "?")
+            text = choices.answer_text(res["selected"])
+            print(f"[{now_local().strftime('%H:%M')}] @{user} bottone: {text[:80]}")
+            try:
+                msg_id = tq.enqueue(chat_id, text, user, reply_to_text=res.get("question") or msg.get("text"),
+                                    choice={"id": res["cid"], "question": res.get("question", ""),
+                                            "selected": res["selected"], "multi": res.get("multi", False)})
+            except Exception:
+                choices.reopen(res["cid"])
+                raise
+            outcome = "bottone"
+            try:
+                append_log_note(f"[coda {msg_id[:8]}] [bottone] {text[:200]}")
+                self.maybe_wake_from_message()
+            except Exception as e:  # noqa: BLE001
+                print(f"bottone, diario/alzata: {e}", file=sys.stderr)
+        self._ack_callback(cq, chat_id, msg, res)
+        if outcome == "bottone" and not self.session_active():
+            self.notify_inactive(chat_id)
+            return "bottone-inattivo"
+        return outcome
+
+    def _ack_callback(self, cq: dict, chat_id: int, msg: dict, res: dict) -> None:
+        try:
+            self.call(self.token, "answerCallbackQuery", callback_query_id=cq.get("id"),
+                      text=res.get("toast") or None)
+        except Exception as e:  # noqa: BLE001
+            print(f"answerCallbackQuery: {e}", file=sys.stderr)
+        if res.get("markup") is not None and msg.get("message_id"):
+            try:
+                self.call(self.token, "editMessageReplyMarkup", chat_id=chat_id,
+                          message_id=msg["message_id"], reply_markup=res["markup"])
+            except Exception as e:  # noqa: BLE001 — «message is not modified», rete: la scelta vale lo stesso
+                print(f"editMessageReplyMarkup: {e}", file=sys.stderr)
+
     def process_update(self, upd: dict, allowed: set[int]) -> str:
+        if upd.get("callback_query"):
+            return self.handle_callback(upd["callback_query"], allowed)
         msg = upd.get("message") or {}
         chat_id = (msg.get("chat") or {}).get("id")
         if chat_id not in allowed:
@@ -375,7 +427,7 @@ def main() -> int:
                 print(f"[{now_local().strftime('%H:%M')}] cancello: {action}")
             # long polling 25 s: il cancello gira almeno ogni 25 s
             resp = tt.call(token, "getUpdates", _timeout=60, timeout=25, offset=offset,
-                           allowed_updates=["message"])
+                           allowed_updates=["message", "callback_query"])
             bot.on_poll_ok()
             for upd in resp.get("result") or []:
                 offset = max(offset, upd["update_id"] + 1)

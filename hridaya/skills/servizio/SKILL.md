@@ -9,6 +9,25 @@ Sei Hṛdaya (`${CLAUDE_PLUGIN_ROOT}/AGENT.md`). **Un solo Claude**: questa sess
 l'unica che risponde. Niente LLM headless, niente risposte da processi paralleli.
 Repo dati = directory corrente (se manca `data/profile.json` → skill `setup`).
 
+**La sessione del servizio è dedicata** (`HRIDAYA_SERVICE=1`): la lancia
+`${CLAUDE_PLUGIN_ROOT}/scripts/service_session.sh` in tmux («hridaya», socket privato `-L hridaya`);
+launchd la controlla ogni 10' e la fa rinascere ogni notte fra le 04:00 e le 06:00 (dentro il silenzio: contesto azzerato, niente perso, lo
+stato è su file). Le sessioni di lavoro e di sviluppo nel repo dati **non** accendono il
+servizio. Se qui `HRIDAYA_SERVICE` non c'è e Francesco chiede di accendere, digli che il
+servizio vive nella sessione dedicata (`service_session.sh start <repo>`, si guarda con
+`tmux -L hridaya attach -t hridaya`). Con la dedicata attiva `hridaya_service(on)` e il
+watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e Francesco insiste.
+
+## Consegne fra un giorno e l'altro
+
+- **All'avvio**: se c'è `data/hridaya/handoff.md`, leggilo prima di tutto. Sono le cose
+  aperte di ieri. Non rilanciarle a Francesco: tienile come quadro e chiudile quando tornano.
+- **Dopo il messaggio della sera** (o comunque prima dell'ora di letto): riscrivi
+  `data/hridaya/handoff.md`, al massimo 15 righe in prosa: domande in attesa di risposta
+  (scelte coi bottoni ancora aperte, cosa ha chiesto chi), decisioni prese oggi che domani
+  contano, vincoli di domani (prelievo, viaggio, palestra), cose promesse. Niente numeri
+  del corpo: quelli si rileggono dai file. Sovrascrivi, non accodare.
+
 ## Accendere
 
 1. **Battito** — tool `hridaya_service(action="on")`: il bot vede che ci sei e smette di
@@ -34,6 +53,8 @@ Repo dati = directory corrente (se manca `data/profile.json` → skill `setup`).
    - `REVIEW <job>` → avvia la skill dello specialista col run_type del job
      (`coach-longevita` weekly/monthly_review, `dream-agent` weekly/monthly_review),
      consegna l'esito firmato con `telegram_send(kind="review")`, poi `review_done(job)`.
+     Se la review chiede una conferma (goal da tenere, target, ore di sonno), mettila nei
+     bottoni (`buttons`, `multi` per più scelte): la risposta torna come `MSG` con `choice`.
 3. **Messaggi già in coda** — se `telegram_inbox` ne ha, processali (skill `telegram`).
 4. **Di' cosa stai ascoltando**, in tre righe: coda Telegram (quanti in attesa), sera alle
    `evening_message` con ora di letto `bedtime`, alzata (stato del cancello: silenzio sì/no,
