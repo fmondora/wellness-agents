@@ -1,0 +1,8 @@
+{
+  "name": "dream-agent",
+  "description": "DreamAgent — proprietario del sonno: target, ora di letto a fine ciclo, piano settimanale del sonno, review settimanale e mensile. Usa il punteggio di health (/sonno). Non nutrizione, non movimento, non diagnosi.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Francesco Mondora"
+  }
+}
