@@ -119,3 +119,44 @@ class ContinuationFitbitTest(unittest.TestCase):
         self.assertEqual(r["session"]["steps"], 490)
         stacco = next(b for b in r["blocks"] if b["block"] == 1)
         self.assertEqual(stacco["duration_s"], 85 + 100)
+
+
+class HrRecoveryTest(unittest.TestCase):
+    """Recupero dopo il WOD: picco negli ultimi 30 s, quanto scende a +60 s e +120 s."""
+
+    def setUp(self):
+        # blocco 1 = WOD (dal player.json), finisce alle 18:08:00 (evento end a 480 s)
+        self.session = wp.decode_web_app_data(_payload(
+            [[0, 0, 0], [5, 1, 1], [305, 1, 2], [360, 5, 2], [360, 1, 3], [450, 1, 4], [480, 5, 4], [480, 8, 4]]))
+        self.workout = {"blocks": [{"type": "timed"}, {"type": "emom"}]}
+        t0 = datetime(2026, 11, 6, 18, 0, tzinfo=TZ)
+        end = t0 + timedelta(seconds=480)
+        self.hr = []
+        for k in range(0, 66):
+            t = t0 + timedelta(seconds=10 * k)
+            dt = (t - end).total_seconds()
+            v = 150 if dt < -30 else 170 if dt < 0 else 140 if dt < 90 else 120
+            self.hr.append({"t": t, "avg": v, "max": v + 2, "min": v - 2})
+
+    def test_picco_e_discesa(self):
+        b = workout_fitbit.wod_block(self.session, self.workout)
+        self.assertEqual(b, 1)
+        r = workout_fitbit.hr_recovery(self.session, self.hr, 10, b)
+        self.assertEqual(r["peak"], 172)
+        self.assertEqual((r["hr_60"], r["hr_120"]), (140, 120))
+        self.assertEqual((r["drop_60"], r["drop_120"]), (32, 52))
+
+    def test_senza_wod_o_senza_dati(self):
+        self.assertIsNone(workout_fitbit.wod_block(self.session, {"blocks": [{"type": "timed"}, {"type": "sets"}]}))
+        self.assertIsNone(workout_fitbit.hr_recovery(self.session, [], 10, 1))
+        corto = [p for p in self.hr if p["t"] < datetime(2026, 11, 6, 18, 8, 30, tzinfo=TZ)]
+        r = workout_fitbit.hr_recovery(self.session, corto, 10, 1)
+        self.assertIsNone(r["hr_60"])   # la FC dopo la fine non c'è ancora: niente numero inventato
+
+    def test_storico_una_riga_per_seduta(self):
+        r = workout_fitbit.hr_recovery(self.session, self.hr, 10, 1)
+        with tempfile.TemporaryDirectory() as d:
+            daily = Path(d) / "daily"; daily.mkdir()
+            workout_fitbit.save_history(r, "2026-11-06", "2026-11-06.session.json", daily)
+            f = workout_fitbit.save_history(r, "2026-11-06", "2026-11-06.session.json", daily)
+            self.assertEqual(len(f.read_text().splitlines()), 1)

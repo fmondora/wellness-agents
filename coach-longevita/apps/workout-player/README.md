@@ -47,6 +47,26 @@ Le SVG vengono dal bundle del plugin (`assets/img/`) più le SVG generiche scari
 («▶ Pronto») per gli altri — in palestra serve tempo per caricare il bilanciere. `0` = niente prep.
 Nessun recupero dopo l'ultima serie di un blocco `sets`: se serve, `rest_after_s`.
 
+### Debrief a fine seduta
+
+`debrief` (opzionale): domande a bottoni mostrate a fine seduta (o dopo «■ Ferma»), un tocco ciascuna, più una nota
+libera facoltativa (max 280 caratteri). Le risposte viaggiano nel log (`q`, `nt`) e il bot le salva in
+`session.json` → `debrief: {answers, note}`.
+
+```json
+"debrief": [
+  {"id": "rir",  "q": "Deadlift 100: quante ne avevi ancora?", "options": ["0", "1", "2", "3+"]},
+  {"id": "back", "q": "La schiena?", "options": ["ferma", "si è mossa", "dolore"]},
+  {"id": "wod",  "q": "Il WOD?", "options": ["love", "ok", "meh", "no"]},
+  {"id": "energy", "q": "Energia adesso?", "options": ["bassa", "ok", "alta"]},
+  {"id": "tomorrow", "q": "Domani?", "options": ["come da piano", "più facile", "off"]}
+]
+```
+
+Le prime due cambiano ogni giorno (alzata principale della seduta; la schiena a parole, mai scala 0-10); le ultime tre
+sono fisse. Senza `debrief` il player mostra le tre fisse (`wod` solo se c'è un blocco WOD). Tutto facoltativo: senza
+risposte la seduta si invia lo stesso e il coach chiede dopo.
+
 ## Schermo
 
 - Lavoro: esercizio, carico, illustrazione. In AMRAP/for time la lista degli esercizi (scorrevole) e le illustrazioni a rotazione.

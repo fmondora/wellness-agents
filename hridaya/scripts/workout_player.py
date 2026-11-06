@@ -134,7 +134,13 @@ def decode_web_app_data(data: str, received: datetime | None = None) -> dict:
         raise ValueError("log senza eventi")
     received_at = (received or datetime.now(TZ)).isoformat(timespec="seconds")
     cont = int(o.get("cont") or 0)
+    debrief = None
+    q, nt = o.get("q"), o.get("nt")
+    if isinstance(q, dict) or nt:
+        answers = {str(k)[:40]: str(v)[:40] for k, v in (q or {}).items()} if isinstance(q, dict) else {}
+        debrief = {"answers": answers, "note": str(nt or "")[:280], "received_at": received_at}
     return {
+        "debrief": debrief,
         "workout_date": o.get("d"),
         "title": o.get("n"),
         "status": o.get("st"),
@@ -174,6 +180,8 @@ def merge_sessions(old: dict, new: dict) -> dict:
                status=events[-1]["e"] if events[-1]["e"] in ("stop", "end") else new.get("status"),
                segments=old.get("segments", []) + new.get("segments", []),
                truncated_events=old.get("truncated_events", 0) + new.get("truncated_events", 0))
+    if new.get("debrief"):  # l'ultimo debrief inviato vince (si risponde a fine seduta)
+        out["debrief"] = new["debrief"]
     return out
 
 

@@ -116,6 +116,63 @@ def aggregate(session: dict, hr: list[dict], res_s: int, steps: dict[datetime, i
     return {"session": whole, "blocks": blocks, "steps": rows}
 
 
+# --- recupero cardiaco dopo il WOD ----------------------------------------------
+
+WOD_TYPES = {"emom", "interval", "amrap", "fortime"}
+HISTORY = "hr_recovery.jsonl"
+
+
+def wod_block(session: dict, workout: dict | None) -> int | None:
+    """Indice dell'ultimo blocco WOD (tipo dal player.json); senza player.json: l'ultimo blocco vissuto."""
+    lived = {s["block"] for s in segments(session) if s["block"] is not None and s["kind"] != "prep"}
+    if workout:
+        idx = [i for i, b in enumerate(workout.get("blocks") or []) if b.get("type") in WOD_TYPES and i in lived]
+        return idx[-1] if idx else None
+    return max(lived) if lived else None
+
+
+def hr_recovery(session: dict, hr: list[dict], res_s: int, block: int | None) -> dict | None:
+    """Picco negli ultimi 30 s del WOD e FC a +60 s / +120 s dalla fine: quanto scende.
+    Lettura personale (te contro te), non un giudizio clinico."""
+    if block is None:
+        return None
+    mine = [s for s in segments(session) if s["block"] == block and s["kind"] != "prep"]
+    if not mine:
+        return None
+    end = mine[-1]["end"]
+    tail = [p for p in hr if end - timedelta(seconds=30) <= p["t"] < end]
+    if not tail:
+        return None
+    peak = max(p.get("max") or p["avg"] for p in tail)
+
+    def at(sec: int) -> float | None:
+        target = end + timedelta(seconds=sec)
+        near = [p for p in hr if abs((p["t"] + timedelta(seconds=res_s / 2) - target).total_seconds()) <= max(res_s, 15)]
+        if not near:
+            return None
+        return min(near, key=lambda p: abs((p["t"] - target).total_seconds()))["avg"]
+
+    h60, h120 = at(60), at(120)
+    return {"block": block, "block_name": mine[-1]["block_name"], "end": end.isoformat(timespec="seconds"),
+            "peak": round(peak), "hr_60": round(h60) if h60 is not None else None,
+            "hr_120": round(h120) if h120 is not None else None,
+            "drop_60": round(peak - h60) if h60 is not None else None,
+            "drop_120": round(peak - h120) if h120 is not None else None, "res_s": res_s}
+
+
+def save_history(rec: dict, date: str, session_file: str, daily: Path) -> Path:
+    """Storico del recupero, una riga per seduta (rilanciare lo script la sostituisce)."""
+    f = daily.parent / HISTORY
+    rows = []
+    if f.exists():
+        rows = [json.loads(x) for x in f.read_text(encoding="utf-8").splitlines() if x.strip()]
+    rows = [r for r in rows if r.get("session_file") != session_file]
+    rows.append({"date": date, "session_file": session_file, **rec})
+    rows.sort(key=lambda r: (r["date"], r["session_file"]))
+    f.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    return f
+
+
 # --- dati Fitbit ------------------------------------------------------------------
 
 def _utc(x: datetime) -> str:
@@ -178,6 +235,15 @@ def summary(res: dict) -> str:
              f"FC: {res['source']['hr']} · passi: {res['source']['steps']}", "", "Blocchi:"]
     for b in res["blocks"]:
         lines.append(f"  {b['block_name']}: saltato" if b.get("skipped") else f"  {b['block_name']}: {_fmt(b)}")
+    rec = res.get("hr_recovery")
+    if rec:
+        d60 = f"−{rec['drop_60']} a 1′" if rec.get("drop_60") is not None else "1′ —"
+        d120 = f"−{rec['drop_120']} a 2′" if rec.get("drop_120") is not None else "2′ —"
+        lines += ["", f"Recupero dopo {rec['block_name']}: picco {rec['peak']} → {d60}, {d120}"]
+    if res.get("debrief"):
+        d = res["debrief"]
+        ans = " · ".join(f"{k}: {v}" for k, v in (d.get("answers") or {}).items())
+        lines += ["", f"Debrief: {ans or '—'}" + (f" · nota: {d['note']}" if d.get("note") else "")]
     lines += ["", "Passi di lavoro:"]
     for r in res["steps"]:
         if r["kind"] == "work":
@@ -207,11 +273,20 @@ def main() -> int:
     a0, b0 = segs[0]["start"], segs[-1]["end"]
     days = sorted({a0.strftime("%Y-%m-%d"), b0.strftime("%Y-%m-%d")})
     hr_min, steps = minutes_series(days)
-    hr = fetch_hr_fine(a0 - timedelta(minutes=1), b0 + timedelta(minutes=1))
+    # +3 minuti dopo la fine: serve al recupero a 1′ e 2′ se il WOD è l'ultimo blocco
+    hr = fetch_hr_fine(a0 - timedelta(minutes=1), b0 + timedelta(minutes=3))
     res_s, src = (HR_RES, f"rollup {HR_RES}s") if hr else (60, "rollup 60s")
     res = aggregate(session, hr or hr_min, res_s, steps)
     res = {"date": a0.strftime("%Y-%m-%d"), "session_file": path.name,
            "source": {"hr": src, "steps": "rollup 60s (ripartiti per sovrapposizione)"}, **res}
+    wpath = DAILY / f"{session.get('workout_date') or a.date}.player.json"
+    workout = json.loads(wpath.read_text(encoding="utf-8")) if wpath.exists() else None
+    rec = hr_recovery(session, hr or hr_min, res_s, wod_block(session, workout))
+    if rec:
+        res["hr_recovery"] = rec
+        save_history(rec, res["date"], path.name, DAILY)
+    if session.get("debrief"):
+        res["debrief"] = session["debrief"]
     out = path.with_name(path.name.replace(".session.json", ".session-hr.json"))
     out.write_text(json.dumps(res, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps(res, indent=1, ensure_ascii=False) if a.json else summary(res))

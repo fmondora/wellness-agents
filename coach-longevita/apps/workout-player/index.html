@@ -30,6 +30,11 @@
   button { font: inherit; color: var(--fg); background: var(--btn); border: 2px solid #444;
     border-radius: 18px; padding: 18px 10px; font-size: 22px; font-weight: 700; touch-action: manipulation; }
   button:active { transform: scale(.97); }
+  .dq { margin: 14px 0 6px; font-size: 22px; font-weight: 700; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opts button { flex: 1 1 0; min-width: 70px; font-size: 20px; padding: 14px 6px; }
+  .opts button.sel { background: var(--accent); color: #000; border-color: var(--accent); }
+  #dNote { width: 100%; min-height: 64px; font: inherit; font-size: 18px; background: var(--btn); color: var(--fg); border: 2px solid #444; border-radius: 12px; padding: 10px; box-sizing: border-box; }
   button.primary { background: var(--accent); color: #000; border-color: var(--accent); font-size: 30px; padding: 24px 10px; }
   button.danger { background: var(--danger); border-color: var(--danger); color: #000; }
   #blocks { flex: 1; overflow-y: auto; margin: 12px 0; font-size: 19px; line-height: 1.5; }
@@ -180,7 +185,7 @@
   const key = () => 'wp_' + wid;
   function save(extra) {
     if (!S) return;
-    const rec = Object.assign({ wid, events: S.events, sent: false, sentCount, savedAt: Date.now(), lastSeen: Date.now() }, extra || {});
+    const rec = Object.assign({ wid, events: S.events, sent: false, sentCount, savedAt: Date.now(), lastSeen: Date.now(), debrief: S.debrief || null }, extra || {});
     try { localStorage.setItem(key(), JSON.stringify(rec)); } catch (e) {}
     try { if (tgv('6.9') && TG.CloudStorage) TG.CloudStorage.setItem(key(), rec.sent ? 'sent' : E.encodeLog(S), () => {}); } catch (e) {}
   }
@@ -361,6 +366,7 @@
     $('blocks').innerHTML = W.blocks.map((b) => '<div>' + blockSummary(b) + '</div>').join('');
     const box = $('introBtns'); box.innerHTML = '';
     const r = saved && saved.events && saved.events.length ? E.replay(W, saved.events) : null;
+    if (r && saved.debrief) r.debrief = saved.debrief;
     const hhmm = (t) => new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     const note = (text) => { const m = document.createElement('div'); m.className = 'dim'; m.style.fontSize = '19px'; m.textContent = text; box.append(m); };
     const restart = (msg, extra) => btn('↺ Ricomincia da capo', '', () => ask(msg, (extra || []).concat([
@@ -568,7 +574,7 @@
   $('bStop').onclick = () => {
     ask('Fermare la seduta?', [
       btn('Continua', 'primary', closeAsk),
-      btn('■ Ferma e invia', 'danger', () => { closeAsk(); E.stop(S, Date.now()); save(); finish(); send(); }),
+      btn('■ Ferma', 'danger', () => { closeAsk(); E.stop(S, Date.now()); save(); finish(); }),
     ]);
   };
 
@@ -579,9 +585,28 @@
     const works = S.events.filter((e) => e.e === 'done').length;
     const tot = E.view(S, Date.now()).total;
     $('endTitle').textContent = S.status === 'stop' ? 'Seduta fermata' : 'Seduta finita';
-    $('summary').innerHTML = esc(W.title || '') + '<br>Durata: <b>' + E.fmtTime(tot) + '</b><br>Eventi: ' + S.events.length +
-      ' · serie segnate: ' + works + '<br><span class="dim">Inviando, il log va al coach e la finestra si chiude.</span>';
+    $('summary').innerHTML = esc(W.title || '') + '<br>Durata: <b>' + E.fmtTime(tot) + '</b> · serie segnate: ' + works;
+    // debrief: un tocco per domanda, tutto facoltativo; le risposte viaggiano col log
+    S.debrief = S.debrief || { answers: {}, note: '' };
     const box = $('endBtns'); box.innerHTML = '';
+    E.debriefQuestions(W).forEach((q) => {
+      const h = document.createElement('div'); h.className = 'dq'; h.textContent = q.q; box.append(h);
+      const row = document.createElement('div'); row.className = 'opts';
+      q.options.forEach((o) => {
+        const b = btn(o, S.debrief.answers[q.id] === o ? 'sel' : '', () => {
+          if (S.debrief.answers[q.id] === o) delete S.debrief.answers[q.id]; else S.debrief.answers[q.id] = o;
+          [...row.children].forEach((c) => c.classList.toggle('sel', S.debrief.answers[q.id] === c.textContent));
+          save();
+        });
+        row.append(b);
+      });
+      box.append(row);
+    });
+    const nh = document.createElement('div'); nh.className = 'dq'; nh.textContent = 'Una nota? (facoltativa)'; box.append(nh);
+    const ta = document.createElement('textarea'); ta.id = 'dNote'; ta.maxLength = 280; ta.value = S.debrief.note || '';
+    ta.oninput = () => { S.debrief.note = ta.value; save(); }; box.append(ta);
+    const hint = document.createElement('div'); hint.className = 'dim'; hint.style.fontSize = '17px';
+    hint.textContent = 'Inviando, log e risposte vanno al coach e la finestra si chiude.'; box.append(hint);
     box.append(btn('📤 Invia al coach', 'primary', send));
     show('end');
   }

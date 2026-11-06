@@ -335,3 +335,21 @@ test('ripresa dopo stop: continua in pausa dal passo giusto, invio solo della pa
   assert.strictEqual(s4.status, 'end');
   assert.strictEqual(E.continueStep(s4, t + 1000), -1);
 });
+
+test('debrief: domande di default e risposte nel log compatto', () => {
+  const E = require('./engine.js');
+  const w = { date: '2026-11-09', title: 'T', blocks: [
+    { type: 'sets', name: 'Deadlift', exercises: [{ name: 'Deadlift', reps: 3, sets: 1 }], rest_s: 60 },
+    { type: 'emom', name: 'WOD', minutes: 2, exercises: [{ name: 'Row' }] }] };
+  const qs = E.debriefQuestions(w);
+  assert.deepStrictEqual(qs.map((q) => q.id), ['wod', 'energy', 'tomorrow']);
+  const custom = E.debriefQuestions(Object.assign({}, w, { debrief: [{ id: 'rir', q: 'Quante ne avevi?', options: ['0', '1', '2', '3+'] }, { bad: 1 }] }));
+  assert.deepStrictEqual(custom.map((q) => q.id), ['rir']);
+  const s = E.createSession(w); E.start(s, 1000);
+  s.debrief = { answers: { rir: '2', wod: 'love' }, note: 'schiena ferma' };
+  const out = E.encodeLog(s, 4096);
+  const d = E.decodeLog(out);
+  assert.deepStrictEqual(d.debrief, { answers: { rir: '2', wod: 'love' }, note: 'schiena ferma' });
+  const s2 = E.createSession(w); E.start(s2, 1000);
+  assert.strictEqual(E.decodeLog(E.encodeLog(s2, 4096)).debrief, null);
+});

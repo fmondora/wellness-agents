@@ -346,6 +346,20 @@
 
   function lastT(s) { return s.events.length ? s.events[s.events.length - 1].t : 0; }
 
+  // --- debrief a fine seduta --------------------------------------------------
+  /* Domande del coach (w.debrief: [{id, q, options:[...]}]); se mancano, le tre fisse.
+     Le domande sull'alzata principale le scrive il coach nella scheda del giorno. */
+  const WOD_TYPES = ['emom', 'interval', 'amrap', 'fortime'];
+  function debriefQuestions(w) {
+    const ok = (x) => x && typeof x.id === 'string' && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length;
+    if (Array.isArray(w.debrief) && w.debrief.length) return w.debrief.filter(ok).slice(0, 8);
+    const qs = [];
+    if ((w.blocks || []).some((b) => WOD_TYPES.includes(b.type))) qs.push({ id: 'wod', q: 'Il WOD?', options: ['love', 'ok', 'meh', 'no'] });
+    qs.push({ id: 'energy', q: 'Energia adesso?', options: ['bassa', 'ok', 'alta'] });
+    qs.push({ id: 'tomorrow', q: 'Domani?', options: ['come da piano', 'più facile', 'off'] });
+    return qs;
+  }
+
   // --- log compatto per sendData (limite 4096 byte) --------------------------
 
   function byteLen(str) { return new TextEncoder().encode(str).length; }
@@ -374,6 +388,8 @@
       if (trunc) o.tr = trunc;
       if (w.demo) o.demo = 1;
       if (from) o.cont = s.events[0].t;
+      if (s.debrief && s.debrief.answers && Object.keys(s.debrief.answers).length) o.q = s.debrief.answers;
+      if (s.debrief && s.debrief.note) o.nt = String(s.debrief.note).slice(0, 280);
       return JSON.stringify(o);
     };
     for (const len of [48, 24, 12, 0]) {
@@ -394,6 +410,7 @@
   function decodeLog(str) {
     const o = JSON.parse(str);
     return { date: o.d, title: o.n, t0: o.t0, status: o.st, demo: !!o.demo, cont: o.cont || 0,
+             debrief: o.q || o.nt ? { answers: o.q || {}, note: o.nt || '' } : null,
              events: o.E.map((a) => {
                const ev = { t: o.t0 + a[0] * 1000, e: EVENTS[a[1]], s: a[2] };
                if (a[3] & 1) ev.auto = 1;
@@ -465,7 +482,7 @@
     return errs;
   }
 
-  return { voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
+  return { debriefQuestions, voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
            tick, start, pause, resume, skip, done, round, stop, view, encodeLog, decodeLog, byteLen,
            b64urlEncode, b64urlDecode, encodeWorkout, parseFragment, workoutId, validateWorkout };
 });

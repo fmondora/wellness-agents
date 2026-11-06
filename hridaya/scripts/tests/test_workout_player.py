@@ -37,6 +37,21 @@ class DecodeTest(unittest.TestCase):
         self.assertIn("60 kg", st["label"])
         self.assertTrue(any(e.get("auto") for e in s["events"]))
 
+    def test_debrief_decodificato_e_unito(self):
+        o = json.loads(_payload([[0, 0, 0], [5, 1, 1], [470, 8, 4]]))
+        o["q"] = {"rir": "2", "back": "ferma", "wod": "love"}
+        o["nt"] = "x" * 400
+        s = wp.decode_web_app_data(json.dumps(o))
+        self.assertEqual(s["debrief"]["answers"], {"rir": "2", "back": "ferma", "wod": "love"})
+        self.assertEqual(len(s["debrief"]["note"]), 280)
+        senza = wp.decode_web_app_data(_payload([[0, 0, 0], [5, 1, 1]]))
+        self.assertIsNone(senza["debrief"])
+        # una continuazione senza debrief non cancella quello già salvato; uno nuovo lo sostituisce
+        self.assertEqual(wp.merge_sessions(s, senza)["debrief"]["answers"]["wod"], "love")
+        o["q"] = {"wod": "ok"}
+        nuovo = wp.decode_web_app_data(json.dumps(o))
+        self.assertEqual(wp.merge_sessions(senza, nuovo)["debrief"]["answers"], {"wod": "ok"})
+
     def test_timestamp_assoluti_e_auto(self):
         s = wp.decode_web_app_data(_payload([[0, 0, 0], [5, 1, 1], [305, 1, 2, 1], [350, 5, 2], [350, 1, 3],
                                              [440, 1, 4], [470, 5, 4], [470, 8, 4]]))

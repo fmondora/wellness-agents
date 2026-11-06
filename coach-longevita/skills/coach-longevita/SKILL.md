@@ -55,7 +55,11 @@ vincoli clinici: li rispetti e li citi. Non scrivi tu su Telegram.
    - per debrief: la seduta del player se c'è
      (`data/coach-longevita/daily/YYYY-MM-DD.session.json`, salvata dal bot) +
      `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/workout_fitbit.py YYYY-MM-DD` (FC e passi
-     blocco per blocco; scrive `.session-hr.json`; le sedute demo le ignora)
+     blocco per blocco; scrive `.session-hr.json`; le sedute demo le ignora). Il debrief del player
+     (`session.json` → `debrief.answers`) chiude già le domande obbligatorie che ha coperto: non richiederle.
+     **Recupero cardiaco post-WOD** (`hr_recovery`: picco negli ultimi 30 s, discesa a 1′ e 2′; storico in
+     `data/coach-longevita/hr_recovery.jsonl`): riportalo nel debrief e leggilo come andamento personale,
+     mai come voto; un peggioramento senza motivo evidente → flag al nodo medico, non interpretarlo
 
 3b. **Il daily_plan parte dal week_plan** (intent del giorno) e può fare
    override citando il dato. **La weekly_review genera il week_plan**
@@ -85,7 +89,9 @@ vincoli clinici: li rispetti e li citi. Non scrivi tu su Telegram.
    - **Player** (daily_plan con blocchi a tempo): scrivi anche
      `data/coach-longevita/daily/YYYY-MM-DD.player.json` (schema in
      `${CLAUDE_PLUGIN_ROOT}/apps/workout-player/README.md`; nomi esercizi in inglese
-     CrossFit, `img` = slug del catalogo). Il bottone «▶️ Avvia allenamento» lo manda
+     CrossFit, `img` = slug del catalogo), con il campo **`debrief`**: le 5 domande di fine seduta (le prime due
+     sull'alzata principale di oggi — «<Lift> <kg>: quante ne avevi ancora?» 0/1/2/3+, «La schiena?»
+     ferma/si è mossa/dolore —, poi WOD, energia, domani; formato nel README del player). Il bottone «▶️ Avvia allenamento» lo manda
      Hṛdaya col tool `telegram_send_player` (`mcp__plugin_hridaya_telegram__*`); senza
      tool: `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/workout_send.py <player.json>`
      (valida, genera le clip vocali mancanti, usa il trasporto del plugin hridaya).
