@@ -117,6 +117,10 @@ BUTTONS = {"type": "object", "additionalProperties": False, "required": ["option
                           "o righe di etichette; multi=true: si accendono più opzioni e si conferma. "
                           "Il tocco torna nella inbox come messaggio di Francesco con il campo `choice`.",
            "properties": {"options": {"type": "array"}, "multi": {"type": "boolean"}}}
+# reazioni ammesse ai bot (sottoinsieme di quelle standard di Telegram), scelte per un feedback caldo
+# (niente 👊 né 💪: Telegram non li ammette come reazione; vanno nel testo)
+REACTIONS = ["👍", "❤", "❤‍🔥", "🥰", "😍", "💘", "😘", "💋", "🔥", "⚡", "🏆", "💯", "👏", "🎉", "🤩", "😎",
+             "🙏", "👌", "🤝", "🫡", "🤗", "✍", "🤔", "👀", "😴", "😢", "🕊", "😇"]
 REPLY_TO = {"type": "string", "description": "id di un messaggio di Francesco nella inbox (non di un evento di sistema): "
                                            "di giorno parte subito, di notte passa dal cancello; il messaggio è segnato fatto"}
 
@@ -158,6 +162,13 @@ TOOLS = [
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
                              "done": {"type": "boolean"}, "urgent": {"type": "boolean"},
                              "buttons": BUTTONS}, ["id", "text"])},
+    {"name": "telegram_react",
+     "description": "Mette una reazione emoji su un messaggio di Francesco della inbox: un feedback leggero "
+                    "(dato registrato, seduta fatta, buona notizia), al posto di una risposta di sole parole "
+                    "o prima della risposta. Non sempre: quando dice qualcosa. Di notte non parte. "
+                    "done=true se la reazione basta come risposta.",
+     "inputSchema": _schema({"id": {"type": "string"}, "emoji": {"type": "string", "enum": REACTIONS},
+                             "done": {"type": "boolean"}}, ["id", "emoji"])},
     {"name": "hridaya_service",
      "description": "Accende/spegne il servizio nella sessione (battito che dice al bot che Hṛdaya c'è) "
                     "e riporta cosa si sta ascoltando.",
@@ -358,6 +369,20 @@ def call_tool(name: str, args: dict) -> Any:
     if name == "telegram_reply":
         return _reply_text(args["id"], args["text"], args.get("parse_mode"), bool(args.get("urgent")),
                            args.get("done", True), args.get("buttons"))
+    if name == "telegram_react":
+        chat, row = _reply_target(args["id"])
+        if args["emoji"] not in REACTIONS:
+            raise ToolError(f"reazione non ammessa: {args['emoji']} (ammesse: {' '.join(REACTIONS)})")
+        if not row.get("tg_message_id"):
+            raise ToolError("il messaggio non ha l'id Telegram (accodato prima delle reazioni, o un bottone): "
+                            "rispondi con telegram_reply")
+        if _is_night():
+            return {"status": "silent", "note": "finestra di silenzio: niente reazioni di notte"}
+        transport_call(_sender().token, "setMessageReaction", chat_id=chat, message_id=row["tg_message_id"],
+                       reaction=[{"type": "emoji", "emoji": args["emoji"]}])
+        if args.get("done"):
+            tq.mark_done(args["id"])
+        return {"status": "sent", "emoji": args["emoji"], "done": bool(args.get("done"))}
     if name == "hridaya_service":
         act = args["action"]
         listening = [f"coda: {tq.inbox_path()}", "cancello: silenzio notturno, alzata, sera",

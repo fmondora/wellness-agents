@@ -149,3 +149,10 @@ def test_gate_tick_usa_lo_stesso_trasporto(data, fake_call, monkeypatch):
     assert "🚨" in fake_call.texts()
     json.dumps(pg.load_state())
     assert datetime.now(timezone.utc)
+
+
+def test_in_coda_l_id_telegram_per_la_reazione(data, fake_call):
+    u = upd("fatto il cammino")
+    u["message"]["message_id"] = 321
+    assert make(fake_call).process_update(u, {42}).startswith("coda")
+    assert tq.list_pending(include_system=False)[0]["tg_message_id"] == 321

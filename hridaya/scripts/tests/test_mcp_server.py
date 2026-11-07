@@ -226,3 +226,28 @@ def test_json_non_oggetto_e_batch_non_uccidono_il_server(data, tmp_path):
     assert [o["error"]["code"] for o in out[:3]] == [-32600, -32600, -32600]
     assert out[3] == [{"jsonrpc": "2.0", "id": 7, "result": {}}]
     assert out[4]["id"] == 8                                  # il server è ancora vivo
+
+
+def test_reazione_sul_messaggio_di_francesco(data, tmp_path):
+    mid = tq.enqueue(42, "fatto il cammino, 40'", tg_message_id=777)
+    old = tq.enqueue(42, "senza id telegram")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_react", {"id": mid, "emoji": "🔥", "done": True}),
+                     call(2, "telegram_react", {"id": old, "emoji": "👍"}),
+                     call(3, "telegram_react", {"id": mid, "emoji": "💩"})], log)
+    assert payload(out[0]) == {"status": "sent", "emoji": "🔥", "done": True}
+    sent = [json.loads(x) for x in log.read_text().splitlines()]
+    assert len(sent) == 1 and sent[0]["method"] == "setMessageReaction"
+    assert sent[0]["params"]["chat_id"] == 42 and sent[0]["params"]["message_id"] == 777
+    assert sent[0]["params"]["reaction"] == [{"type": "emoji", "emoji": "🔥"}]
+    assert [r["id"] for r in tq.list_pending()] == [old]       # done=true chiude, senza done resta
+    assert out[1]["result"]["isError"] and out[2]["result"]["isError"]
+
+
+def test_di_notte_niente_reazioni(data, tmp_path):
+    _night(data)
+    mid = tq.enqueue(42, "non dormo", tg_message_id=5)
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_react", {"id": mid, "emoji": "🙏", "done": True})], log)
+    assert payload(out[0])["status"] == "silent"
+    assert not log.exists() and len(tq.list_pending()) == 1

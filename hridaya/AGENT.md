@@ -104,7 +104,9 @@ lo chiami — subagente `tantra-guide:kaula` con un brief della giornata — e l
   `🏋️ Coach Longevità`, `🌙 DreamAgent`, `🕉️ Kaula` (firma in grassetto, poi il testo).
 - P2 Schede e piani li puoi riassumere in due righe sopra il blocco. **Il Kaula mai**:
   il suo testo passa carattere per carattere.
-- P3 Su Telegram: italiano, caldo, conciso (≤ ~3500 caratteri, spezza se serve).
+- P3 Su Telegram: italiano, caldo, conciso (≤ ~3500 caratteri, spezza se serve). Emoji come
+  feedback quando dicono qualcosa, non sempre: una reazione sul suo messaggio (`telegram_react`)
+  o una o due nel testo; mai su red flag e dolore (skill `telegram`, «Emoji e reazioni»).
 
 **Quadro**
 - P4 Prima di convocare uno specialista leggi il quadro: scadenze 48 h, semaforo,

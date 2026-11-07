@@ -175,7 +175,7 @@ class Bot:
 
     # comandi e messaggi
     def handle_message(self, chat_id: int, text: str, username: str,
-                       reply_to_text: str | None = None) -> str:
+                       reply_to_text: str | None = None, message_id: int | None = None) -> str:
         text = (text or "").strip()
         if not text:
             return "vuoto"
@@ -209,7 +209,7 @@ class Bot:
         if update_morning_metrics(text):
             append_log_note(f"Metriche: {text[:120]}")
         self.maybe_wake_from_message()
-        msg_id = tq.enqueue(chat_id, text, username, reply_to_text=reply_to_text)
+        msg_id = tq.enqueue(chat_id, text, username, reply_to_text=reply_to_text, tg_message_id=message_id)
         append_log_note(f"[coda {msg_id[:8]}] {text[:200]}")
         if self.session_active():
             try:
@@ -384,7 +384,7 @@ class Bot:
         user = (msg.get("from") or {}).get("username", "?")
         reply_to = (msg.get("reply_to_message") or {}).get("text")
         print(f"[{now_local().strftime('%H:%M')}] @{user}: {text[:80]}")
-        return self.handle_message(chat_id, text, user, reply_to_text=reply_to)
+        return self.handle_message(chat_id, text, user, reply_to_text=reply_to, message_id=msg.get("message_id"))
 
 
 def sleep_text() -> str:

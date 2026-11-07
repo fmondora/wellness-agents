@@ -89,10 +89,13 @@ def append_jsonl(path: Path, row: dict[str, Any]) -> None:
 
 
 def enqueue(chat_id: int, text: str, username: str = "",
-            reply_to_text: str | None = None, choice: dict | None = None) -> str:
+            reply_to_text: str | None = None, choice: dict | None = None,
+            tg_message_id: int | None = None) -> str:
     msg_id = str(uuid.uuid4())
     row = {"id": msg_id, "chat_id": chat_id, "username": username, "text": text,
            "status": "pending", "created_at": _now()}
+    if tg_message_id:
+        row["tg_message_id"] = tg_message_id   # per mettergli una reazione
     if choice:
         # risposta con un bottone: {"id", "question", "selected": [...], "multi"}
         row["choice"] = choice
