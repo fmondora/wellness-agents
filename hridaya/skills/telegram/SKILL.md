@@ -36,7 +36,7 @@ Quando dicono qualcosa, non a ogni messaggio. Se non aggiungono niente, si lasci
   - Se poi arriva anche una risposta, la reazione va prima.
   - Mappa:
     - attività fisica fatta, PR: 🔥 ⚡ 🏆 💯
-    - cose del cuore, Lucia, i figli, gratitudine: ❤ 🥰 😍 ❤‍🔥 💘 😘 💋 🤗
+    - cose del cuore, partner e figli, gratitudine: ❤ 🥰 😍 ❤‍🔥 💘 😘 💋 🤗
     - pratica e meditazione: 🙏 🕊 😇
     - dato preso, nota: ✍ 👌 👍
     - buona notizia: 🎉 🤩
