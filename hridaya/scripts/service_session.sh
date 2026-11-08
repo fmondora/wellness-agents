@@ -12,6 +12,8 @@
 # (una sessione Claude, una shell SSH). La sessione nasce con HRIDAYA_SERVICE=1: l'hook di avvio
 # accende il servizio solo lì; le sessioni di lavoro non ascoltano mentre batte la dedicata.
 # Repo dati: argomento, o WELLNESS_DATA. Permessi: modalità auto (nessuno davanti allo schermo).
+# Sonno del Mac: claude gira sotto `caffeinate -is` (niente sonno da inattività finché vive la sessione;
+# -s vale in corrente). Col coperchio chiuso macOS dorme comunque: lì serve `pmset disablesleep`.
 set -u
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 export LANG="${LANG:-en_US.UTF-8}" LC_ALL="${LC_ALL:-en_US.UTF-8}"
@@ -59,7 +61,7 @@ start() {
     return 0
   fi
   $T new-session -d -s "$NAME" -c "$DATA" -x 200 -y 50 \
-    "exec env HRIDAYA_SERVICE=1 WELLNESS_DATA=${(q)DATA} claude --permission-mode auto ${(q)PROMPT}"
+    "exec env HRIDAYA_SERVICE=1 WELLNESS_DATA=${(q)DATA} caffeinate -is claude --permission-mode auto ${(q)PROMPT}"
   log "sessione $NAME avviata in $DATA"
 }
 
