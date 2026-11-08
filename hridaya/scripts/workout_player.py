@@ -274,6 +274,8 @@ BOT_COMMANDS = [
     {"command": "log", "description": "Riepilogo del diario di oggi"},
     {"command": "nota", "description": "Annota nel diario: /nota testo"},
     {"command": "sonno", "description": "Analisi della notte"},
+    {"command": "meditazione", "description": "Meditazione guidata da ascoltare in cuffia (es. /meditazione 30)"},
+    {"command": "studio", "description": "Studio tantrico col Kaula: lezione, coppia, inquiry, revisione"},
     {"command": "help", "description": "Cosa so fare"},
 ]
 

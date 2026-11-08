@@ -40,16 +40,27 @@ watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e France
    - `MSG <id> …` → skill `telegram` su quel messaggio (`telegram_reply`)
    - `SYS wake …` / `MATTINO <data>` → messaggio dopo l'alzata (P7): `/sonno` + scadenze
      48 h, `telegram_send(kind="wake")`. `duplicate` = il fallback è già partito: basta.
-     `too_late` = il mattino è passato (dopo `late_cutoff`): non insistere. Poi riprendi i
-     messaggi rimasti in coda di notte (`telegram_inbox`: file e bottoni non partono di notte).
+     `too_late` = il mattino è passato (dopo `late_cutoff`): non insistere. Variante del Kaula con
+     vocali accesi: il suo `---VOCE---` dopo il `sent`, con `telegram_send_voice(after="wake")`. Poi
+     riprendi i messaggi rimasti in coda di notte (`telegram_inbox`: file, bottoni, vocali e
+     meditazioni non partono di notte).
    - `SYS workout_session …` → proponi il debrief al Coach Longevità
    - `SYS red_flag …` → verifica l'escalation, nient'altro
    - `SERA <data>` → messaggio della sera (P6): lancia il subagente `tantra-guide:kaula`
      (tool Agent; tipo `meditazione_sera`; brief: HRV/semaforo, carico, sonno, emozioni del
      diario, vincoli di domani — il curriculum e la memoria li legge lui); componi: blocco «🕉️ Kaula» **intatto** + ora di letto
      (DreamAgent / `gate_status.bedtime`) + prelievo domani se c'è (`data/scadenze.json`,
-     `kb/esami.md`). `telegram_send(kind="evening", parse_mode="HTML")`. `too_late` = è
-     già ora di letto: non insistere.
+     `kb/esami.md`). `telegram_send(kind="evening", parse_mode="HTML", practice="<titolo della
+     pratica>")`: sotto compaiono «Inizia»/«Fine» per domattina. `too_late` = è
+     già ora di letto: non insistere. Il messaggio contiene solo il testo del Kaula prima dei
+     blocchi `---…---`. Vocali accesi: «vocali accesi» nel brief; se il messaggio è partito
+     (`sent`), il blocco `---VOCE---` va subito dopo con `telegram_send_voice(after="evening")`
+     (caption `🕉️ <b>Kaula</b> · <titolo>`): è l'unica iniziativa fuori da `telegram_send`, e il
+     server la accetta solo dopo la sera partita.
+   - `SYS practice_done` → pratica fatta coi bottoni: lettura della finestra sulla FC al minuto
+     (skill `telegram`, Fase 1), nel diario; alla persona una riga solo se dice qualcosa.
+   - `SYS voice_failed` → un vocale o una meditazione non è partito: una riga alla persona, niente
+     nuovi tentativi automatici.
    - `REVIEW <job>` → avvia la skill dello specialista col run_type del job
      (`coach-longevita` weekly/monthly_review, `dream-agent` weekly/monthly_review),
      consegna l'esito firmato con `telegram_send(kind="review")`, poi `review_done(job)`.

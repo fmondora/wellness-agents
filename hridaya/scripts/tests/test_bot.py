@@ -156,3 +156,32 @@ def test_in_coda_l_id_telegram_per_la_reazione(data, fake_call):
     u["message"]["message_id"] = 321
     assert make(fake_call).process_update(u, {42}).startswith("coda")
     assert tq.list_pending(include_system=False)[0]["tg_message_id"] == 321
+
+
+def test_studio_va_in_coda_per_il_kaula(data, fake_call):
+    assert make(fake_call).process_update(upd("/studio inquiry"), {42}).startswith("coda")
+    assert tq.list_pending(include_system=False)[0]["text"] == "/studio inquiry"
+    import workout_player as wp
+    assert any(c["command"] == "studio" for c in wp.BOT_COMMANDS)
+
+
+def test_sta_scrivendo_finche_non_ha_risposto(data, fake_call):
+    b = make(fake_call, active=True)
+    mid = tq.enqueue(42, "come ho dormito?")
+    tq.enqueue_system("wake", "alzata")                      # gli eventi di sistema non contano
+    assert b.typing_tick() == {42}
+    assert fake_call.calls[-1] == ("sendChatAction", {"chat_id": 42, "action": "typing"})
+    tq.mark_done(mid)
+    assert b.typing_tick() == set()
+
+
+def test_sta_scrivendo_no_senza_sessione_di_notte_o_se_vecchio(data, fake_call):
+    from datetime import datetime, timedelta, timezone
+    tq.enqueue(42, "ci sei?")
+    assert make(fake_call, active=False).typing_tick() == set()
+    later = datetime.now(timezone.utc) + timedelta(seconds=tb.TYPING_MAX_S + 5)
+    assert make(fake_call, active=True).typing_tick(now=later) == set()
+    (data / "config" / "hridaya.json").write_text(json.dumps(
+        {"bedtime": "00:01", "wake": {"fallback": "23:59", "fallback_max": "23:59", "late_cutoff": "23:59"}}))
+    assert make(fake_call, active=True).typing_tick() == set()
+    assert not [c for c in fake_call.calls if c[0] == "sendChatAction"]

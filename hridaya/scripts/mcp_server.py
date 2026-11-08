@@ -121,6 +121,13 @@ BUTTONS = {"type": "object", "additionalProperties": False, "required": ["option
 # (niente 👊 né 💪: Telegram non li ammette come reazione; vanno nel testo)
 REACTIONS = ["👍", "❤", "❤‍🔥", "🥰", "😍", "💘", "😘", "💋", "🔥", "⚡", "🏆", "💯", "👏", "🎉", "🤩", "😎",
              "🙏", "👌", "🤝", "🫡", "🤗", "✍", "🤔", "👀", "😴", "😢", "🕊", "😇"]
+VOICE_PROFILE = {"type": "string", "description": "quale voce, se ce n'è più d'una (hridaya_service status le "
+                                                "elenca): la sceglie la persona o la suggerisce il Kaula; "
+                                                "vuoto = la principale"}
+PRACTICE = {"type": "string", "description": "titolo della pratica: sotto il messaggio compaiono «▶️ Inizia» / "
+                                           "«⏹ Fine»; il bot registra la finestra e alla fine arriva l'evento "
+                                           "practice_done (da leggere sulla FC al minuto). Per meditazioni e "
+                                           "pratiche guidate; non insieme a buttons"}
 REPLY_TO = {"type": "string", "description": "id di un messaggio di Francesco nella inbox (non di un evento di sistema): "
                                            "di giorno parte subito, di notte passa dal cancello; il messaggio è segnato fatto"}
 
@@ -132,7 +139,7 @@ TOOLS = [
      "inputSchema": _schema({"text": {"type": "string"}, "kind": KIND,
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
                              "urgent": {"type": "boolean"}, "in_reply_to": REPLY_TO,
-                             "done": {"type": "boolean"}, "buttons": BUTTONS}, ["text"])},
+                             "done": {"type": "boolean"}, "buttons": BUTTONS, "practice": PRACTICE}, ["text"])},
     {"name": "telegram_send_card",
      "description": "Manda una scheda: testo HTML + album di immagini (es. la scheda del Coach Longevità). "
                     "spec_path = JSON lista di passi {text} | {photos, caption}, foto relative alla spec; "
@@ -161,7 +168,7 @@ TOOLS = [
      "inputSchema": _schema({"id": {"type": "string"}, "text": {"type": "string"},
                              "parse_mode": {"type": "string", "enum": ["HTML"]},
                              "done": {"type": "boolean"}, "urgent": {"type": "boolean"},
-                             "buttons": BUTTONS}, ["id", "text"])},
+                             "buttons": BUTTONS, "practice": PRACTICE}, ["id", "text"])},
     {"name": "telegram_react",
      "description": "Mette una reazione emoji su un messaggio di Francesco della inbox: un feedback leggero "
                     "(dato registrato, seduta fatta, buona notizia), al posto di una risposta di sole parole "
@@ -169,6 +176,33 @@ TOOLS = [
                     "done=true se la reazione basta come risposta.",
      "inputSchema": _schema({"id": {"type": "string"}, "emoji": {"type": "string", "enum": REACTIONS},
                              "done": {"type": "boolean"}}, ["id", "emoji"])},
+    {"name": "telegram_send_voice",
+     "description": "Manda un VOCALE (voce sintetica locale, se i vocali sono accesi nel setup). text = la "
+                    "versione per l'orecchio scritta da chi parla (frasi brevi; riga vuota = pausa lunga; "
+                    "«...» = pausa breve; niente HTML né emoji), non il messaggio scritto. Per pratiche guidate "
+                    "da ascoltare a occhi chiusi o se la persona chiede un vocale; mai dati, schede, temi clinici. "
+                    "Serve in_reply_to (risposta) oppure after=evening|wake (subito dopo il messaggio della sera "
+                    "o del mattino già partito, uno al giorno). Risponde subito «preparing»: sintesi e invio vanno "
+                    "in background (se falliscono arriva un evento voice_failed). Di notte non parte.",
+     "inputSchema": _schema({"text": {"type": "string"}, "caption": {"type": "string"},
+                             "title": {"type": "string", "description": "breve, per il nome del file"},
+                             "in_reply_to": REPLY_TO, "voice_profile": VOICE_PROFILE,
+                             "practice": {"type": "boolean", "description": "pratica guidata: «Inizia»/«Fine» sotto "
+                                          "il vocale (le meditazioni li hanno sempre)"},
+                             "after": {"type": "string", "enum": ["evening", "wake"]}}, ["text"])},
+    {"name": "telegram_send_meditation",
+     "description": "Prepara e manda una MEDITAZIONE LUNGA da ascoltare in cuffia (5-60 minuti): voce sintetica, "
+                    "campane, silenzi e musica di sottofondo, come brano audio. script = copione a tempo scritto "
+                    "dal Kaula (segmenti che cominciano con «@mm:ss» o «@mm:ss campana», ultima riga «@mm:ss fine»). "
+                    "music = parola del nome di un brano delle cartelle musicali (es. tanpura, bansuri), «drone» "
+                    "o «nessuna». Solo su richiesta (in_reply_to). Risponde subito «preparing»: il montaggio "
+                    "richiede alcuni minuti, l'invio è in background (errore → evento voice_failed).",
+     "inputSchema": _schema({"script": {"type": "string"}, "title": {"type": "string"},
+                             "music": {"type": "string"}, "caption": {"type": "string"},
+                             "as_voice": {"type": "boolean", "description": "come vocale invece che come brano "
+                                          "(se la persona lo chiede; default: brano)"},
+                             "voice_profile": VOICE_PROFILE,
+                             "in_reply_to": REPLY_TO}, ["script", "title", "in_reply_to"])},
     {"name": "hridaya_service",
      "description": "Accende/spegne il servizio nella sessione (battito che dice al bot che Hṛdaya c'è) "
                     "e riporta cosa si sta ascoltando.",
@@ -225,6 +259,17 @@ def _reply_held(row: dict, urgent: bool) -> bool:
     return True
 
 
+def _practice_markup(title: Any, buttons: Any) -> dict | None:
+    if not title:
+        return None
+    if buttons:
+        raise ToolError("practice e buttons insieme no: una sola tastiera per messaggio")
+    if not isinstance(title, str):
+        raise ToolError("practice: il titolo della pratica (stringa)")
+    import practice
+    return practice.create(title)[1]
+
+
 def _buttons(spec: Any, text: str) -> tuple[str | None, dict | None]:
     """Registra la scelta → (cid, reply_markup); (None, None) se non ci sono bottoni."""
     if spec is None:
@@ -264,10 +309,11 @@ def _with_buttons(cid: str | None, fn):
 
 
 def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, done: bool,
-                buttons: dict | None = None) -> dict:
+                buttons: dict | None = None, practice_title: str | None = None) -> dict:
     chat, row = _reply_target(msg_id)
     held = _reply_held(row, urgent)
-    cid, markup = _buttons(buttons, text)
+    pm = _practice_markup(practice_title, buttons)
+    cid, markup = _buttons(buttons, text) if not pm else (None, pm)
 
     def go() -> dict:
         if held:
@@ -285,6 +331,66 @@ def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, do
     return {**out, "done": done}
 
 
+def _voice_line() -> str:
+    try:
+        import voice_note as vn
+        v = vn.config()
+        if not v:
+            return "vocali: spenti"
+        return f"vocali: accesi (voci: {', '.join(vn.profiles(v))}; la prima è la principale)"
+    except Exception as e:  # noqa: BLE001 — una funzione facoltativa non deve fermare il servizio
+        return f"vocali: config non valida ({e})"
+
+
+def _voice_job(name: str, args: dict) -> dict:
+    """Vocale o meditazione: valida subito, poi un lavoro in background (niente server bloccato,
+    niente doppioni se la chiamata si ripete)."""
+    import voice_note as vn
+    vcfg = vn.config()
+    if not vcfg:
+        raise ToolError("vocali spenti: si accendono nella skill setup (fase Vocali), "
+                        "config/hridaya.json → voice.enabled")
+    meditation = name == "telegram_send_meditation"
+    reply, after = args.get("in_reply_to"), args.get("after")
+    chat = _reply_target(reply)[0] if reply else None
+    try:
+        vcfg = vn.with_profile(vcfg, args.get("voice_profile"))
+        if meditation:
+            import meditation as md
+            md.parse(args["script"])
+            if vcfg.get("engine", "mlx-audio") != "mlx-audio":
+                raise vn.VoiceError("le meditazioni lunghe richiedono il motore mlx-audio")
+        else:
+            vn.spoken(args["text"])
+    except vn.VoiceError as e:
+        raise ToolError(str(e))
+    if _is_night():
+        return {"status": "silent", "note": "finestra di silenzio: niente vocali di notte"}
+    if reply:
+        key = f"reply:{reply}"            # un vocale (o una meditazione) per messaggio a cui si risponde
+    elif after and not meditation:
+        st = push_gate.status(session_active=session_state.is_active())
+        if not st.get(f"{after}_sent"):
+            raise ToolError(f"il messaggio «{after}» di oggi non è ancora partito: il vocale viene dopo")
+        key = f"{after}:{datetime.now(cc.tz()).date().isoformat()}"
+    else:
+        raise ToolError("un vocale è una risposta (in_reply_to) oppure segue il messaggio della sera o del "
+                        "mattino (after); le meditazioni solo su richiesta (in_reply_to)")
+    payload = {"chat_id": chat or _sender().chat_id, "title": args.get("title") or "",
+               "practice": meditation or bool(args.get("practice")),
+               "voice_profile": args.get("voice_profile") or "",
+               "caption": args.get("caption") or "", "reply_to": reply or ""}
+    if meditation:
+        payload.update(script=args["script"], music=args.get("music") or "", performer="Kaula",
+                       as_voice=bool(args.get("as_voice")))
+    else:
+        payload["text"] = args["text"]
+    r = vn.create_job("meditation" if meditation else "voice", key, payload)
+    if reply:
+        tq.mark_done(reply)
+    return {**r, "done": bool(reply)}
+
+
 def _installed_plugins() -> set[str]:
     from _plugins import plugin_scripts
     return {p for p in ("coach-longevita", "dream-agent") if plugin_scripts(p)}
@@ -297,8 +403,10 @@ def call_tool(name: str, args: dict) -> Any:
     if name == "telegram_send":
         if args.get("in_reply_to"):
             return _reply_text(args["in_reply_to"], args["text"], args.get("parse_mode"),
-                               bool(args.get("urgent")), args.get("done", True), args.get("buttons"))
-        cid, markup = _buttons(args.get("buttons"), args["text"])
+                               bool(args.get("urgent")), args.get("done", True), args.get("buttons"),
+                               args.get("practice"))
+        pm = _practice_markup(args.get("practice"), args.get("buttons"))
+        cid, markup = _buttons(args.get("buttons"), args["text"]) if not pm else (None, pm)
         return _with_buttons(cid, lambda: push_gate.deliver(
             args["text"], args.get("kind") or "message", _sender(), parse_mode=args.get("parse_mode"),
             urgent=bool(args.get("urgent")), reply_markup=markup))
@@ -368,7 +476,7 @@ def call_tool(name: str, args: dict) -> Any:
         return {"pending": rows, "count": len(rows)}
     if name == "telegram_reply":
         return _reply_text(args["id"], args["text"], args.get("parse_mode"), bool(args.get("urgent")),
-                           args.get("done", True), args.get("buttons"))
+                           args.get("done", True), args.get("buttons"), args.get("practice"))
     if name == "telegram_react":
         chat, row = _reply_target(args["id"])
         if args["emoji"] not in REACTIONS:
@@ -383,10 +491,13 @@ def call_tool(name: str, args: dict) -> Any:
         if args.get("done"):
             tq.mark_done(args["id"])
         return {"status": "sent", "emoji": args["emoji"], "done": bool(args.get("done"))}
+    if name in ("telegram_send_voice", "telegram_send_meditation"):
+        return _voice_job(name, args)
     if name == "hridaya_service":
         act = args["action"]
         listening = [f"coda: {tq.inbox_path()}", "cancello: silenzio notturno, alzata, sera",
-                     f"review: {', '.join(sorted(_installed_plugins())) or 'nessun coach installato'}"]
+                     f"review: {', '.join(sorted(_installed_plugins())) or 'nessun coach installato'}",
+                     _voice_line()]
         if act == "on":
             why = None if args.get("force") else session_state.guard(cc.rhythm()["session_heartbeat_max_age_s"])
             if why:

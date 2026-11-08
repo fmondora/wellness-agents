@@ -1,7 +1,7 @@
 {
   "name": "hridaya",
   "description": "Hṛdaya — il cuore del consiglio: primo contatto e coordinatore, voce unica (anche su Telegram), diario (/log), quadro della giornata con le scadenze cliniche, convocazione degli specialisti con i vincoli, canale Telegram (bot, cancello dei push con silenzio notturno fino all'alzata, server MCP), /setup con bootstrap Telegram, /servizio per accendere l'ascolto nella sessione. Non decide al posto degli specialisti e non diagnostica.",
-  "version": "0.4.7",
+  "version": "0.9.0",
   "author": {
     "name": "Francesco Mondora"
   }

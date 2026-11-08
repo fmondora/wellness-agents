@@ -23,8 +23,9 @@ from __future__ import annotations
 import json
 import re
 import sys
+import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -148,6 +149,8 @@ Comandi:
 /log — il diario di oggi
 /nota testo — annota nel diario
 /sonno — com'è andata la notte
+/meditazione — una meditazione guidata da ascoltare in cuffia (es. /meditazione 30 respiro)
+/studio — lo studio tantrico col Kaula (anche: /studio coppia, /studio inquiry, /studio revisione)
 /help — questo messaggio
 
 Scrivimi liberamente: come stai, il corpo, il sonno, una domanda. Rispondo quando la sessione è accesa sul Mac; se non lo è, te lo dico e ti rispondo appena torna.
@@ -155,6 +158,10 @@ Di notte, dall'ora di letto all'alzata, non ti scrivo io."""
 
 
 # --- canale -------------------------------------------------------------------------
+
+TYPING_EVERY_S = 4      # Telegram tiene «sta scrivendo…» per ~5 s: si rinnova prima che sparisca
+TYPING_MAX_S = 180      # oltre, un messaggio rimasto in coda non è più «in lavorazione»
+
 
 class Bot:
     def __init__(self, token: str, call: Callable[..., dict] = tt.call,
@@ -169,6 +176,32 @@ class Bot:
 
     def session_active(self) -> bool:
         return self._session_active()
+
+    def typing_tick(self, now: datetime | None = None) -> set[int]:
+        """«sta scrivendo…» nelle chat con un messaggio della persona in attesa di risposta, mentre la
+        sessione c'è. Di notte no: la risposta passerebbe dal cancello e uscirebbe al mattino."""
+        if not self.session_active():
+            return set()
+        now = now or datetime.now(timezone.utc)
+        if push_gate.is_silent(now.astimezone(cc.tz()), cc.rhythm(), push_gate.load_state()):   # ritmo fresco
+            return set()
+        cutoff = (now - timedelta(seconds=TYPING_MAX_S)).isoformat()
+        chats = {int(r["chat_id"]) for r in tq.list_pending(include_system=False)
+                 if r.get("chat_id") and r.get("created_at", "") >= cutoff}
+        for chat in chats:
+            try:
+                self.call(self.token, "sendChatAction", chat_id=chat, action="typing")
+            except Exception as e:  # noqa: BLE001  (un'azione persa non deve fermare nulla)
+                print(f"sendChatAction: {e}", file=sys.stderr)
+        return chats
+
+    def typing_loop(self, stop: threading.Event) -> None:
+        while not stop.is_set():
+            try:
+                self.typing_tick()
+            except Exception as e:  # noqa: BLE001
+                print(f"typing: {e}", file=sys.stderr)
+            stop.wait(TYPING_EVERY_S)
 
     def send(self, chat_id: int, text: str, **kw: Any) -> None:
         tt.send_text(self.token, chat_id, text, call=self.call, **kw)
@@ -287,6 +320,7 @@ class Bot:
             if row.get("in_reply_to") in inbox_ids:
                 self.send(chat_id, row.get("text", ""))
                 tq.mark_outbox_sent(row["in_reply_to"], row.get("chat_id"))
+                tq.mark_done(row["in_reply_to"])     # risposto: anche «sta scrivendo…» si ferma
             else:   # iniziativa scritta in outbox da un vecchio chiamante: passa dal cancello
                 push_gate.submit(row.get("text", ""), source=f"outbox:{row.get('in_reply_to')}",
                                  push_id=f"outbox-{row.get('in_reply_to')}")
@@ -330,6 +364,8 @@ class Bot:
         if chat_id not in allowed:
             print(f"Ignorato callback da chat_id {chat_id}")
             return "ignorato"
+        if (cq.get("data") or "").startswith("pr:"):
+            return self.handle_practice(cq, chat_id, msg)
         res = choices.tap(cq.get("data") or "", tap_id=cq.get("id"))
         outcome = f"bottone-{res['action']}"
         if res["action"] == "answer":
@@ -354,6 +390,33 @@ class Bot:
             self.notify_inactive(chat_id)
             return "bottone-inattivo"
         return outcome
+
+    def handle_practice(self, cq: dict, chat_id: int, msg: dict) -> str:
+        """«Inizia» / «Fine» sotto una pratica: lo registra il bot, senza la sessione, con una riga nel
+        diario. L'evento `practice_done` parte dopo, da practice_tick (serve il «dopo» sulla FC)."""
+        import practice
+        res = practice.tap(cq.get("data") or "", tap_id=cq.get("id"))
+        p = res.get("practice") or {}
+        try:
+            if res["action"] == "started":
+                append_log_note(f"[pratica] inizio «{p.get('title', '')}» {now_local():%H:%M}")
+            elif res["action"] == "ended":
+                _, data = practice.event(p)
+                append_log_note(f"[pratica] «{data['title']}» {data['start']}–{data['end']} ({data['minutes']}′)")
+        except Exception as e:  # noqa: BLE001 — il tocco è registrato comunque in practices.json
+            print(f"pratica, coda/diario: {e}", file=sys.stderr)
+        self._ack_callback(cq, chat_id, msg, res)
+        return f"pratica-{res['action']}"
+
+    def practice_tick(self, now: datetime | None = None) -> list[str]:
+        """Pratiche finite da mezz'ora: evento `practice_done` per la sessione."""
+        import practice
+        out = []
+        for p in practice.due(now):
+            text, data = practice.event(p)
+            tq.enqueue_system("practice_done", text, data, dedup_key=f"practice_done:{p['id']}")
+            out.append(p["id"])
+        return out
 
     def _ack_callback(self, cq: dict, chat_id: int, msg: dict, res: dict) -> None:
         try:
@@ -419,12 +482,20 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         print(f"setMyCommands: {e}", file=sys.stderr)
 
+    # «sta scrivendo…» finché la sessione lavora a una risposta (il long polling blocca il ciclo)
+    threading.Thread(target=bot.typing_loop, args=(threading.Event(),), daemon=True,
+                     name="typing").start()
     offset = 0
     while True:
         try:
             bot.flush_outbox()
             for action in bot.gate_tick():
                 print(f"[{now_local().strftime('%H:%M')}] cancello: {action}")
+            try:
+                for pid in bot.practice_tick():
+                    print(f"[{now_local().strftime('%H:%M')}] pratica {pid}: lettura in coda")
+            except Exception as e:  # noqa: BLE001
+                print(f"pratiche: {e}", file=sys.stderr)
             # long polling 25 s: il cancello gira almeno ogni 25 s
             resp = tt.call(token, "getUpdates", _timeout=60, timeout=25, offset=offset,
                            allowed_updates=["message", "callback_query"])

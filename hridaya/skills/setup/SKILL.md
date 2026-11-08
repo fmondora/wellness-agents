@@ -96,7 +96,33 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
    (`apps/workout-player/deploy.sh` del plugin coach, serve wrangler e un progetto
    Pages), `WORKOUT_PLAYER_URL` nel `.env`, poi una demo: tool `telegram_send_player`
    sul `fixtures/demo.player.json` del player → verifica audio e schermo acceso.
-8. **Spiega il servizio**: «Ti rispondo quando la sessione Claude è accesa sul Mac
+8. **Opzionale — Vocali** (Mac con Apple Silicon): «Vuoi che alcune pratiche arrivino anche come
+   vocale, letto da una voce sintetica che gira sul Mac?» Se sì:
+   - **Prima cerca ciò che c'è già**: `voice_note.py discover` (script di questo plugin) elenca i
+     modelli vocali nelle cache di Hugging Face e gli ambienti Python che hanno già mlx-audio.
+     Se trovi un modello `mlx` adatto all'italiano e un ambiente con `ok: true` (mlx-audio ≥ 0.6),
+     **proponi di riusarli** (una domanda: nome del modello, dimensione, dove sta).
+   - Altrimenti: `voice_note.py install` crea `~/.local/share/hridaya/voice-venv` con mlx-audio
+     e scarica il modello (default Voxtral-4B, voce `it_male`, ~8 GB: dillo prima). Serve
+     `ffmpeg` (brew). Senza Apple Silicon: motore `say` di macOS, qualità da prova.
+   - Scrivi in `config/hridaya.json` il blocco `"voice"`:
+     `{"enabled": true, "engine": "mlx-audio", "python": …, "model": …, "voice": …,
+     "quant_bits": 8, "hf_home": <cartella della cache trovata>}`.
+     Mettere `hf_home` è obbligatorio se la cache non è quella standard: launchd non ha l'ambiente
+     della shell.
+   - `voice_note.py check` → «vocali pronti»; poi un vocale di prova con
+     `telegram_send_voice` (due frasi brevi) e chiedi se la voce va bene.
+     Voci diverse = altro `voice`/`model`, una domanda alla volta. Per una voce su misura (più
+     calda, più lenta): Qwen3-TTS **VoiceDesign** la crea da una descrizione a parole
+     (`method: "generate_voice_design"`, `generate_kwargs.instruct`, `seed` fisso perché resti
+     uguale). Fai 3-4 campioni sullo stesso brano e lascia scegliere; il timbro si ritocca con
+     `voice_filter` (filtri ffmpeg, es. `bass=…,treble=…`; niente eco se non lo chiede).
+   - **Meditazioni in cuffia** (facoltativo): cartelle con musica di sottofondo che la persona
+     può usare (licenze sue) in `voice.music_dirs`, preferita in `voice.meditation_music`; senza
+     musica c'è sempre il bordone sintetico (`drone`).
+   - Proponi di aggiungere `data/exports/voce/`, `data/exports/meditazioni/` e
+     `data/hridaya/voice_jobs/` al `.gitignore` del repo dati: sono file pesanti e rigenerabili.
+9. **Spiega il servizio**: «Ti rispondo quando la sessione Claude è accesa sul Mac
    nel repo dati e hai detto `/servizio` (o "accendi il servizio"): tienila aperta.
    Se è chiusa il bot ti dice che non ci sono e accoda; sera e mattino arrivano lo
    stesso in versione automatica. Di notte, dall'ora di letto all'alzata, taccio.»
