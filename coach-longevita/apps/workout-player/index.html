@@ -73,6 +73,16 @@
   #detail { font-size: min(9vw, 46px); text-align: center; font-weight: 700; color: var(--warn); margin-top: 4px; }
   #note { font-size: 19px; text-align: center; color: #ddd; margin-top: 6px; min-height: 1.2em; }
   #list { font-size: 22px; text-align: center; line-height: 1.4; }
+  /* cambio blocco con attrezzi: il cronometro (attesa) passa in secondo piano, la lista no */
+  body.setup #clock { font-size: min(13vw, 7vh); color: #ccc; }
+  body.setup #ex { font-size: min(8vw, 34px); }
+  body.setup #detail { font-size: min(6vw, 26px); }
+  body.setup #phase { font-size: 20px; }
+  #list.equip { text-align: left; font-size: 21px; background: rgba(0,0,0,.25); border-radius: 14px; padding: 10px 14px; margin-top: 10px; }
+  #list.equip .eh { font-size: 16px; font-weight: 800; letter-spacing: .1em; color: var(--warn); }
+  #list.equip .area { color: #ddd; margin-top: 4px; }
+  .sec { display: block; font-size: 14px; font-weight: 800; letter-spacing: .14em; color: var(--warn); margin-top: 14px; }
+  #blocks .eq { font-size: 16px; color: #bbb; }
   #round { font-size: 22px; text-align: center; margin-top: 6px; }
   #next { font-size: 20px; text-align: center; color: #ccc; padding: 8px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #act { width: 100%; margin-bottom: 12px; }
@@ -98,7 +108,12 @@
   .it .d { color: var(--warn); margin-left: auto; white-space: nowrap; padding-left: 8px; }
   .it.done { opacity: .45; } .it.skipped { opacity: .45; text-decoration: line-through; }
   .it.current { background: var(--work); font-weight: 800; } .it.next { outline: 2px solid var(--accent); }
-  #summary { font-size: 20px; line-height: 1.6; flex: 1; overflow-y: auto; }
+  /* fine seduta: 5 domande + nota + Invia non stanno in uno schermo → scorre tutta la schermata */
+  #end { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+  #end > * { flex-shrink: 0; }
+  #summary { font-size: 20px; line-height: 1.6; }
+  #endBtns { padding-bottom: 24px; }
+  textarea { -webkit-user-select: text; user-select: text; }
   textarea { width: 100%; height: 120px; background: #111; color: #ccc; border: 1px solid #333; font-size: 12px; }
 </style>
 </head>
@@ -352,18 +367,29 @@
   }
 
   // --- intro ---
+  function blockKind(b) {
+    if (!b) return '';
+    return { timed: 'a tempo', sets: (b.rounds ? b.rounds + ' giri' : 'serie'), emom: 'EMOM ' + b.minutes + '′',
+      interval: (b.work_s + '/' + (b.rest_s || 0) + ' × ' + (b.rounds || 1)), amrap: 'AMRAP ' + E.fmtTime(b.duration_s),
+      fortime: 'for time' + (b.cap_s ? ' (cap ' + E.fmtTime(b.cap_s) + ')' : '') }[b.type] || '';
+  }
   function blockSummary(b) {
     const n = b.exercises.map((x) => x.name).join(' + ');
-    const t = { timed: 'a tempo', sets: (b.rounds ? b.rounds + ' giri' : 'serie'), emom: 'EMOM ' + b.minutes + '′',
-      interval: (b.work_s + '/' + (b.rest_s || 0) + ' × ' + (b.rounds || 1)), amrap: 'AMRAP ' + E.fmtTime(b.duration_s),
-      fortime: 'for time' + (b.cap_s ? ' (cap ' + E.fmtTime(b.cap_s) + ')' : '') }[b.type];
+    const t = blockKind(b);
     return '<b>' + esc(b.name) + '</b>' + (b.optional ? ' <span class="dim">(facoltativo)</span>' : '') +
       '<br><span class="dim">' + esc(t) + ' · ' + esc(n) + '</span>';
   }
   function intro(saved) {
     $('title').textContent = W.title || 'Allenamento';
     $('sub').textContent = (W.date || '') + (W.demo ? ' · demo' : '');
-    $('blocks').innerHTML = W.blocks.map((b) => '<div>' + blockSummary(b) + '</div>').join('');
+    let lastSec = null;
+    $('blocks').innerHTML = E.plan(W).map((p, i) => {
+      const head = p.section && p.section !== lastSec ? '<span class="sec">' + esc(p.section.toUpperCase()) + '</span>' : '';
+      lastSec = p.section;
+      const eq = p.equipment.length || p.area ? '<div class="eq">🧰 ' + esc(p.equipment.join(' · ') || '—') +
+        (p.area ? ' · 📍 ' + esc(p.area) : '') + '</div>' : '';
+      return head + '<div>' + blockSummary(W.blocks[i]) + eq + '</div>';
+    }).join('');
     const box = $('introBtns'); box.innerHTML = '';
     const r = saved && saved.events && saved.events.length ? E.replay(W, saved.events) : null;
     if (r && saved.debrief) r.debrief = saved.debrief;
@@ -394,7 +420,7 @@
         unlockAudio(); S = r; sentCount = prevSent; E.continueAt(S, Date.now()); begin();
       }));
       if (saved.sent) box.append(btn('📤 Reinvia', '', () => { S = r; sentCount = 0; send(); }));
-      else box.append(btn('📤 Invia', ci >= 0 ? '' : 'primary', () => { S = r; sentCount = 0; send(); }));
+      else box.append(btn('📝 Feedback e invio', ci >= 0 ? '' : 'primary', () => { S = r; sentCount = 0; finish(); }));
       box.append(restart('Ricominciare da capo? La seduta di prima resta archiviata sul telefono.'));
     } else {
       box.append(btn('▶ Inizia', 'primary', fresh));
@@ -447,7 +473,7 @@
     if (last.e !== 'step') return;
     const st = S.steps[last.s], k = st.kind;
     beep(k === 'work' ? 1320 : 520, 0.45); haptic(k === 'work' ? 'warning' : 'success');
-    if (k === 'rest' && st.dur >= 15) {
+    if ((k === 'rest' && st.dur >= 15) || st.go) {
       const nw = E.nextWork(S, last.s);
       if (nw) setTimeout(() => cue(last.s + ':next', 'Next: ' + nw.name, ['next', E.voiceSlug(nw.name)]), 600);
     }
@@ -471,7 +497,7 @@
   let sheetCur = -2;
   function renderSheet() {
     sheetCur = S.cur;
-    $('sheetBody').innerHTML = E.sheet(S).map((b) => '<h3>' + esc(b.name) + (b.optional ? ' <span class="dim">(facoltativo)</span>' : '') + '</h3>' +
+    $('sheetBody').innerHTML = E.sheet(S).map((b) => '<h3>' + (b.section ? '<span class="sec">' + esc(b.section.toUpperCase()) + '</span>' : '') + esc(b.name) + (b.optional ? ' <span class="dim">(facoltativo)</span>' : '') + '</h3>' +
       b.items.map((x) => '<div class="it ' + x.status + '" id="it' + x.i + '"><span class="st">' + SHEET_MARK[x.status] + '</span><span>' +
         esc(x.name) + (x.rounds > 1 ? ' <span class="dim">' + x.round + '/' + x.rounds + '</span>' : '') + '</span><span class="d">' +
         esc(x.detail || '') + '</span></div>').join('')).join('');
@@ -503,9 +529,11 @@
     touchSeen(now);
     const v = E.view(S, now), st = v.step;
     if (S.cur !== shownCur) { shownCur = S.cur; shownAt = now; }
-    document.body.className = (v.paused ? 'paused ' : '') + 'k-' + st.kind + (st.list ? ' has-list' : '');
+    document.body.className = (v.paused ? 'paused ' : '') + 'k-' + st.kind + (st.list ? ' has-list' : '') +
+      (st.kind === 'prep' && !st.go && ((st.equipment && st.equipment.length) || st.area) ? ' setup' : '');
     $('pausedTag').textContent = S.reopened ? 'RIPRESA — tocca ▶ Riprendi' : 'IN PAUSA';
-    $('bname').textContent = v.block.name;
+    const secName = st.section && !v.block.name.toLowerCase().includes(st.section.toLowerCase()) ? st.section.toUpperCase() + ' · ' : '';
+    $('bname').textContent = secName + v.block.name;
     $('bpos').textContent = 'blocco ' + (v.blockIdx + 1) + '/' + v.nBlocks + ' · ' + (v.stepInBlock + 1) + '/' + v.stepsInBlock;
     $('bar').firstElementChild.style.width = (v.progress * 100).toFixed(1) + '%';
     $('phase').textContent = PHASE[st.kind] + (st.mode === 'amrap' ? ' · AMRAP' : st.mode === 'up' ? ' · FOR TIME' : '');
@@ -530,7 +558,18 @@
     // recupero e prep: in evidenza il prossimo esercizio, con la sua immagine
     const nw = st.kind === 'work' ? null : E.nextWork(S);
     let slug = st.img;
-    if (st.kind !== 'work') {
+    const setup = st.kind === 'prep' && !st.go && ((st.equipment && st.equipment.length) || st.area);
+    if (st.kind === 'prep' && !st.go) {
+      // cambio blocco: che sezione comincia, cosa preparare e dove
+      const lbl = st.newSection && st.section ? 'INIZIA: ' + st.section.toUpperCase() : 'PROSSIMO BLOCCO';
+      $('ex').innerHTML = '<span class="lbl">' + esc(lbl) + '</span>' + esc(st.name);
+      $('detail').textContent = blockKind(W.blocks[st.b]);
+      slug = setup ? null : (nw ? nw.img : null);
+    } else if (st.go) {
+      $('ex').innerHTML = '<span class="lbl">SI PARTE</span>' + esc(nw ? nw.name : st.name);
+      $('detail').textContent = nw ? (nw.detail || '') : '';
+      slug = nw ? nw.img : null;
+    } else if (st.kind !== 'work') {
       $('ex').innerHTML = nw ? '<span class="lbl">PROSSIMO</span>' + esc(nw.name) : esc(st.kind === 'rest' ? 'Recupero' : st.name);
       $('detail').textContent = nw ? (nw.detail || '') : '';
       slug = nw ? nw.img : null;
@@ -543,7 +582,12 @@
       slug = withImg.length ? withImg[Math.floor(now / 4000) % withImg.length].img : null;
     }
     showFig(slug, now);
-    $('list').innerHTML = st.list ? st.list.map((x) => esc(x.name + (x.detail ? ' — ' + x.detail : ''))).join('<br>') : '';
+    const L = $('list');
+    L.classList.toggle('equip', !!setup);
+    if (setup) {
+      L.innerHTML = (st.equipment.length ? '<div class="eh">PREPARA</div>' + st.equipment.map((x) => '☐ ' + esc(x)).join('<br>') : '') +
+        (st.area ? '<div class="area">📍 ' + esc(st.area) + '</div>' : '');
+    } else L.innerHTML = st.list ? st.list.map((x) => esc(x.name + (x.detail ? ' — ' + x.detail : ''))).join('<br>') : '';
     $('note').textContent = st.kind === 'prep' ? [st.detail, nw && nw.note].filter(Boolean).join(' · ')
       : st.kind === 'rest' ? ((nw && nw.note) || '') : (st.note || '');
     if ($('sheet').classList.contains('on')) {
@@ -557,7 +601,7 @@
     $('round').textContent = r;
     const nx = v.next;
     $('next').textContent = nx ? 'Poi: ' + (nx.kind === 'rest' ? 'recupero ' + E.fmtTime(nx.dur)
-      : nx.kind === 'prep' ? 'blocco «' + nx.name + '»' : nx.name + (nx.detail ? ' · ' + nx.detail : '')) : 'Poi: fine';
+      : nx.kind === 'prep' ? (nx.go ? 'via tra ' + nx.dur + '″' : 'blocco «' + nx.name + '»') : nx.name + (nx.detail ? ' · ' + nx.detail : '')) : 'Poi: fine';
     // pulsante principale
     const a = $('act');
     a.style.visibility = 'visible';

@@ -1,7 +1,7 @@
 {
   "name": "coach-longevita",
   "description": "Coach Longevità — training operativo per durare, non per performare. Daily plan, week plan, debrief (anche dalle sedute del player con FC e passi), lift book, uno skill alla volta. Include il workout player (Telegram Mini App) consegnato dal canale di Hṛdaya.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "author": {
     "name": "Francesco Mondora"
   }

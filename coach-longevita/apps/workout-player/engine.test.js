@@ -24,7 +24,8 @@ test('timeline della seduta reale', () => {
   assert.strictEqual(emom.length, 10);
   assert.deepStrictEqual(emom.slice(0, 3).map((x) => x.name), ['Row', 'Goblet Squat', 'Row']);
   assert.ok(emom.every((x) => x.dur === 60 && x.mark));
-  assert.strictEqual(kinds(4), 'pwrwrwrw');             // 40/20 × 4
+  assert.strictEqual(kinds(4), 'ppwrwrwrw');            // «Pronto» + 10 s di via, poi 40/20 × 4
+  assert.ok(st.find((x) => x.b === 4 && x.kind === 'prep' && x.go).dur === E.GO_S);
   assert.strictEqual(st[0].dur, 5);
 });
 
@@ -352,4 +353,36 @@ test('debrief: domande di default e risposte nel log compatto', () => {
   assert.deepStrictEqual(d.debrief, { answers: { rir: '2', wod: 'love' }, note: 'schiena ferma' });
   const s2 = E.createSession(w); E.start(s2, 1000);
   assert.strictEqual(E.decodeLog(E.encodeLog(s2, 4096)).debrief, null);
+});
+
+test('sezioni, attrezzi e via prima del WOD', () => {
+  const w = { date: '2026-11-09', title: 'T', blocks: [
+    { type: 'timed', name: 'Riscaldamento', exercises: [{ name: 'Walk', time_s: 60 }] },
+    { type: 'sets', name: 'Bulgarian Split Squat', rounds: 2, rest_s: 60,
+      exercises: [{ name: 'Bulgarian Split Squat', reps: 6, kg: 8 }] },
+    { type: 'sets', name: 'Misura: Dead Hang', exercises: [{ name: 'Dead Hang', reps: 'max' }] },
+    { type: 'interval', name: 'WOD lungo', work_s: 50, rest_s: 10, rounds: 2, area: 'zona rig',
+      equipment: ['Box basso', 'Kettlebell 16 kg'], exercises: [{ name: 'Box Step-up' }, { name: 'Kettlebell Swing', kg: 16 }] },
+    { type: 'sets', name: 'Core', section: 'Accessori', go_s: 5, exercises: [{ name: 'Plank', sets: [{ kg: 5 }, { kg: 10 }] }] },
+    { type: 'amrap', name: 'Finisher', duration_s: 120, go_s: 0, exercises: [{ name: 'Burpee' }] },
+    { type: 'timed', name: 'Fine', exercises: [{ name: "Child's Pose", time_s: 60 }] }] };
+  assert.deepStrictEqual(E.validateWorkout(w), []);
+  const pl = E.plan(w);
+  assert.deepStrictEqual(pl.map((x) => x.section), ['Riscaldamento', 'Forza', 'Misure', 'WOD', 'Accessori', 'WOD', 'Defaticamento']);
+  assert.deepStrictEqual(pl[1].equipment, ['Bulgarian Split Squat · 8 kg']);   // dedotti dal carico
+  assert.deepStrictEqual(pl[3].equipment, ['Box basso', 'Kettlebell 16 kg']);  // scritti dal coach
+  assert.deepStrictEqual(pl[4].equipment, ['Plank · 5/10 kg']);
+  assert.strictEqual(pl[3].area, 'zona rig');
+  const st = E.buildTimeline(w);
+  const preps = (b) => st.filter((x) => x.b === b && x.kind === 'prep');
+  assert.deepStrictEqual(preps(3).map((x) => [x.mode, x.dur, x.go]), [['manual', 0, false], ['timer', 10, true]]);
+  assert.ok(preps(3)[0].newSection && preps(3)[0].equipment.length === 2 && preps(3)[0].area === 'zona rig');
+  assert.strictEqual(preps(4).length, 1);       // sets: niente via anche con go_s
+  assert.strictEqual(preps(5).length, 1);       // go_s: 0 → niente via
+  assert.strictEqual(E.stepLabel(preps(3)[1]), 'Via WOD lungo');
+  assert.ok(preps(1)[0].newSection && !st.find((x) => x.b === 1 && x.kind === 'work').newSection);
+  assert.ok(E.validateWorkout({ blocks: [{ type: 'timed', name: 'x', equipment: 'box', exercises: [{ name: 'a' }] }]})
+    .some((e) => /equipment/.test(e)));
+  const s = E.createSession(w); E.start(s, 0);
+  assert.strictEqual(E.sheet(s)[3].section, 'WOD');
 });

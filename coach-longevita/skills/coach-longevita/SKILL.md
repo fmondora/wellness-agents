@@ -89,7 +89,10 @@ vincoli clinici: li rispetti e li citi. Non scrivi tu su Telegram.
    - **Player** (daily_plan con blocchi a tempo): scrivi anche
      `data/coach-longevita/daily/YYYY-MM-DD.player.json` (schema in
      `${CLAUDE_PLUGIN_ROOT}/apps/workout-player/README.md`; nomi esercizi in inglese
-     CrossFit, `img` = slug del catalogo), con il campo **`debrief`**: le 5 domande di fine seduta (le prime due
+     CrossFit, `img` = slug del catalogo). **Ogni blocco** porta `section` (Riscaldamento · Forza · Misure ·
+     WOD · Defaticamento…), `equipment` (cosa preparare, carichi compresi: «Box basso», «Kettlebell 16 kg»,
+     «2 manubri da 24 kg») e `area` (dove: «zona rig», «corsia 10 m libera»): il player li mostra prima del
+     blocco, al cambio di sezione, e i blocchi a cronometro partono 10 s dopo «Pronto». Poi il campo **`debrief`**: le 5 domande di fine seduta (le prime due
      sull'alzata principale di oggi — «<Lift> <kg>: quante ne avevi ancora?» 0/1/2/3+, «La schiena?»
      ferma/si è mossa/dolore —, poi WOD, energia, domani; formato nel README del player). Il bottone «▶️ Avvia allenamento» lo manda
      Hṛdaya col tool `telegram_send_player` (`mcp__plugin_hridaya_telegram__*`); senza

@@ -25,7 +25,16 @@ dal menu del bot: riapre l'ultimo `player.json` con data ≤ oggi, i demo solo s
 
 `demo: true` (opzionale): seduta di prova, il bot la salva come `YYYY-MM-DD.demo.session.json` e `workout_fitbit` la ignora (salvo `--demo`).
 
-Ogni blocco: `type`, `name`, `exercises` (lista), e opzionali `prep_s`, `rest_after_s`, `optional`.
+Ogni blocco: `type`, `name`, `exercises` (lista), e opzionali `prep_s`, `rest_after_s`, `optional`,
+`section`, `equipment`, `area`, `go_s`.
+
+**Sezioni e attrezzi.** `section` (testo: Riscaldamento, Forza, Misure, WOD, Defaticamento…) compare in alto
+durante il blocco e, al cambio, la prep dice «INIZIA: WOD». Senza `section` il player la deduce (nome del blocco,
+poi tipo: emom/interval/amrap/fortime → WOD, sets → Forza, timed primo/ultimo → Riscaldamento/Defaticamento).
+`equipment` (lista di testi, carichi compresi) e `area` (dove nella palestra) compaiono nell'intro, sotto ogni
+blocco, e nella prep manuale come lista «PREPARA»; senza `equipment` il player elenca gli esercizi con carico.
+Prima di un blocco a cronometro (emom, interval, amrap, fortime) con prep manuale, dopo «▶ Pronto» parte
+un countdown «SI PARTE» di `go_s` secondi (default 10, `0` = subito): il passo è una prep con etichetta `Via <blocco>`.
 Esercizio: `name` (**nome inglese standard CrossFit**: Deadlift, Goblet Squat, Strict Press, Pull-up Negative,
 Row, Bike, Plank, Cat-Cow, World's Greatest Stretch, Walk in Place…: così compare a schermo, nella Scheda,
 nel «Prossimo» e nella voce «Next: Deadlift»; note e dettagli restano in italiano), `reps` (numero o testo: `"8 cal"`, `"3 per lato"`), `time_s`, `kg`, `note`,

@@ -41,20 +41,68 @@
     return { name: ex.name || '', detail: detailOf(ex, set), note, img: ex.img || null };
   }
 
+  // --- sezioni e attrezzi ----------------------------------------------------
+
+  const WOD_TYPES = ['emom', 'interval', 'amrap', 'fortime'];
+  const GO_S = 10; // dopo «▶ Pronto», prima di un blocco che parte col cronometro
+
+  /* Sezione del blocco: `section` se il coach l'ha scritta, altrimenti dedotta. */
+  function sectionOf(blk, b, n) {
+    if (blk.section) return String(blk.section);
+    const name = String(blk.name || '');
+    if (/riscald|warm|attivaz/i.test(name)) return 'Riscaldamento';
+    if (/defatic|cool|scarico|allungam/i.test(name)) return 'Defaticamento';
+    if (/misur|test/i.test(name)) return 'Misure';
+    if (/wod|metcon/i.test(name) || WOD_TYPES.includes(blk.type)) return 'WOD';
+    if (blk.type === 'timed') return b === 0 ? 'Riscaldamento' : (b === n - 1 ? 'Defaticamento' : '');
+    return blk.type === 'sets' ? 'Forza' : '';
+  }
+
+  /* Cosa preparare: `equipment` del coach; senza, gli esercizi con carico (nome · kg). */
+  function equipmentOf(blk) {
+    if (Array.isArray(blk.equipment)) return blk.equipment.filter((x) => typeof x === 'string' && x.trim());
+    const seen = new Set(), out = [];
+    for (const ex of blk.exercises || []) {
+      const kgs = [ex.kg].concat(Array.isArray(ex.sets) ? ex.sets.map((x) => x && x.kg) : []).filter((k) => k != null);
+      if (!kgs.length) continue;
+      const t = ex.name + ' · ' + [...new Set(kgs)].join('/') + ' kg';
+      if (!seen.has(t)) { seen.add(t); out.push(t); }
+    }
+    return out;
+  }
+
+  /* Per l'intro e la Scheda: blocchi con sezione, attrezzi, zona. */
+  function plan(w) {
+    const bl = w.blocks || [];
+    return bl.map((blk, b) => ({ b, name: blk.name, section: sectionOf(blk, b, bl.length),
+      equipment: equipmentOf(blk), area: blk.area || '', optional: !!blk.optional }));
+  }
+
   // --- timeline -------------------------------------------------------------
 
   function buildTimeline(w) {
     const steps = [];
-    (w.blocks || []).forEach((blk, b) => {
+    const blocks = w.blocks || [];
+    let prevSection = null;
+    blocks.forEach((blk, b) => {
       let bs = 0;
       const push = (o) => steps.push(Object.assign(
         { i: steps.length, b, bs: bs++, kind: 'work', mode: 'timer', dur: 0,
-          name: '', detail: '', note: '', img: null, round: 0, rounds: 0, mark: false, list: null }, o));
+          name: '', detail: '', note: '', img: null, round: 0, rounds: 0, mark: false, list: null,
+          section: '', newSection: false, equipment: null, area: '', go: false }, o));
       const exs = blk.exercises || [];
       const prep = blk.prep_s !== undefined ? blk.prep_s : (b === 0 ? 5 : null);
+      const section = sectionOf(blk, b, blocks.length);
+      const setup = { section, newSection: section !== prevSection, equipment: equipmentOf(blk), area: blk.area || '' };
+      prevSection = section;
       if (prep !== 0) {
-        push({ kind: 'prep', mode: prep == null ? 'manual' : 'timer', dur: prep || 0,
-               name: blk.name, detail: blk.optional ? 'facoltativo' : '' });
+        push(Object.assign({ kind: 'prep', mode: prep == null ? 'manual' : 'timer', dur: prep || 0,
+               name: blk.name, detail: blk.optional ? 'facoltativo' : '' }, setup));
+        // «Pronto» non fa partire subito un blocco a cronometro: 10 s per mettersi in posizione
+        const go = blk.go_s !== undefined ? blk.go_s : GO_S;
+        if (prep == null && WOD_TYPES.includes(blk.type) && go > 0) {
+          push({ kind: 'prep', mode: 'timer', dur: go, name: blk.name, go: true, section });
+        }
       }
       const rest = (dur) => push({ kind: 'rest', mode: 'timer', dur, name: 'Recupero' });
 
@@ -111,7 +159,7 @@
   }
 
   function stepLabel(st) {
-    if (st.kind === 'prep') return 'Prep ' + st.name;
+    if (st.kind === 'prep') return (st.go ? 'Via ' : 'Prep ') + st.name;
     return st.name + (st.detail ? ' ' + st.detail : '') + (st.rounds > 1 ? ' [' + st.round + '/' + st.rounds + ']' : '');
   }
 
@@ -311,7 +359,7 @@
     const skipped = new Set(s.events.filter((e) => e.e === 'skip').map((e) => e.s));
     const cur = s.steps[s.cur];
     const nw = cur && cur.kind !== 'work' && !s.finished ? nextWork(s) : null;
-    const blocks = (s.workout.blocks || []).map((b, i) => ({ b: i, name: b.name, optional: !!b.optional, items: [] }));
+    const blocks = plan(s.workout).map((x) => Object.assign(x, { items: [] }));
     for (const st of s.steps) {
       if (st.kind !== 'work' || !blocks[st.b]) continue;
       let status = 'todo';
@@ -349,7 +397,6 @@
   // --- debrief a fine seduta --------------------------------------------------
   /* Domande del coach (w.debrief: [{id, q, options:[...]}]); se mancano, le tre fisse.
      Le domande sull'alzata principale le scrive il coach nella scheda del giorno. */
-  const WOD_TYPES = ['emom', 'interval', 'amrap', 'fortime'];
   function debriefQuestions(w) {
     const ok = (x) => x && typeof x.id === 'string' && typeof x.q === 'string' && Array.isArray(x.options) && x.options.length;
     if (Array.isArray(w.debrief) && w.debrief.length) return w.debrief.filter(ok).slice(0, 8);
@@ -478,11 +525,15 @@
       if (b.type === 'emom' && !(b.minutes > 0)) errs.push(p + ': minutes');
       if (b.type === 'interval' && !(b.work_s > 0)) errs.push(p + ': work_s');
       if (b.type === 'amrap' && !(b.duration_s > 0)) errs.push(p + ': duration_s');
+      if (b.equipment !== undefined && !(Array.isArray(b.equipment) && b.equipment.every((x) => typeof x === 'string')))
+        errs.push(p + ': equipment deve essere una lista di testi');
+      if (b.area !== undefined && typeof b.area !== 'string') errs.push(p + ': area deve essere un testo');
+      if (b.section !== undefined && typeof b.section !== 'string') errs.push(p + ': section deve essere un testo');
     });
     return errs;
   }
 
-  return { debriefQuestions, voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
+  return { sectionOf, equipmentOf, plan, GO_S, debriefQuestions, voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
            tick, start, pause, resume, skip, done, round, stop, view, encodeLog, decodeLog, byteLen,
            b64urlEncode, b64urlDecode, encodeWorkout, parseFragment, workoutId, validateWorkout };
 });

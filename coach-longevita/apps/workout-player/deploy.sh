@@ -16,6 +16,10 @@ DIST="$(mktemp -d -t workout-player)"
 trap 'rm -rf "$DIST"' EXIT
 mkdir -p "$DIST/img" "$DIST/voice"
 cp "$HERE"/index.html "$HERE"/engine.js "$HERE"/nosleep.mp4 "$DIST/"
+# pagina e motore vanno insieme: la versione nel src evita una pagina nuova col motore vecchio in cache
+EV="$(shasum "$HERE/engine.js" | cut -c1-10)"
+sed -i '' "s|<script src=\"engine.js\"></script>|<script src=\"engine.js?v=$EV\"></script>|" "$DIST/index.html"
+grep -q "engine.js?v=$EV" "$DIST/index.html" || { echo "deploy: versione del motore non applicata" >&2; exit 1; }
 cp "$PLUGIN"/assets/img/*.svg "$DIST/img/"
 if [[ -n "$DATA" && -d "$DATA/data/coach-longevita/daily/img" ]]; then
   for f in "$DATA"/data/coach-longevita/daily/img/*.svg(N); do
