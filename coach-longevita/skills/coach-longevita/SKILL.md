@@ -98,7 +98,9 @@ vincoli clinici: li rispetti e li citi. Non scrivi tu su Telegram.
      Hṛdaya col tool `telegram_send_player` (`mcp__plugin_hridaya_telegram__*`); senza
      tool: `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/workout_send.py <player.json>`
      (valida, genera le clip vocali mancanti, usa il trasporto del plugin hridaya).
-     Prima dell'invio: `--dry-run` per validare.
+     Prima dell'invio: `--dry-run` per validare. Il canale rifiuta una seduta con esercizi vietati
+     (`preference_book.no_rules` + fase di vita del profilo: `scripts/workout_guard.py <player.json>`,
+     exit 3): se succede, cambia la scheda, non il nome dell'esercizio.
    - **Telegram** (se chiesto, o se la richiesta arriva da Telegram): `--png`
      sulle immagini, poi spec `data/coach-longevita/daily/YYYY-MM-DD.telegram.json`
      = lista di passi `{"text": "<b>HTML</b>"}` o

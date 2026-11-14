@@ -456,6 +456,10 @@ def call_tool(name: str, args: dict) -> Any:
         errs = wp.validate_workout(w)
         if errs:
             raise ToolError("player.json non valido: " + "; ".join(errs))
+        blocked = wp.guard(w, root=cc.data_root())
+        if blocked:
+            raise ToolError("seduta bloccata, esercizi vietati: " + "; ".join(blocked)
+                            + " — torna al coach per cambiarla")
         base = cc.load_env().get("WORKOUT_PLAYER_URL", "")
         if not base:
             raise ToolError("manca WORKOUT_PLAYER_URL nel .env del repo dati")

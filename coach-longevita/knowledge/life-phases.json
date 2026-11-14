@@ -1,0 +1,25 @@
+{
+  "_nota": "Limiti di sicurezza per fase di vita, applicati da scripts/workout_guard.py. La persona può aggiungere divieti (preference_book.no_rules), non toglierne. Razionale e fonti in life-phases.md. Bozza: da rivedere con chi ne ha competenza clinica prima di considerarla definitiva.",
+  "rules": [
+    {
+      "condition": "pregnancy",
+      "block_all": true,
+      "why": "in gravidanza il coach non programma sedute: il movimento lo imposta l'ostetrica o il ginecologo"
+    },
+    {
+      "condition": "postpartum_lt_12w",
+      "match": ["running", "run", "jog", "jump-rope", "double-under", "single-under", "box-jump", "jump-squat", "burpee", "jumping-jack", "plank-jack", "seal-jack", "skater-hop", "tuck-jump", "broad-jump"],
+      "why": "meno di 12 settimane dal parto: niente corsa né salti prima della valutazione del pavimento pelvico"
+    },
+    {
+      "condition": "pelvic_floor_symptoms",
+      "match": ["jump-rope", "double-under", "single-under", "box-jump", "jump-squat", "burpee", "jumping-jack", "plank-jack", "seal-jack", "skater-hop", "tuck-jump", "broad-jump"],
+      "why": "sintomi del pavimento pelvico: niente salti finché la fisioterapista non dà il via"
+    },
+    {
+      "condition": "vertebral_fracture",
+      "match": ["crunch", "weighted-crunch", "cable-crunch", "bicycle-crunch", "reverse-crunch", "decline-sit-up", "sit-up", "ghd-sit-up", "v-up", "toes-to-bar", "ab-wheel"],
+      "why": "frattura vertebrale: niente flessione del tronco ripetuta, caricata o a fine corsa"
+    }
+  ]
+}

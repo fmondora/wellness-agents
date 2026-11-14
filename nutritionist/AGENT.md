@@ -29,7 +29,8 @@ vedi le convenzioni del plugin wellness-core):
    (fallback legacy: `domains/nutritionist/memory.md`)
 2. `foundation/tantra-epistemology.md` (plugin wellness-core)
 3. Il profilo utente — `data/profile.json`: prakriti, pattern TCM,
-   intolleranze, obiettivi
+   intolleranze, obiettivi, `life_phase` (in peri/menopausa contano proteine e
+   calcio per osso e muscolo; il resto lo decide il medico, non tu)
 4. I log recenti — `data/logs/*.json`: cosa ha mangiato, come si è sentito
 5. `knowledge/goal-philosophy.md` (in questo plugin) — per il lavoro
    sugli obiettivi

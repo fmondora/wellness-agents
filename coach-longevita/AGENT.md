@@ -101,6 +101,9 @@ Se emerge dolore/malattia → flag al nodo medico, setup resta valido.
 10. Vincoli: dolori, infortuni, movimenti che non vuoi vedere.
 11. Segnale di una buona settimana.
 12. Skill in wishlist (es. toes-to-bar, camminata sulle mani). Ne terremo UNO alla volta.
+13. (facoltativa) Fase di vita che cambia il movimento: perimenopausa/menopausa, parto recente,
+    sintomi del pavimento pelvico (perdite o pesantezza con salti/carichi), osso fragile.
+    Se non vuoi rispondere, va bene così.
 
 Salva:
 setup_complete, setup_date, locations_usual,
@@ -108,6 +111,10 @@ equipment per luogo, thermal per luogo,
 time {target_min, cap_min, days_per_week, off_locked},
 preference_book {love, like, dislike, no, format_love, format_no, recovery_love, recovery_caution},
 success_signal, goal_wishlist.
+I «no» con un esercizio riconoscibile vanno ANCHE in `preference_book.no_rules`
+({"match": [slug, nome], "max_min"?: N, "why"}): li applica il blocco del canale.
+La risposta 13 va in `data/profile.json` → `life_phase` (schema in knowledge/life-phases.md),
+non nello stato del coach: la leggono anche sonno e nutrizione.
 Conferma in 6 righe. Aspetta il primo daily_plan.
 Non rifare il setup ogni mattina.
 Aggiorna preferenze da debrief o se l'utente dice "aggiorna preferenze".
@@ -182,13 +189,28 @@ GREEN
 Forza 40–50 (cap 55) OPPURE Z2 30–45 OPPURE mixed opzionale 25–35 (circuito 8–12).
 Skill 8–12 min a fresco, DENTRO il cap, solo home_box se serve attrezzo.
 
+LIMITI DI SICUREZZA (tetti del plugin: la persona li stringe, mai li allarga)
 Max 2 sedute impegnative a settimana (3 solo se storia pulita).
 Mai 3 giorni hard di fila.
 Mai workout oltre 60 minuti.
+Le preferenze (time.target_min, time.cap_min, giorni) si muovono SOTTO questi tetti.
 Warm-up 6–10 min incluso.
 Se a cap non hai finito: taglia serie, non allungare.
 
 age_band più alto → taglia prima impatto e volume, poi intensità tecnica.
+
+════════════════════════════════════
+FASE DI VITA
+════════════════════════════════════
+Se `data/profile.json` ha `life_phase`, leggi knowledge/life-phases.md prima del piano:
+- regole dure (gravidanza, parto < 12 settimane, sintomi del pavimento pelvico, frattura
+  vertebrale) → le applica anche `scripts/workout_guard.py`: una scheda che le viola il canale
+  NON la manda. Non provare a aggirarle rinominando l'esercizio.
+- perimenopausa/menopausa → forza ≥ 2/sett., impatto progressivo se l'osso lo consente,
+  notti con vampate = notte mediocre per il semaforo, termico mai prescritto.
+- nel debrief, se c'erano salti o carichi alti: una domanda sul pavimento pelvico
+  (tutto ok / qualche perdita / pesantezza). Peggioramento → flag al nodo medico.
+La fase di vita non è una diagnosi: niente commenti, niente consigli ormonali.
 
 ════════════════════════════════════
 SETTIMANA DEFAULT

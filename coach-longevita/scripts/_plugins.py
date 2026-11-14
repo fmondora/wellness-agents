@@ -5,7 +5,7 @@ coach-longevita e dream-agent (ogni plugin deve funzionare da solo nella cache).
 
 Ordine: variabile WELLNESS_PLUGIN_<NOME> (cartella scripts) → checkout del
 marketplace (<radice>/<plugin>/scripts) → cache dei plugin installati
-(<cache>/wellness-agents/<plugin>/<versione>/scripts, la più recente).
+(<cache>/wellness-agents/<plugin>/<versione>/scripts, la versione più alta).
 Il plugin mancante non è un errore: chi chiama degrada e lo dice.
 """
 from __future__ import annotations
@@ -28,7 +28,17 @@ def plugin_scripts(name: str) -> Path | None:
     cands = glob.glob(str(here.parent.parent.parent / name / "*" / "scripts"))
     cands += glob.glob(os.path.expanduser(f"~/.claude/plugins/cache/wellness-agents/{name}/*/scripts"))
     cands = [c for c in cands if os.path.isdir(c)]
-    return Path(max(cands, key=os.path.getmtime)) if cands else None
+    return Path(max(cands, key=_version_key)) if cands else None
+
+
+def _version_key(path: str) -> tuple:
+    """Ordina per versione (0.10.0 > 0.9.2), poi per data: lanciare pytest in una cartella
+    vecchia della cache non deve farla diventare «la più recente»."""
+    v = Path(path).parent.name
+    try:
+        return (1, tuple(int(x) for x in v.split(".")), os.path.getmtime(path))
+    except ValueError:
+        return (0, (), os.path.getmtime(path))
 
 
 def import_from(plugin: str, module: str):

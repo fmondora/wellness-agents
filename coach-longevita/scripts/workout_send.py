@@ -5,7 +5,8 @@
 
 Il canale è di Hṛdaya: in sessione si usa il suo tool `telegram_send_player`. Questo script
 serve quando il tool non c'è: usa il trasporto del plugin hridaya (lo trova installato o nel
-checkout del marketplace), valida lo schema, genera le clip vocali mancanti (e ripubblica il
+checkout del marketplace), valida lo schema, rifiuta le sedute con esercizi vietati
+(`workout_guard.py`), genera le clip vocali mancanti (e ripubblica il
 player se ne ha create), costruisce WORKOUT_PLAYER_URL (.env del repo dati) + #w=… e invia.
 Repo dati: cwd o WELLNESS_DATA.
 """
@@ -52,6 +53,11 @@ def main() -> int:
     if errs:
         print("Workout non valido:\n  " + "\n  ".join(errs), file=sys.stderr)
         return 2
+    import workout_guard
+    blocked = workout_guard.check(w)
+    if blocked:
+        print("Seduta bloccata (esercizi vietati):\n  " + "\n  ".join(blocked), file=sys.stderr)
+        return 3
     env = cc.load_env()
     base = env.get("WORKOUT_PLAYER_URL", "")
     if not base:

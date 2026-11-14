@@ -37,6 +37,20 @@ TYPES = {"timed", "sets", "emom", "interval", "amrap", "fortime"}
 MAX_PLAIN_URL = 2048  # oltre, il fragment va compresso (deflate-raw, iOS ≥ 16.4)
 
 
+def guard(w: dict, root: Path | None = None) -> list[str]:
+    """Esercizi vietati (preferenze personali + fase di vita): il controllo è del coach, lo
+    applicano tutte le porte che mandano il bottone (tool MCP, /allenamento). Senza il plugin
+    coach-longevita non c'è nulla da controllare; con il plugin ma senza il guard si blocca."""
+    from _plugins import import_from, plugin_scripts
+    if plugin_scripts("coach-longevita") is None:
+        return []
+    try:
+        g = import_from("coach-longevita", "workout_guard")
+    except ImportError as e:
+        return [f"controllo degli esercizi vietati non disponibile ({e}): blocco prudenziale"]
+    return g.check(w, root=root or ROOT)
+
+
 # --- workout → URL -----------------------------------------------------------
 
 def validate_workout(w: Any) -> list[str]:

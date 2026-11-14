@@ -59,6 +59,7 @@ un'ora di letto che ignora un vincolo del giorno (prelievo, viaggio, turno).
 | ora di letto a fine ciclo | `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/circadian_plan.py --json` (soglie in `config/insights.json` → `circadian`) |
 | settimana di movimento | `data/coach-longevita/week_plan.json` (solo lettura) |
 | diario | `data/logs/` (emozioni, caffè, schermi serali se annotati) |
+| fase di vita | `data/profile.json` → `life_phase`: in peri/menopausa le vampate notturne frammentano il sonno per una causa che non è igiene né stress; si osserva (diario, temperatura notturna se c'è) e si dice, mai si interpreta come terapia |
 
 ---
 
