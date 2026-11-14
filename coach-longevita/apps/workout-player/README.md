@@ -46,7 +46,7 @@ Le SVG vengono dal bundle del plugin (`assets/img/`) più le SVG generiche scari
 | type | campi | come gira |
 |---|---|---|
 | `timed` | `duration_s` (se un solo esercizio) | un passo per esercizio: a countdown se ha `time_s`, altrimenti «Fatto» |
-| `sets` | `rounds`, `rest_s` (a fine giro), `rest_between_s` (tra esercizi della superserie) | «Fatto» a fine serie → recupero a countdown. Rampa: `exercise.sets: [{reps, kg, rest_s, note}]` |
+| `sets` | `rounds`, `rest_s` (a fine giro), `rest_between_s` (tra esercizi della superserie) | «Fatto» a fine serie → recupero a countdown. Rampa: `exercise.sets: [{reps, kg, rest_s, note}]` (tante serie quante ne elenca, anche con `rounds: 1`; a schermo la scaletta dei carichi) |
 | `emom` | `minutes`, `interval_s` (60) | esercizi a rotazione minuto per minuto; «Fatto (segna)» registra quando hai finito il lavoro del minuto |
 | `interval` | `work_s`, `rest_s`, `rounds` | ogni giro passa per tutte le stazioni (Tabata = 20/10 × 8) |
 | `amrap` | `duration_s` | countdown, «+1 giro» a tap |
@@ -119,6 +119,29 @@ WELLNESS_DATA=<repo dati> coach-longevita/apps/workout-player/deploy.sh [--dry-r
 ```
 
 `deploy.sh` pubblica solo asset generici (pagina, motore, illustrazioni, voce) da una cartella
-temporanea; progetto Pages da `WORKOUT_PLAYER_PAGES_PROJECT` nel `.env` del repo dati. Le clip vocali
-nuove (`make_voice.py`, voce macOS Samantha) finiscono in `data/coach-longevita/player-voice/` del repo
-dati, non nella cache del plugin.
+temporanea; progetto Pages da `WORKOUT_PLAYER_PAGES_PROJECT` nel `.env` del repo dati. Il bundle `voice/`
+ha la clip (voce macOS Samantha) di ogni nome del catalogo esercizi (`make_voice.py --catalog`, da rifare
+quando il catalogo cresce): un player pubblicato una volta parla per chiunque lo usi, il workout viaggia
+nell'URL. Solo i nomi fuori catalogo generano clip nel repo dati (`data/coach-longevita/player-voice/`)
+e chiedono un deploy da lì.
+
+«↩ Indietro» torna al passo di lavoro precedente (salta recuperi e i 10 s di via) per rifare un «Fatto»
+toccato per sbaglio: nel log è un `step` all'indietro, la scheda e il riepilogo contano l'ultima chiusura del passo.
+
+## Design
+
+Token CSS in testa a `index.html`, il resto del foglio usa solo quelli:
+
+- **colore** (semantico, cambia col tema): superfici (`--bg`, `--surface`, `--surface-2`, `--field`), testo
+  (`--fg`, `--fg-2`, `--dim`), linee (`--line`, `--border`), le quattro **fasi** che colorano tutto lo sfondo
+  (`--work`, `--rest`, `--prep`, `--pause`) e i segnali (`--accent`, `--warn`, `--danger` con i loro `--on-*`);
+- **tipo**: scala `--t-xs`…`--t-2xl` (14–30 px), pesi `--w-bold/heavy/black`, font di sistema;
+- **spazio e raggi**: `--s-1`…`--s-5` (4–24 px), `--r-xs`…`--r-lg`, `--tap-pad` per i bottoni;
+- **misure fluide** del player (`--clock*`, `--ex*`, `--detail*`): legate allo schermo, si stringono con
+  illustrazione, scaletta o cambio attrezzi.
+
+Tema: `data-theme` su `<html>`. **Scuro di default**, anche con Telegram in chiaro: in palestra si legge meglio
+da lontano. Chi lo vuole chiaro mette `?theme=light` nel suo `WORKOUT_PLAYER_URL`
+(`https://…pages.dev/?theme=light`); `?theme=auto` segue `Telegram.WebApp.colorScheme` (evento `themeChanged`)
+o, fuori da Telegram, `prefers-color-scheme`. Il chiaro rifà solo i token di colore. Un colore nuovo
+si aggiunge come token in entrambi i temi, mai come esadecimale nelle regole.

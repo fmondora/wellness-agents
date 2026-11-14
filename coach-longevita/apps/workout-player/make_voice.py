@@ -2,11 +2,15 @@
 """Clip vocali pre-registrate per il player (iOS dentro Telegram non legge speechSynthesis dai timer).
 
     WELLNESS_DATA=<repo dati> python3.12 make_voice.py [player.json ...]
+    python3.12 make_voice.py --catalog      # nel plugin: tutto il catalogo esercizi in voice/
+
 
 Genera <slug>.mp3 (voce macOS Samantha, en-US) per le frasi fisse e per ogni nome di esercizio
 trovato nelle fixture, nei player.json del coach e nei file passati. Le clip del plugin (voice/)
 non si rifanno; le nuove vanno nel repo dati (data/coach-longevita/player-voice/), non nella
-cache del plugin. Stampa gli slug creati. Lo slug deve coincidere con voiceSlug() in engine.js.
+cache del plugin. Con --catalog le clip di tutti i nomi di knowledge/exercise-catalog.json vanno nel
+bundle (voice/, si committa): un player condiviso parla per chiunque senza deploy dal repo dati, che
+serve solo per i nomi fuori catalogo. Stampa gli slug creati. Lo slug deve coincidere con voiceSlug() in engine.js.
 """
 from __future__ import annotations
 
@@ -23,6 +27,7 @@ HERE = Path(__file__).resolve().parent
 REPO = Path(os.environ.get("WELLNESS_DATA") or Path.cwd())
 BUNDLED = HERE / "voice"
 VOICE_DIR = REPO / "data" / "coach-longevita" / "player-voice"
+CATALOG = HERE.parent.parent / "knowledge" / "exercise-catalog.json"
 FIXED = {"half-way-there": "Half way there", "ten-seconds": "Ten seconds", "next": "Next"}
 
 
@@ -39,11 +44,15 @@ def workout_names(path: str | Path) -> set[str]:
     return {x["name"] for b in w.get("blocks", []) for x in b.get("exercises", []) if x.get("name")}
 
 
-def make(text: str, slug: str) -> bool:
-    out = VOICE_DIR / f"{slug}.mp3"
+def catalog_names() -> set[str]:
+    return {e["name"] for e in json.loads(CATALOG.read_text(encoding="utf-8"))["exercises"] if e.get("name")}
+
+
+def make(text: str, slug: str, dest: Path = VOICE_DIR) -> bool:
+    out = dest / f"{slug}.mp3"
     if out.exists() or (BUNDLED / f"{slug}.mp3").exists():
         return False
-    VOICE_DIR.mkdir(parents=True, exist_ok=True)
+    dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         aiff = Path(td) / "v.aiff"
         # testo via stdin: un nome che inizia con "-" non diventa un'opzione di say
@@ -55,12 +64,19 @@ def make(text: str, slug: str) -> bool:
 
 def main(argv: list[str]) -> int:
     texts = dict(FIXED)
-    files = glob.glob(str(HERE / "fixtures" / "*.json")) + \
-        glob.glob(str(REPO / "data" / "coach-longevita" / "daily" / "*.player.json")) + argv
-    for f in files:
-        for n in workout_names(f):
-            texts.setdefault(voice_slug(n), n)
-    created = [slug for slug, text in sorted(texts.items()) if slug and make(text, slug)]
+    if "--catalog" in argv:
+        dest, names = BUNDLED, catalog_names()
+        for f in glob.glob(str(HERE / "fixtures" / "*.json")):
+            names |= workout_names(f)
+    else:
+        dest, names = VOICE_DIR, set()
+        files = glob.glob(str(HERE / "fixtures" / "*.json")) + \
+            glob.glob(str(REPO / "data" / "coach-longevita" / "daily" / "*.player.json")) + argv
+        for f in files:
+            names |= workout_names(f)
+    for n in sorted(names):
+        texts.setdefault(voice_slug(n), n)
+    created = [slug for slug, text in sorted(texts.items()) if slug and make(text, slug, dest)]
     for slug in created:
         print(slug)
     return 0

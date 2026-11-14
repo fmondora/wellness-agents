@@ -114,12 +114,16 @@
           });
           break;
         case 'sets': {
-          const rounds = blk.rounds || Math.max(1, ...exs.map((e) => (e.sets || []).length));
+          // una rampa (exercise.sets) ha tante serie quante ne elenca, anche se il blocco dice rounds: 1
+          const ramp = Math.max(0, ...exs.map((e) => (Array.isArray(e.sets) ? e.sets.length : 0)));
+          const rounds = Math.max(blk.rounds || 1, ramp);
           for (let r = 0; r < rounds; r++) {
             exs.forEach((ex, k) => {
-              const set = ex.sets ? ex.sets[r] : null;
-              if (ex.sets && !set) return;
-              push(Object.assign(exInfo(ex, set), { mode: 'manual', round: r + 1, rounds }));
+              const sets = Array.isArray(ex.sets) ? ex.sets : null;
+              const set = sets ? sets[r] : null;
+              if (sets && !set) return;
+              const ladder = sets && sets.length > 1 ? { ladder: sets.map((x) => detailOf(ex, x)), li: r } : null;
+              push(Object.assign(exInfo(ex, set), { mode: 'manual', round: r + 1, rounds }, ladder));
               const lastEx = k === exs.length - 1;
               const d = set && set.rest_s != null ? set.rest_s : (lastEx ? blk.rest_s : blk.rest_between_s);
               if (d && !(lastEx && r === rounds - 1)) rest(d);
@@ -278,6 +282,24 @@
     return out.concat(advance(s, now, false));
   }
 
+  /* «Indietro»: torna al passo di lavoro prima (saltando recuperi, prep fra i blocchi e i 10 s
+     di via), per rifare un «Fatto» toccato per sbaglio. Nel log è un normale cambio di passo
+     all'indietro. Solo la prep iniziale resta un approdo: prima non c'è lavoro. */
+  function backTarget(s) {
+    let j = s.cur - 1;
+    while (j > 0 && (s.steps[j].kind === 'rest' || s.steps[j].kind === 'prep' || s.steps[j].go)) j--;
+    return j >= 0 && j < s.cur ? j : -1;
+  }
+
+  function back(s, now, expected) {
+    const { out, ok } = gate(s, now, expected);
+    if (!ok) return out;
+    const j = backTarget(s);
+    if (j < 0) return out;
+    out.push(emit(s, 'step', now, j));
+    return out;
+  }
+
   function round(s, now, expected) {
     if (!live(s)) return [];
     const out = s.paused ? [] : tick(s, now);
@@ -356,7 +378,9 @@
   /* L'intera seduta per la vista "Scheda": blocchi → passi di lavoro con stato
      done | skipped | current | next | todo. */
   function sheet(s) {
-    const skipped = new Set(s.events.filter((e) => e.e === 'skip').map((e) => e.s));
+    const last = {};   // conta l'ultima chiusura del passo: dopo «Indietro» un salto può diventare fatto
+    for (const e of s.events) if (e.e === 'skip' || e.e === 'done') last[e.s] = e.e;
+    const skipped = new Set(Object.keys(last).filter((k) => last[k] === 'skip').map(Number));
     const cur = s.steps[s.cur];
     const nw = cur && cur.kind !== 'work' && !s.finished ? nextWork(s) : null;
     const blocks = plan(s.workout).map((x) => Object.assign(x, { items: [] }));
@@ -364,7 +388,7 @@
       if (st.kind !== 'work' || !blocks[st.b]) continue;
       let status = 'todo';
       if (skipped.has(st.i)) status = 'skipped';
-      else if (st.i < s.cur || (s.finished && s.status === 'end' && st.i <= s.cur)) status = 'done';
+      else if (st.i < s.cur || last[st.i] === 'done' && st.i !== s.cur || (s.finished && s.status === 'end' && st.i <= s.cur)) status = 'done';
       else if (st.i === s.cur && !s.finished) status = 'current';
       else if (nw && st.i === nw.i) status = 'next';
       blocks[st.b].items.push({ i: st.i, name: st.name, detail: st.detail, round: st.round, rounds: st.rounds,
@@ -533,7 +557,7 @@
     return errs;
   }
 
-  return { sectionOf, equipmentOf, plan, GO_S, debriefQuestions, voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
+  return { back, backTarget, sectionOf, equipmentOf, plan, GO_S, debriefQuestions, voiceSlug, EVENTS, KINDS, AUTO_LAG_MS, TAP_GUARD_MS, abandon, reopen, continueStep, continueAt, CONTINUE_MAX_MS, lastT, nextWork, imgFrames, sheet, fmtTime, buildTimeline, stepLabel, createSession, apply, replay,
            tick, start, pause, resume, skip, done, round, stop, view, encodeLog, decodeLog, byteLen,
            b64urlEncode, b64urlDecode, encodeWorkout, parseFragment, workoutId, validateWorkout };
 });

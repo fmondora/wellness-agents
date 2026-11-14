@@ -386,3 +386,56 @@ test('sezioni, attrezzi e via prima del WOD', () => {
   const s = E.createSession(w); E.start(s, 0);
   assert.strictEqual(E.sheet(s)[3].section, 'WOD');
 });
+
+test('rampa con rounds: 1 elenca tutte le serie, con la scaletta dei carichi', () => {
+  const w = { date: '2026-11-11', title: 't', blocks: [
+    { name: 'Deadlift — rampa', type: 'sets', rounds: 1, exercises: [{ name: 'Deadlift', sets: [
+      { reps: 5, kg: 60, rest_s: 90 }, { reps: 3, kg: 80, rest_s: 120 }, { reps: 2, kg: 90, rest_s: 150 }] }] },
+    { name: 'Deadlift — lavoro', type: 'sets', rounds: 2, rest_s: 150, exercises: [{ name: 'Deadlift', reps: 4, kg: 100 }] }] };
+  const st = E.buildTimeline(w);
+  const ramp = st.filter((x) => x.b === 0 && x.kind === 'work');
+  assert.deepStrictEqual(ramp.map((x) => x.detail), ['5 rip. · 60 kg', '3 rip. · 80 kg', '2 rip. · 90 kg']);
+  assert.deepStrictEqual(ramp.map((x) => x.li), [0, 1, 2]);
+  assert.deepStrictEqual(ramp[1].ladder, ['5 rip. · 60 kg', '3 rip. · 80 kg', '2 rip. · 90 kg']);
+  assert.deepStrictEqual(st.filter((x) => x.b === 0 && x.kind === 'rest').map((x) => x.dur), [90, 120]);
+  assert.ok(!st.filter((x) => x.b === 1).some((x) => x.ladder));   // serie uguali: niente scaletta
+});
+
+test('indietro: annulla un Fatto per sbaglio, salta il recupero, la scheda torna giusta', () => {
+  const w = { date: '2026-11-11', title: 't', blocks: [
+    { name: 'Rampa', type: 'sets', exercises: [{ name: 'Deadlift', sets: [
+      { reps: 5, kg: 60, rest_s: 90 }, { reps: 3, kg: 80, rest_s: 120 }, { reps: 2, kg: 90 }] }] }] };
+  const s = E.createSession(w);
+  let t = T0;
+  E.start(s, t);                                   // 0 prep a tempo (primo blocco)
+  E.tick(s, t += 6000);                            // → 1 serie a 60
+  assert.strictEqual(s.cur, 1);
+  assert.strictEqual(E.backTarget(s), 0);
+  E.done(s, t += 1000, 1);                         // fatto (per sbaglio) → 2 recupero
+  assert.strictEqual(s.steps[s.cur].kind, 'rest');
+  E.back(s, t += 1000, 2);                         // indietro: torna alla serie a 60, non al recupero
+  assert.strictEqual(s.cur, 1);
+  assert.strictEqual(s.steps[s.cur].detail, '5 rip. · 60 kg');
+  E.back(s, t += 300, 1);                          // doppio tap subito dopo: ignorato
+  assert.strictEqual(s.cur, 1);
+  E.done(s, t += 1000, 1);
+  assert.strictEqual(s.cur, 2);
+  const items = E.sheet(s)[0].items;
+  assert.strictEqual(items[0].status, 'done');
+  const back = E.replay(w, s.events);              // il log basta a ricostruire
+  assert.strictEqual(back.cur, 2);
+  const log = E.decodeLog(E.encodeLog(s));
+  assert.ok(log.events.length >= 6);
+});
+
+test('indietro dal primo esercizio di un blocco: salta la prep a tempo e torna al blocco prima', () => {
+  const w = { date: '2026-11-14', title: 't', blocks: [
+    { name: 'A', type: 'timed', exercises: [{ name: 'Air Squat' }] },
+    { name: 'B', type: 'timed', prep_s: 10, exercises: [{ name: 'Push-up' }] }] };
+  const s = E.createSession(w);
+  const iA = s.steps.findIndex((x) => x.kind === 'work' && x.b === 0);
+  const iB = s.steps.findIndex((x) => x.kind === 'work' && x.b === 1);
+  assert.strictEqual(s.steps[iB - 1].kind, 'prep');
+  s.cur = iB;
+  assert.strictEqual(E.backTarget(s), iA);
+});
