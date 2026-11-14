@@ -88,6 +88,20 @@ def test_allenamento_rimanda_il_bottone(data, fake_call, monkeypatch):
     assert p["reply_markup"]["keyboard"][0][0]["web_app"]["url"].startswith("https://x.pages.dev/#")
 
 
+def test_allenamento_non_riapre_una_seduta_vietata(data, fake_call, monkeypatch):
+    monkeypatch.setattr(wp, "DAILY", data / "daily")
+    wp.DAILY.mkdir()
+    (data / "data" / "coach-longevita").mkdir(parents=True)
+    (data / "data" / "coach-longevita" / "state.json").write_text(json.dumps(
+        {"preference_book": {"no_rules": [{"match": ["run"], "max_min": 30, "why": "ginocchia"}]}}))
+    w = {"title": "Z2", "blocks": [{"type": "timed", "name": "Z2", "exercises": [{"name": "Run", "time_s": 3600}]}]}
+    (wp.DAILY / "2026-11-06.player.json").write_text(json.dumps(w))
+    monkeypatch.setattr(wp, "latest_player", lambda daily: daily / "2026-11-06.player.json")
+    make(fake_call).process_update(upd("/allenamento"), {42})
+    m, p = fake_call.calls[-1]
+    assert not p.get("reply_markup") and "Scheda bloccata" in p["text"] and "ginocchia" in p["text"]
+
+
 def test_409_ripetuti_un_solo_avviso_dal_cancello(data, fake_call):
     b = make(fake_call)
     fired = [b.on_conflict() for _ in range(6)]
@@ -124,6 +138,51 @@ def test_messaggio_notturno_non_e_alzata(data, fake_call, monkeypatch):
     monkeypatch.setattr(tb, "now_local", lambda: datetime(2026, 11, 7, 3, 10, tzinfo=tb.cc.tz()))
     make(fake_call).process_update(upd("non dormo"), {42})
     assert "2026-11-07" not in (pg.load_state().get("wake") or {})
+
+
+def _enqueue_at(text, when):
+    mid = tq.enqueue(42, text)
+    rows = tq.read_jsonl(tq.inbox_path())
+    for r in rows:
+        if r["id"] == mid:
+            r["created_at"] = when.astimezone(timezone.utc).isoformat()
+    tq.inbox_path().write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return mid
+
+
+def test_messaggio_prima_del_pavimento_diventa_alzata_al_pavimento(data, fake_call):
+    tz = tb.cc.tz()
+    b = make(fake_call, active=True)
+    _enqueue_at("Ciao", datetime(2026, 11, 14, 4, 50, tzinfo=tz))        # pavimento di default 05:00
+    assert not b.maybe_wake_from_early_message(datetime(2026, 11, 14, 4, 55, tzinfo=tz))   # non ancora
+    assert b.maybe_wake_from_early_message(datetime(2026, 11, 14, 5, 0, 30, tzinfo=tz))
+    w = pg.load_state()["wake"]["2026-11-14"]
+    assert w["at"] == "05:00" and "04:50" in w["source"]
+    assert any(r.get("event") == "wake" for r in tq.list_pending())
+    assert not b.maybe_wake_from_early_message(datetime(2026, 11, 14, 5, 1, tzinfo=tz))    # una volta sola
+
+
+def test_messaggio_della_notte_fonda_non_e_alzata(data, fake_call):
+    tz = tb.cc.tz()
+    b = make(fake_call, active=True)
+    _enqueue_at("non dormo", datetime(2026, 11, 14, 2, 40, tzinfo=tz))   # fuori dall'ora prima
+    assert not b.maybe_wake_from_early_message(datetime(2026, 11, 14, 5, 10, tzinfo=tz))
+    assert "2026-11-14" not in (pg.load_state().get("wake") or {})
+
+
+def test_messaggio_gia_risposto_prima_del_pavimento_vale_lo_stesso(data, fake_call):
+    tz = tb.cc.tz()
+    b = make(fake_call, active=True)
+    tq.mark_done(_enqueue_at("ciao", datetime(2026, 11, 14, 4, 30, tzinfo=tz)))   # risposta trattenuta
+    assert b.maybe_wake_from_early_message(datetime(2026, 11, 14, 5, 0, 20, tzinfo=tz))
+
+
+def test_bot_ripartito_tardi_lascia_fare_al_cancello(data, fake_call):
+    tz = tb.cc.tz()
+    b = make(fake_call, active=True)
+    _enqueue_at("ciao", datetime(2026, 11, 14, 4, 50, tzinfo=tz))
+    assert not b.maybe_wake_from_early_message(datetime(2026, 11, 14, 12, 0, tzinfo=tz))
+    assert "2026-11-14" not in (pg.load_state().get("wake") or {})
 
 
 def test_errore_telegram_porta_il_codice():

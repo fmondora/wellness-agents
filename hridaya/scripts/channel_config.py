@@ -33,6 +33,8 @@ DEFAULTS: dict = {
     "session_heartbeat_max_age_s": 150,  # oltre, la sessione è considerata spenta
     "wake": {
         "earliest": "05:00",       # pavimento: mai un'alzata prima di quest'ora
+        "early_message_min": 60,   # un messaggio scritto in quest'ultima ora prima del pavimento (con
+                                   # o senza risposta) vale come alzata quando il pavimento scatta
         "watch_from": "04:30",     # da quando si scaricano i dati al minuto
         "fallback": "09:30",       # alzata non vista entro quest'ora → messaggio comunque
         "fallback_max": "11:30",   # se i dati dicono che dorme ancora, si rimanda fino a qui

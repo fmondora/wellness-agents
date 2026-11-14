@@ -64,6 +64,13 @@ def now_local() -> datetime:
     return datetime.now(cc.tz())
 
 
+def _ts(iso: str | None) -> datetime | None:
+    try:
+        return datetime.fromisoformat(iso) if iso else None
+    except ValueError:
+        return None
+
+
 def today_str() -> str:
     return now_local().strftime("%Y-%m-%d")
 
@@ -273,10 +280,39 @@ class Bot:
             return
         if m.isoformat() in (st.get("wake") or {}):
             return
-        rec = {"at": now.strftime("%H:%M"), "source": "messaggio", "recorded_at": now.isoformat()}
+        self._record_wake(m, {"at": now.strftime("%H:%M"), "source": "messaggio",
+                              "recorded_at": now.isoformat()})
+
+    def maybe_wake_from_early_message(self, now: datetime | None = None) -> bool:
+        """Un messaggio scritto poco prima del pavimento (entro `wake.early_message_min`), con o senza
+        risposta, vale come alzata appena il pavimento scatta: chi scrive «ciao» alle 05:20 è sveglio,
+        e senza questo il silenzio (risposte trattenute comprese) durerebbe fino al fallback. I
+        messaggi della notte fonda restano in silenzio. Solo prima del fallback: un bot ripartito
+        tardi lascia decidere a `push_gate.tick` (riavvio tardivo, `late_cutoff`)."""
+        now = now or now_local()
+        wake = self.cfg["wake"]
+        m = push_gate.morning_of(now, self.cfg)
+        hm = now.strftime("%H:%M")
+        if m != now.date() or hm < wake["earliest"] or hm >= wake["fallback"]:
+            return False
+        if m.isoformat() in (push_gate.load_state().get("wake") or {}):
+            return False
+        floor = push_gate._at(m, wake["earliest"], now.tzinfo)
+        since = floor - timedelta(minutes=wake.get("early_message_min", 60))
+        early = sorted(t for t in (_ts(r.get("created_at")) for r in tq.read_jsonl(tq.inbox_path())
+                                                     if r.get("kind") != "system")
+                       if t and since <= t < floor)
+        if not early:
+            return False
+        first = early[0].astimezone(now.tzinfo).strftime("%H:%M")
+        self._record_wake(m, {"at": wake["earliest"], "source": f"messaggio prima del pavimento ({first})",
+                              "recorded_at": now.isoformat()})
+        return True
+
+    def _record_wake(self, m, rec: dict) -> None:
         push_gate._update_state(lambda s: s.setdefault("wake", {}).__setitem__(m.isoformat(), rec))
         if self.session_active():
-            tq.enqueue_system("wake", f"Francesco ha scritto alle {rec['at']}: è sveglio. "
+            tq.enqueue_system("wake", f"Francesco ha scritto ({rec['source']}, alzata {rec['at']}): è sveglio. "
                                       "Tocca al messaggio del mattino (notte + scadenze 48 h).",
                               {"date": m.isoformat(), **rec}, dedup_key=f"wake-{m.isoformat()}")
 
@@ -292,6 +328,11 @@ class Bot:
             errs = wp.validate_workout(w)
             if errs:
                 self.send(chat_id, "Scheda non valida: " + "; ".join(errs[:3]))
+                return
+            blocked = wp.guard(w, root=cc.data_root())
+            if blocked:
+                self.send(chat_id, "Scheda bloccata: " + "; ".join(blocked[:3])
+                          + ". Chiedi al coach di cambiarla.")
                 return
             day = path.name[:10]
             text = (f"🏋️ Riapro l'allenamento del {day[8:10]}/{day[5:7]}: {w.get('title') or 'senza titolo'}"
@@ -491,6 +532,11 @@ def main() -> int:
             bot.flush_outbox()
             for action in bot.gate_tick():
                 print(f"[{now_local().strftime('%H:%M')}] cancello: {action}")
+            try:
+                if bot.maybe_wake_from_early_message():
+                    print(f"[{now_local().strftime('%H:%M')}] alzata: messaggio scritto prima del pavimento")
+            except Exception as e:  # noqa: BLE001
+                print(f"alzata da messaggio: {e}", file=sys.stderr)
             try:
                 for pid in bot.practice_tick():
                     print(f"[{now_local().strftime('%H:%M')}] pratica {pid}: lettura in coda")
