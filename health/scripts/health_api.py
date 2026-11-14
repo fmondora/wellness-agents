@@ -184,8 +184,12 @@ class HealthClient:
             "date": (
                 f'{snake}.date >= "{start_iso[:10]}" AND {snake}.date < "{end_iso[:10]}"'
             ),
+            "sample_time": (   # tipi a campione (peso, massa grassa)
+                f'{snake}.sample_time.physical_time >= "{start_iso}" AND '
+                f'{snake}.sample_time.physical_time < "{end_iso}"'
+            ),
         }
-        order = ["start_time", "end_time", "date"]
+        order = ["start_time", "end_time", "date", "sample_time"]
         if prefer and prefer in filters_by_key:
             order = [prefer] + [k for k in order if k != prefer]
         filters = [filters_by_key[k] for k in order]

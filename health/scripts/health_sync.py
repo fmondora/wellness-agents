@@ -22,7 +22,8 @@ from health_api import AuthError, HealthClient
 from health_extract import (extract_azm, extract_daily_value,
                                     extract_hr_hourly, extract_hr_intraday,
                                     extract_hr_stats, extract_sleep,
-                                    extract_steps, extract_steps_intraday)
+                                    extract_steps, extract_steps_intraday,
+                                    extract_body, extract_sleep_temperature)
 
 import os
 BASE_DIR = Path(os.environ.get("WELLNESS_DATA", Path.cwd()))
@@ -77,6 +78,20 @@ def sync_date(client: HealthClient, base_dir: Path, date_str: str) -> dict:
         value = extract_daily_value(points or [])
         if value is not None:
             result[out_key] = value
+
+    # temperatura cutanea della notte (data = mattina del risveglio, come i tipi Daily)
+    temp = try_call("sleep temperature", lambda: client.list_data_points(
+        "daily-sleep-temperature-derivations", "daily_sleep_temperature_derivations", start, end, prefer="date"))
+    skin = extract_sleep_temperature(temp or [])
+    if skin:
+        result["skin_temp"] = skin
+
+    # bilancia (Renpho & co., se scrivono su Google Health/Fitbit): ultima misura del giorno
+    weight = try_call("weight", lambda: client.list_data_points("weight", "weight", start, end,
+                                                                prefer="sample_time"))
+    fat = try_call("body-fat", lambda: client.list_data_points("body-fat", "body_fat", start, end,
+                                                               prefer="sample_time"))
+    result.update(extract_body(weight or [], fat or []))
 
     hr_roll = try_call("heart-rate rollup", lambda: client.rollup("heart-rate", start, end, 3600))
     hourly = extract_hr_hourly(hr_roll or {})

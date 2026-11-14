@@ -127,9 +127,9 @@ schedulati vivono nel repo dati (launchd + shim) e chiamano questi script.
 
 | Script | Cosa fa |
 |---|---|
-| `health_sync.py` | sync wearable (Google Health API): completo, `--date`, `--intraday`, `--auth` |
+| `health_sync.py` | sync wearable (Google Health API): completo, `--date`, `--intraday`, `--auth`. Oltre a sonno, HRV, FC, passi: `skin_temp` (temperatura cutanea della notte: `nightly_c`, `baseline_c`, `delta_c` = scostamento dalla baseline a 30 giorni) e, se una bilancia scrive su Google Health/Fitbit, `weight_kg`, `body_fat_pct`, `body_source` |
 | `health_api.py`, `health_extract.py`, `health_metrics.py` | client, estrazione, metriche condivise |
-| `insights_engine.py` | detector eventi (camminate, sessioni, semaforo HRV, sonno, pratica notturna); le notifiche immediate diventano richieste di push al cancello di Hṛdaya (`push_request.py` → `data/telegram/push.jsonl`) |
+| `insights_engine.py` | detector eventi (camminate, sessioni, semaforo HRV, sonno, pratica notturna, temperatura cutanea sopra la baseline per 2 notti — `skin_temp_rise`, da osservare, mai diagnosi); le notifiche immediate diventano richieste di push al cancello di Hṛdaya (`push_request.py` → `data/telegram/push.jsonl`) |
 | `trends.py` | baseline e trend 10/30/90/300 giorni (`--print`) |
 | `sleep_analysis.py` | punteggio del sonno sul baseline personale (skill `sonno`) |
 | `meditation_detect.py` | lettura delle sedute dichiarate + FC/passi al minuto (`_fetch_minutes`, cache `data/fitbit/minute/`), usata anche per l'alzata |

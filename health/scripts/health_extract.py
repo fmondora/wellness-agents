@@ -304,3 +304,64 @@ def extract_steps(daily_rollup: dict) -> int | None:
         if n is not None:
             return int(n)
     return None
+
+
+def extract_sleep_temperature(points: list) -> dict | None:
+    """Temperatura cutanea della notte (`daily-sleep-temperature-derivations`, Fitbit).
+
+    → {"nightly_c", "baseline_c"?, "delta_c"?, "sd30_c"?}: `delta_c` = notte − baseline personale
+    (mediana dei 30 giorni, la calcola Google), `sd30_c` = deviazione standard dello scostamento a
+    30 giorni. È temperatura della pelle, non febbre: conta lo scostamento, non il valore.
+    """
+    for point in points:
+        rec = (point or {}).get("dailySleepTemperatureDerivations") if isinstance(point, dict) else None
+        if not isinstance(rec, dict):
+            continue
+        night = _num(rec.get("nightlyTemperatureCelsius"))   # a volte arriva come stringa
+        if night is None:
+            continue
+        out = {"nightly_c": round(night, 2)}
+        base = _num(rec.get("baselineTemperatureCelsius"))
+        if base is not None:
+            out["baseline_c"] = round(base, 2)
+            out["delta_c"] = round(night - base, 2)
+        sd = _num(rec.get("relativeNightlyStddev30dCelsius"))
+        if sd is not None:
+            out["sd30_c"] = round(sd, 2)
+        return out
+    return None
+
+
+def _num(v) -> float | None:
+    if isinstance(v, bool):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sample_time(rec: dict) -> str:
+    st = rec.get("sampleTime") or {}
+    return str(st.get("physicalTime") or st.get("civilTime") or "")
+
+
+def extract_body(weight_points: list, fat_points: list) -> dict:
+    """Ultima misura del giorno da bilancia (o inserita a mano): {"weight_kg"?, "body_fat_pct"?, "body_source"?}."""
+    out: dict = {}
+    ws = [(p or {}).get("weight") for p in weight_points if isinstance(p, dict)]
+    ws = [w for w in ws if isinstance(w, dict) and _num(w.get("weightGrams")) is not None]
+    if ws:
+        last = max(ws, key=_sample_time)
+        out["weight_kg"] = round(_num(last["weightGrams"]) / 1000, 2)
+        src = next((p.get("dataSource") for p in weight_points
+                    if isinstance(p, dict) and p.get("weight") is last), None) or {}
+        name = (src.get("device") or {}).get("displayName") or src.get("platform")
+        if name:
+            out["body_source"] = name
+    fs = [(p or {}).get("bodyFat") for p in fat_points if isinstance(p, dict)]
+    fs = [f for f in fs if isinstance(f, dict) and _num(f.get("percentage")) is not None]
+    if fs:
+        out["body_fat_pct"] = round(_num(max(fs, key=_sample_time)["percentage"]), 1)
+    return out
+

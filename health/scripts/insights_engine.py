@@ -387,6 +387,45 @@ def detect_hrv(cfg: dict, date_str: str) -> list[dict]:
     return events
 
 
+SKIN_TEMP_DEFAULT = {"enabled": True, "consecutive": 2, "delta_c": 0.7, "deliver": "morning"}
+
+
+def detect_skin_temp(cfg: dict, date_str: str) -> list[dict]:
+    """skin_temp_rise: temperatura cutanea notturna sopra la baseline personale per N notti di fila.
+
+    Un dato da osservare, non una diagnosi: spesso precede un'infezione, ma la alzano anche viaggi,
+    alcol, sauna serale, camera calda, fase del ciclo e vampate. Soglia in `rules.skin_temp_rise`
+    di config/insights.json (default +0,7 °C × 2 notti: con i dati di un anno ~1 volta ogni 6 settimane).
+    """
+    rule = {**SKIN_TEMP_DEFAULT, **(cfg.get("rules", {}).get("skin_temp_rise") or {})}
+    if not rule.get("enabled"):
+        return []
+    n, end = int(rule["consecutive"]), date.fromisoformat(date_str)
+    by_date = {d.get("date"): d for d in fitbit_days_back(n + 1, date_str) if isinstance(d, dict)}
+
+    def delta(back: int):
+        day = by_date.get((end - timedelta(days=back)).isoformat()) or {}
+        return (day.get("skin_temp") or {}).get("delta_c")
+
+    def hot(x) -> bool:
+        return isinstance(x, (int, float)) and x >= rule["delta_c"]
+
+    deltas = [delta(i) for i in range(n - 1, -1, -1)]
+    if not all(hot(x) for x in deltas) or hot(delta(n)):
+        return []                 # sotto soglia, notte mancante, o episodio già segnalato ieri
+    serie = " → ".join(f"+{x:.1f}" for x in deltas)
+    return [{
+        "id": f"skin_temp_rise-{date_str}",
+        "rule": "skin_temp_rise", "date": date_str,
+        "severity": "info",
+        "deliver": rule["deliver"],
+        "data": {"delta_c": deltas},
+        "message": (f"🌡️ Temperatura della pelle sopra la tua media per {rule['consecutive']} notti di fila "
+                    f"({serie} °C). Spesso viene prima di un raffreddore; la alzano anche viaggi, alcol, "
+                    "sauna serale o camera calda. Da osservare: come ti senti?"),
+    }]
+
+
 def detect_night_practice(cfg: dict, date_str: str) -> tuple[list[dict], int]:
     """Veglia abitata: il risveglio notturno che è diventato pratica.
 
@@ -531,6 +570,7 @@ def evaluate(date_str: str, cfg: dict, state: dict,
     events += detect_long_walk(fitbit, cfg, date_str, now)
     events += detect_intense_session(fitbit, cfg, date_str, now)
     events += detect_hrv(cfg, date_str)
+    events += detect_skin_temp(cfg, date_str)
     practice_events, practice_min = detect_night_practice(cfg, date_str)
     events += practice_events
     events += detect_sleep(cfg, date_str, practice_min)
