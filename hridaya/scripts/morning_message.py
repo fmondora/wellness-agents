@@ -162,8 +162,10 @@ def deadlines(day: str, horizon_days: int = 2) -> list[dict]:
 
 
 def is_blood_draw(it: dict) -> bool:
-    return it.get("kind") in ("prelievo", "esami") or bool(
-        PRELIEVO.search(f"{it.get('id', '')} {it.get('title', '')}"))
+    # il kind dichiarato decide: «Scaricare i referti del prelievo» (kind referti) non è un prelievo
+    if it.get("kind"):
+        return it["kind"] in ("prelievo", "esami")
+    return bool(PRELIEVO.search(f"{it.get('id', '')} {it.get('title', '')}"))
 
 
 def format_deadlines(items: list[dict]) -> list[str]:
