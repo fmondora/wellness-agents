@@ -38,6 +38,13 @@ body {
 body.alarm { animation: alarm 2.4s ease-in-out infinite; }
 @keyframes alarm { 50% { --bg-b: #c8501a; } }
 
+.scene { position: fixed; inset: 0; pointer-events: none; display: none; }
+body.running .scene { display: block; }
+.scene i { position: absolute; inset: 0; background: center / cover no-repeat; opacity: 0; transition: opacity var(--slow) ease; }
+.scene i.on { opacity: .62; }
+.scene::after { content: ''; position: absolute; inset: 0;      /* sopra la scena le parole devono leggersi */
+  background: linear-gradient(to bottom, rgba(0,0,0,.42), rgba(0,0,0,.08) 30%, rgba(0,0,0,.08) 55%, rgba(0,0,0,.55)); }
+body.alarm .scene i.on { opacity: .25; }
 .screen { position: fixed; inset: 0; display: none; flex-direction: column;
   padding: calc(env(safe-area-inset-top) + 18px) var(--pad) calc(env(safe-area-inset-bottom) + 18px); }
 .screen.on { display: flex; }
@@ -88,11 +95,14 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 #run .where { text-align: center; color: var(--cenere); font-size: var(--t-small); margin-top: .35rem; min-height: 1.3em; }
 .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .glass { height: 100%; max-height: 44vh; width: auto; position: relative; z-index: 1; }
-.fig { height: 100%; max-height: 44vh; aspect-ratio: 1; width: auto; max-width: 100%; object-fit: cover; border-radius: 22px; position: relative; z-index: 1; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+.fig { height: 100%; max-height: 44vh; aspect-ratio: 1; width: auto; max-width: 100%; object-fit: cover; position: relative; z-index: 1;
+  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent); mask-image: radial-gradient(closest-side, #000 72%, transparent); }
 #i-path .i-fig { float: right; width: 88px; height: 88px; border-radius: 12px; margin: 0 0 .3rem .6rem; object-fit: cover; }
 #i-path li::after { content: ''; display: block; clear: both; }
 .glass .frame { fill: var(--legno); }
-.glass .bulb { fill: rgba(237, 230, 214, .05); stroke: rgba(237, 230, 214, .42); stroke-width: 1.4; }
+.glass .post { fill: #8f6d40; }
+.glass .shine { fill: none; stroke: rgba(237, 230, 214, .22); stroke-width: 3; stroke-linecap: round; }
+.glass .bulb { fill: rgba(237, 230, 214, .08); stroke: rgba(237, 230, 214, .5); stroke-width: 1.6; }
 .glass .sand { fill: var(--grain); transition: fill var(--slow) ease; }
 .glass .stream { stroke: var(--grain); stroke-width: 2.2; stroke-dasharray: 3 5; animation: fall .5s linear infinite; }
 @keyframes fall { to { stroke-dashoffset: -8; } }
@@ -114,6 +124,9 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 .check.on i { background: var(--grain); box-shadow: none; color: var(--basalto); }
 .check.on span { text-decoration: line-through; text-decoration-thickness: 1px; }
 body.has-checks .stage { display: none; }
+/* la lista prende lo spazio della clessidra e, se non ci sta, scorre: il bottone resta sempre libero */
+body.has-checks #run .words { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.6rem), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 1.6rem), transparent); padding-bottom: 1.2rem; }
 .veil { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem;
   background: rgba(15, 19, 18, .93); padding: var(--pad); text-align: center; z-index: 5; }
 .veil.on { display: flex; }
@@ -138,10 +151,11 @@ textarea::placeholder { color: var(--cenere); }
   .glass .stream, body.alarm { animation: none; }
   body { transition: none; }
 }
-@media (max-height: 620px) { .glass { max-height: 36vh; } .words { min-height: 6rem; } #run .name { margin-top: 1.5vh; } }
+@media (max-height: 620px) { .glass, .fig { max-height: 36vh; } .words { min-height: 6rem; } #run .name { margin-top: 1.5vh; } .check { min-height: 44px; } .checks li { margin-bottom: .35rem; } }
 </style>
 </head>
 <body data-type="prep">
+<div class="scene" aria-hidden="true"><i id="sc-a"></i><i id="sc-b"></i></div>
 
 <section class="screen" id="intro">
   <div class="head">
@@ -176,13 +190,17 @@ textarea::placeholder { color: var(--cenere); }
         <clipPath id="c-top"><path d="M38,26 Q38,118 96,157 L104,157 Q162,118 162,26 Z"/></clipPath>
         <clipPath id="c-bot"><path d="M96,163 Q38,202 38,294 L162,294 Q162,202 104,163 Z"/></clipPath>
       </defs>
-      <rect class="frame" x="24" y="10" width="152" height="12" rx="6"/>
-      <rect class="frame" x="24" y="298" width="152" height="12" rx="6"/>
+      <rect class="post" x="26" y="18" width="7" height="284" rx="3.5"/>
+      <rect class="post" x="167" y="18" width="7" height="284" rx="3.5"/>
+      <rect class="frame" x="16" y="6" width="168" height="16" rx="8"/>
+      <rect class="frame" x="16" y="298" width="168" height="16" rx="8"/>
       <path class="sand" id="g-top" clip-path="url(#c-top)" d=""/>
       <path class="sand" id="g-bot" clip-path="url(#c-bot)" d=""/>
       <line class="stream" id="g-stream" x1="100" y1="157" x2="100" y2="294"/>
       <path class="bulb" d="M38,26 Q38,118 96,157 L104,157 Q162,118 162,26 Z"/>
       <path class="bulb" d="M96,163 Q38,202 38,294 L162,294 Q162,202 104,163 Z"/>
+      <path class="shine" d="M50,40 Q52,100 84,140"/>
+      <path class="shine" d="M84,180 Q54,210 50,270"/>
     </svg>
   </div>
   <div class="words">
@@ -328,15 +346,26 @@ textarea::placeholder { color: var(--cenere); }
     return n === 0 ? '' : n === 1 ? 'una gettata sulle pietre' : (['', '', 'due', 'tre', 'quattro'][n] || n) + ' gettate sulle pietre';
   }
   function show(id) {
+    document.body.classList.toggle('running', id === 'run');
     for (const el of document.querySelectorAll('.screen')) el.classList.toggle('on', el.id === id);
   }
   function veil(id) {
     for (const el of document.querySelectorAll('.veil')) el.classList.toggle('on', el.id === id);
   }
+  const SCENE = { prep: 'prima', heat: 'calore', air: 'aria', cold: 'freddo', rest: 'riposo', close: 'dopo' };
+  let sceneOn = 'sc-a';
+  function setScene(t) {               // lo sfondo del momento: se l'immagine manca resta il colore del tipo
+    const next = sceneOn === 'sc-a' ? 'sc-b' : 'sc-a', el = $(next), url = 'img/scena-' + (SCENE[t] || 'prima') + '.webp';
+    const im = new Image();
+    im.onload = () => { if (lastType !== t) return; el.style.backgroundImage = 'url("' + url + '")'; el.classList.add('on'); $(sceneOn).classList.remove('on'); sceneOn = next; };
+    im.onerror = () => { $(sceneOn).classList.remove('on'); };
+    im.src = url;
+  }
   function setType(t) {
     if (t === lastType) return;
     lastType = t;
     document.body.dataset.type = t;
+    setScene(t);
     const col = { heat: '#2a0f07', air: '#1a2526', cold: '#04252b', rest: '#171d14' }[t] || '#1b211f';
     try { if (tgv('6.1')) { TG.setHeaderColor(col); TG.setBackgroundColor(col); } } catch (e) {}
   }

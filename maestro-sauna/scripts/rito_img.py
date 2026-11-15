@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.12
-"""Le figure del rito con Nano Banana Pro (Gemini 3 Pro Image): un gesto per immagine, stesso stile
+"""Le figure (gesti, 1:1) e le scene (sfondi dei momenti, 9:16) del rito con Nano Banana Pro (Gemini 3 Pro Image): un gesto per immagine, stesso stile
 per tutte, sui colori della pagina, salvate in apps/rito/img/<gesto>.webp (le copia deploy.sh).
 La chiave viene da GOOGLE_API_KEY (mai stampata).
 
@@ -57,11 +57,49 @@ GESTURES = {
               "chest, eyes closed, warm socks, a glass of water nearby.",
 }
 
+# Le scene: lo sfondo a tutto schermo di ogni tipo di momento, mentre il momento scorre. Nessuna persona (la
+# persona è chi guarda), il centro calmo e vuoto (ci sta sopra la clessidra), buio e poco contrasto (sopra ci
+# sono parole e bottoni).
+SCENE_STYLE = (
+    "Same visual language as a calm flat editorial illustration for a spa ritual guide: soft rounded shapes, no "
+    "outlines, subtle paper grain. Palette only: deep basalt green-black #1b211f, warm linen #ede6d6 used sparingly, "
+    "honey wood #b9925a, warm sand #d9b36c, cool teal #7cc9c4. "
+    "Tall vertical composition for a phone screen, FULL-BLEED from edge to edge: no frame, no border, no rounded card, no inset panel, no window shape, no split or stripes at the sides. NO people, no animals. The whole central area of the image is a "
+    "calm, dark, almost empty field (an hourglass will be drawn over it): details only along the bottom third and "
+    "the far edges. Very dark overall, low contrast, dusk light, a gentle vignette. "
+    "No text, no letters, no numbers, no logos."
+)
+SCENES = {
+    "scena-calore": "Inside a Finnish wooden sauna at night, seen from the bench: warm wooden wall planks, the benches "
+                    "along the bottom, the stove with hot stones glowing ember-orange in a lower corner, a wooden bucket "
+                    "and ladle, a faint wisp of steam. The whole image is bathed in warm deep ember light: background "
+                    "from dark burnt brown #2a0f07 at the top to glowing rust #86300d at the bottom, NOT green or black.",
+    "scena-freddo": "Outdoors at dusk: a round wooden cold-water tub at the bottom of the frame, still teal water, "
+                    "a few pine branches at the edges, the first stars in a deep teal night sky (#04252b to #115560).",
+    "scena-aria": "A wooden deck outside the sauna in the cool evening air: the planks at the bottom, a towel on the "
+                  "railing at one edge, misty pines far away, a pale sky of grey-green (#1a2526 to #3b5152).",
+    "scena-riposo": "A quiet room for resting after the sauna: a lounger with a soft folded blanket at the bottom, "
+                    "a glass of water on a small wooden table, a warm lamp glowing low, deep moss-green darkness "
+                    "(#171d14 to #37472c).",
+    "scena-prima": "A changing area before the sauna: folded linen towels on a wooden shelf at the bottom, slippers, "
+                   "a water bottle, a wooden bucket, soft warm light from the side, basalt green-black darkness.",
+    "scena-dopo": "After the ritual: a cup of herbal tea with a thin thread of steam, warm socks and a small bottle "
+                  "of oil on a wooden tray at the bottom, a candle, calm basalt and warm sand darkness.",
+}
+
+
+def prompt(slug: str) -> tuple[str, str]:
+    """→ (testo, rapporto d'aspetto)"""
+    if slug in SCENES:
+        return f"{SCENES[slug]}\n\nStyle: {SCENE_STYLE}", "9:16"
+    return f"{GESTURES[slug]}\n\nStyle: {STYLE}", "1:1"
+
 
 def generate(slug: str, key: str, model: str) -> bytes:
+    text, ratio = prompt(slug)
     body = {
-        "contents": [{"parts": [{"text": f"{GESTURES[slug]}\n\nStyle: {STYLE}"}]}],
-        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "1:1"}},
+        "contents": [{"parts": [{"text": text}]}],
+        "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": ratio}},
     }
     req = urllib.request.Request(
         f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -86,7 +124,7 @@ def main() -> int:
     ap.add_argument("--list", action="store_true")
     a = ap.parse_args()
     if a.list or not a.slugs:
-        print("\n".join(GESTURES))
+        print("\n".join([*GESTURES, *SCENES]))
         return 0
     key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not key:
@@ -95,7 +133,7 @@ def main() -> int:
     a.out.mkdir(parents=True, exist_ok=True)
     bad = 0
     for slug in a.slugs:
-        if slug not in GESTURES:
+        if slug not in GESTURES and slug not in SCENES:
             print(f"{slug}: gesto sconosciuto", file=sys.stderr)
             bad += 1
             continue
