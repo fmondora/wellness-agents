@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.21.0"
+    "version": "0.22.0"
   },
   "plugins": [
     {
@@ -24,6 +24,12 @@
       "name": "dream-agent",
       "source": "./dream-agent",
       "description": "DreamAgent — proprietario del sonno: target, ora di letto a fine ciclo, piano settimanale del sonno, review settimanale e mensile; usa /sonno di health. Non nutrizione, non movimento, non diagnosi.",
+      "category": "coaching"
+    },
+    {
+      "name": "maestro-sauna",
+      "source": "./maestro-sauna",
+      "description": "Maestro di sauna — il rito del calore con il rigore di una Spa: partitura della seduta (soglia, calore, aria, acqua, riposo) dentro i tetti della persona, rito guidato sul telefono con clessidra e suoni (Telegram Mini App, dal canale di Hṛdaya), debrief. Non decide il giorno, non allarga i limiti.",
       "category": "coaching"
     },
     {

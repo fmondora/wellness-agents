@@ -107,10 +107,11 @@ def keyboard(url: str) -> dict:
             "resize_keyboard": True, "one_time_keyboard": False}
 
 
-def close_keyboard(token: str, chat_id: int | str, call: Callable[..., dict] = tg_call) -> dict:
+def close_keyboard(token: str, chat_id: int | str, call: Callable[..., dict] = tg_call,
+                   text: str | None = None) -> dict:
     """Toglie la barra «Avvia allenamento» (seduta lasciata a metà o non fatta). Si riapre con /allenamento."""
     return call(token, "sendMessage", chat_id=chat_id,
-                text="⏹ Allenamento chiuso: il bottone non c'è più. Per riaprirlo, /allenamento.",
+                text=text or "⏹ Chiuso: il bottone non c'è più. Per riaprirlo, /allenamento.",
                 reply_markup={"remove_keyboard": True})
 
 
@@ -293,7 +294,8 @@ def latest_player(daily: Path = DAILY, today: str | None = None) -> Path | None:
 
 BOT_COMMANDS = [
     {"command": "allenamento", "description": "Riapri l'ultimo allenamento"},
-    {"command": "chiudi", "description": "Chiudi l'allenamento: toglie il bottone «Avvia allenamento»"},
+    {"command": "sauna", "description": "Riapri il rito di oggi del Maestro di sauna"},
+    {"command": "chiudi", "description": "Chiudi allenamento o rito: toglie il bottone dalla barra"},
     {"command": "diario", "description": "Il diario di oggi: com'è andata, cosa manca, aggiornalo"},
     {"command": "nota", "description": "Annota nel diario: /nota testo"},
     {"command": "sonno", "description": "Analisi della notte"},
@@ -303,6 +305,13 @@ BOT_COMMANDS = [
 ]
 
 
+def bot_commands() -> list[dict]:
+    """Il menu, senza i comandi degli specialisti che non sono installati."""
+    from _plugins import plugin_scripts
+    skip = set() if plugin_scripts("maestro-sauna") else {"sauna"}
+    return [c for c in BOT_COMMANDS if c["command"] not in skip]
+
+
 def set_bot_commands(token: str, call: Callable[..., dict] = tg_call) -> None:
     """Menu comandi della chat privata (idempotente: setMyCommands sovrascrive)."""
-    call(token, "setMyCommands", commands=BOT_COMMANDS, scope={"type": "all_private_chats"})
+    call(token, "setMyCommands", commands=bot_commands(), scope={"type": "all_private_chats"})

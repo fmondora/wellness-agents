@@ -3,13 +3,14 @@
 
 Fa solo trasporto e cose deterministiche:
   1. long polling (getUpdates) e menu comandi (setMyCommands)
-  2. comandi locali: /diario (/journal, /log) /nota /sonno /allenamento /chiudi /help
+  2. comandi locali: /diario (/journal, /log) /nota /sonno /allenamento /sauna /chiudi /help
   3. red flag clinici → escalation immediata, sempre
   4. messaggi della persona → coda data/telegram/inbox.jsonl (li legge la sessione accesa)
      sessione spenta → una riga sola «Hṛdaya non è attivo adesso…» (una volta per assenza)
   5. bottoni di risposta (callback_query, choices.py) → la scelta va in coda come un suo messaggio;
      bottoni del registro (log_plan.py) e del diario (journal.py) → li gestisce il bot da solo
-  5b. web_app_data del player → seduta salvata (formato del coach) + evento per la sessione
+  5b. web_app_data del player → seduta salvata (formato del coach) + evento per la sessione;
+      web_app_data di un rito (rito_player.py) → seduta in data/sauna/sessions/, diario, evento
   6. outbox: risposte scritte via CLI (sent=false) → Telegram; quelle non di risposta
      passano dal cancello come push
   7. a ogni giro il cancello dei push (push_gate.tick): silenzio notturno, alzata, fallback
@@ -175,7 +176,8 @@ Sono Hṛdaya, il cuore del tuo consiglio: ti ascolto, tengo il quadro della gio
 
 Comandi:
 /allenamento — riapre l'ultimo allenamento (timer)
-/chiudi — chiude l'allenamento e toglie il bottone «Avvia allenamento»
+/chiudi — chiude l'allenamento (o il rito) e toglie il bottone dalla barra
+/sauna — riapre il rito di oggi del Maestro di sauna
 /diario — il diario di oggi in ordine, con i bottoni per aggiornarlo (anche /journal)
 /nota testo — annota nel diario
 /sonno — com'è andata la notte
@@ -189,6 +191,8 @@ Di notte, dall'ora di letto all'alzata, non ti scrivo io."""
 
 # --- canale -------------------------------------------------------------------------
 
+RITO_CLOSE_TEXT = "⏹ Chiudi il rito"      # come rito_player.CLOSE_TEXT (qui per non importarlo a ogni messaggio)
+RITO_CLOSED = "⏹ Rito chiuso: il bottone non c'è più. Per riaprirlo, /sauna."
 NUDGE_TEXT = ("L'ascolto della coda è fermo: riarma subito il Monitor (skill servizio, Ascolto) "
               "e guarda i messaggi in coda.")      # niente cifre: in un menu sceglierebbero un'opzione
 # a schermo c'è un dialog (permesso, domanda, selettore) o un turno in corso: i tasti non vanno digitati
@@ -272,13 +276,17 @@ class Bot:
             append_log_note(note)
             self.send(chat_id, f"✓ Nota salvata — diario {today_str()}")
             return "nota"
-        if low.startswith("/chiudi") or text == wp_close_text():
+        if low.startswith("/chiudi") or text in (wp_close_text(), RITO_CLOSE_TEXT):
             import workout_player as wp
             try:
-                wp.close_keyboard(self.token, chat_id, call=self.call)
+                wp.close_keyboard(self.token, chat_id, call=self.call,
+                                  text=RITO_CLOSED if text == RITO_CLOSE_TEXT else None)
             except Exception as e:  # noqa: BLE001
                 print(f"/chiudi error: {e}", file=sys.stderr)
             return "chiudi"
+        if low.startswith("/sauna"):
+            self.send_rito_button(chat_id)
+            return "sauna"
         if low.startswith("/allenamento"):
             self.send_workout_button(chat_id)
             return "allenamento"
@@ -383,9 +391,65 @@ class Bot:
             self.send(chat_id, "Non riesco a mandare il bottone ora.")
             print(f"/allenamento error: {e}", file=sys.stderr)
 
+    def send_rito_button(self, chat_id: int) -> None:
+        """/sauna: riapre il rito che il Maestro ha scritto per oggi, se passa ancora la soglia."""
+        import rito_player as rp
+        if not rp.installed():
+            self.send(chat_id, "Il Maestro di sauna non è installato: qui il rito non c'è.")
+            return
+        root = cc.data_root()
+        path = rp.latest_rito(root)
+        base = cc.load_env().get("RITO_PLAYER_URL", "")
+        if not path:
+            self.send(chat_id, "Per oggi il Maestro di sauna non ha scritto un rito. Chiedimelo: «facciamo la sauna?»")
+            return
+        if not base:
+            self.send(chat_id, "Il rito non è ancora collegato (manca RITO_PLAYER_URL).")
+            return
+        if rp.closed_session(root):
+            self.send(chat_id, "Il rito di oggi è già compiuto. Per un altro, chiedilo al Maestro.")
+            return
+        try:
+            r = json.loads(path.read_text(encoding="utf-8"))
+            reopen = rp.was_sent(root)               # già mandato oggi: è una riapertura a metà rito
+            blocked = rp.guard(r, root, reopen=reopen)
+            if blocked:
+                self.send(chat_id, "La soglia resta chiusa: " + "; ".join(blocked[:3]) + ".")
+                return
+            rp.send_rito_button(self.token, chat_id, r, base, call=self.call,
+                                text=f"♨️ Riapro il rito di oggi: {r.get('title') or 'senza titolo'}\n"
+                                     "Se l'avevi lasciato a metà, dentro trovi «Riprendo il rito».")
+            rp.mark_sent(root)
+        except Exception as e:  # noqa: BLE001
+            self.send(chat_id, "Non riesco a mandare il bottone del rito ora.")
+            print(f"/sauna error: {e}", file=sys.stderr)
+
     def handle_web_app_data(self, chat_id: int, data: str) -> Path | None:
+        import rito_player as rp
+        if rp.is_rito_data(data):                    # il ritorno di un rito del Maestro di sauna
+            path, session, text = rp.receive(data, cc.data_root())
+            # prima il diario e l'evento, poi la risposta: se Telegram non risponde la seduta non si perde
+            if session and not session.get("demo"):
+                try:
+                    rp.write_diary(session, cc.data_root())      # nel diario del giorno del rito, unendo
+                except Exception as e:  # noqa: BLE001 — la seduta è salvata comunque
+                    print(f"rito, diario: {e}", file=sys.stderr)
+                rel = str(path.relative_to(cc.data_root())) if path.is_relative_to(cc.data_root()) else str(path)
+                tq.enqueue_system("rito_session", f"Rito registrato: {path.name}. "
+                                                  "Il Maestro di sauna può fare il debrief.", {"file": rel},
+                                  dedup_key=f"rito_session:{session.get('t0_ms')}")
+            try:
+                self.call(self.token, "sendMessage", chat_id=chat_id, text=text, reply_markup={"remove_keyboard": True})
+            except Exception as e:  # noqa: BLE001
+                print(f"rito, risposta: {e}", file=sys.stderr)
+            return path
         import workout_player as wp
         path = wp.handle_web_app_data(self.token, chat_id, data, wp.DAILY, call=self.call)
+        try:                                         # la risposta al workout ha tolto la barra: se c'era un rito aperto, dirlo
+            if rp.was_sent(cc.data_root()) and not rp.closed_session(cc.data_root()):
+                self.send(chat_id, "Il rito di oggi è ancora aperto: /sauna per riavere il bottone.")
+        except Exception as e:  # noqa: BLE001
+            print(f"rito, promemoria: {e}", file=sys.stderr)
         if path and path.name.endswith(".session.json") and not path.name.endswith(".demo.session.json"):
             tq.enqueue_system("workout_session", f"Seduta registrata dal player: {path.name}. "
                                                  "Coach Longevità può fare il debrief (workout_fitbit).",

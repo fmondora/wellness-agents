@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Rito</title>
+<script>window.__RITO_HASH = location.hash;</script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="engine.js"></script>
+<script src="sound.js"></script>
+<style>
+/* Materiali di una sauna: pietra, legno chiaro, brace, acqua, foglia. Un solo carattere: Optima. */
+@property --bg-a { syntax: '<color>'; inherits: true; initial-value: #1b211f; }
+@property --bg-b { syntax: '<color>'; inherits: true; initial-value: #2c3531; }
+@property --grain { syntax: '<color>'; inherits: true; initial-value: #d9b36c; }
+:root {
+  --basalto: #1b211f; --lino: #ede6d6; --cenere: #a3aba3; --sabbia: #d9b36c; --legno: #b9925a;
+  --bg-a: #1b211f; --bg-b: #2c3531; --grain: #d9b36c;
+  --font: Optima, "Optima Nova", Candara, "Segoe UI", "Noto Sans", sans-serif;
+  --t-name: clamp(2.1rem, 9.5vw, 3.1rem); --t-body: 1.14rem; --t-time: 1.3rem; --t-small: .98rem;
+  --pad: max(22px, env(safe-area-inset-left)); --slow: 2.2s;
+}
+body[data-type="heat"]  { --bg-a: #2a0f07; --bg-b: #86300d; --grain: #f3b65c; }
+body[data-type="air"]   { --bg-a: #1a2526; --bg-b: #3b5152; --grain: #e2ebe6; }
+body[data-type="cold"]  { --bg-a: #04252b; --bg-b: #115560; --grain: #c4ece8; }
+body[data-type="rest"]  { --bg-a: #171d14; --bg-b: #37472c; --grain: #d5dcab; }
+body[data-type="close"] { --bg-a: #1b211f; --bg-b: #3a3626; --grain: #d9b36c; }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font); color: var(--lino); background-color: var(--bg-a);
+  background-image: radial-gradient(130% 78% at 50% 112%, var(--bg-b), var(--bg-a) 72%);
+  transition: --bg-a var(--slow) ease, --bg-b var(--slow) ease, --grain var(--slow) ease;
+  -webkit-font-smoothing: antialiased; overflow: hidden; user-select: none; -webkit-user-select: none;
+}
+body.alarm { animation: alarm 2.4s ease-in-out infinite; }
+@keyframes alarm { 50% { --bg-b: #c8501a; } }
+
+.screen { position: fixed; inset: 0; display: none; flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 18px) var(--pad) calc(env(safe-area-inset-bottom) + 18px); }
+.screen.on { display: flex; }
+
+h1, h2, p { margin: 0; font-weight: 400; }
+.name { font-size: var(--t-name); letter-spacing: .015em; line-height: 1.08; text-align: center; }
+.sub { font-size: var(--t-body); color: var(--cenere); text-align: center; margin-top: .5rem; line-height: 1.45; }
+
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.primary {
+  width: 100%; min-height: 72px; border-radius: 36px; font-size: 1.42rem; letter-spacing: .01em;
+  background: var(--lino); color: var(--basalto); padding: 0 1.2rem; transition: transform .12s ease, background .3s ease;
+}
+.primary:active { transform: scale(.985); }
+.primary.wait { background: transparent; color: var(--lino); box-shadow: inset 0 0 0 1.5px var(--lino); font-size: 1.12rem; line-height: 1.3; }
+.quiet { min-height: 52px; padding: 0 1rem; font-size: 1.06rem; color: var(--cenere); text-decoration: underline; text-underline-offset: 5px; text-decoration-thickness: 1px; }
+button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
+.row { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; min-height: 52px; }
+
+/* --- soglia: il rito scritto, prima di cominciare --- */
+#intro .head { margin-top: 4vh; }
+#intro .scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(#000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
+.path { list-style: none; padding: 0; margin: 1.8rem auto 1.4rem; width: min(100%, 23rem); }
+.path li { position: relative; padding: 0 0 1.05rem 2.1rem; font-size: var(--t-body); line-height: 1.35; }
+.path li::before { content: ""; position: absolute; left: .32rem; top: .42rem; width: .62rem; height: .62rem; border-radius: 50%; background: var(--dot, var(--cenere)); }
+.path li::after { content: ""; position: absolute; left: .6rem; top: 1.25rem; bottom: -.3rem; width: 1px; background: rgba(237, 230, 214, .22); }
+.path li:last-child::after { display: none; }
+.path li[data-t="heat"] { --dot: #e8873a; }
+.path li[data-t="cold"] { --dot: #7cc9c4; }
+.path li[data-t="air"]  { --dot: #c9d6d2; }
+.path li[data-t="rest"] { --dot: #a9b878; }
+.path small { display: block; font-size: var(--t-small); color: var(--cenere); }
+#intro .foot { padding-top: .6rem; }
+#intro .note { margin: 0 auto .8rem; max-width: 23rem; }
+
+/* --- il rito --- */
+.rail { display: flex; justify-content: center; gap: 9px; height: 14px; align-items: center; }
+.rail i { width: 7px; height: 7px; border-radius: 50%; background: rgba(237, 230, 214, .22); transition: all .8s ease; }
+.rail i.done { background: rgba(237, 230, 214, .7); }
+.rail i.now { width: 11px; height: 11px; background: var(--grain); }
+#run .name { margin-top: 3.5vh; }
+#run .where { text-align: center; color: var(--cenere); font-size: var(--t-small); margin-top: .35rem; min-height: 1.3em; }
+.stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+.glass { height: 100%; max-height: 44vh; width: auto; position: relative; z-index: 1; }
+.glass .frame { fill: var(--legno); }
+.glass .bulb { fill: rgba(237, 230, 214, .05); stroke: rgba(237, 230, 214, .42); stroke-width: 1.4; }
+.glass .sand { fill: var(--grain); transition: fill var(--slow) ease; }
+.glass .stream { stroke: var(--grain); stroke-width: 2.2; stroke-dasharray: 3 5; animation: fall .5s linear infinite; }
+@keyframes fall { to { stroke-dashoffset: -8; } }
+.halo { position: absolute; width: 46vh; height: 46vh; max-width: 92vw; max-height: 92vw; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(213, 220, 171, .2), transparent 70%); opacity: 0; transform: scale(.72); }
+.halo.on { opacity: 1; }
+.words { text-align: center; min-height: 7.2rem; }
+.time { font-size: var(--t-time); color: var(--grain); transition: color var(--slow) ease; min-height: 1.5em; }
+.text { font-size: var(--t-body); line-height: 1.5; margin: .5rem auto 0; max-width: 24rem; color: rgba(237, 230, 214, .86); transition: opacity .6s ease; }
+.text.cue { color: var(--lino); font-size: 1.24rem; }
+.actions { margin-top: .9rem; }
+.veil { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem;
+  background: rgba(15, 19, 18, .93); padding: var(--pad); text-align: center; z-index: 5; }
+.veil.on { display: flex; }
+.veil .primary { max-width: 22rem; }
+
+/* --- chiusura --- */
+#closing { overflow-y: auto; }
+#closing .head { margin-top: 5vh; }
+.told { text-align: center; font-size: var(--t-body); line-height: 1.6; color: rgba(237, 230, 214, .86); margin: 1.4rem auto 0; max-width: 23rem; }
+.q { margin: 1.9rem auto 0; width: min(100%, 23rem); }
+.q p { font-size: 1.22rem; text-align: center; margin-bottom: .8rem; }
+.opts { display: flex; flex-direction: column; gap: .55rem; }
+.opt { min-height: 58px; border-radius: 29px; font-size: 1.14rem; box-shadow: inset 0 0 0 1.2px rgba(237, 230, 214, .4); transition: all .25s ease; }
+.opt.on { background: var(--lino); color: var(--basalto); box-shadow: none; }
+textarea { width: 100%; margin-top: 1.6rem; min-height: 4.4rem; border-radius: 18px; border: 0; padding: .9rem 1rem; font: inherit; font-size: 1.06rem;
+  background: rgba(237, 230, 214, .09); color: var(--lino); resize: none; user-select: text; -webkit-user-select: text; }
+textarea::placeholder { color: var(--cenere); }
+#closing .foot { margin-top: 1.6rem; padding-bottom: .4rem; }
+.note { text-align: center; color: var(--cenere); font-size: var(--t-small); margin-top: .8rem; line-height: 1.4; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass .stream, body.alarm { animation: none; }
+  body { transition: none; }
+}
+@media (max-height: 620px) { .glass { max-height: 36vh; } .words { min-height: 6rem; } #run .name { margin-top: 1.5vh; } }
+</style>
+</head>
+<body data-type="prep">
+
+<section class="screen" id="intro">
+  <div class="head">
+    <h1 class="name" id="i-title">Rito</h1>
+    <p class="sub" id="i-sub"></p>
+  </div>
+  <div class="scroll"><ol class="path" id="i-path"></ol></div>
+  <div class="foot">
+    <p class="note" id="i-note">Il rito parla col suono: togli il silenzioso e alza il volume. Lascia il telefono fuori dalla cabina, acceso su questa pagina. In cabina tieni d'occhio la clessidra: il telefono accompagna, non sorveglia.</p>
+    <button class="primary" id="b-start">Comincio il rito</button>
+    <div class="row">
+      <button class="quiet" id="b-sound">Prova il suono</button>
+      <button class="quiet" id="b-fresh" hidden>Ricomincio da capo</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="run">
+  <div class="rail" id="r-rail" aria-hidden="true"></div>
+  <h2 class="name" id="r-name"></h2>
+  <p class="where" id="r-where"></p>
+  <div class="stage">
+    <div class="halo" id="r-halo"></div>
+    <svg class="glass" id="r-glass" viewBox="0 0 200 320" role="img" aria-label="Clessidra">
+      <defs>
+        <clipPath id="c-top"><path d="M38,26 Q38,118 96,157 L104,157 Q162,118 162,26 Z"/></clipPath>
+        <clipPath id="c-bot"><path d="M96,163 Q38,202 38,294 L162,294 Q162,202 104,163 Z"/></clipPath>
+      </defs>
+      <rect class="frame" x="24" y="10" width="152" height="12" rx="6"/>
+      <rect class="frame" x="24" y="298" width="152" height="12" rx="6"/>
+      <path class="sand" id="g-top" clip-path="url(#c-top)" d=""/>
+      <path class="sand" id="g-bot" clip-path="url(#c-bot)" d=""/>
+      <line class="stream" id="g-stream" x1="100" y1="157" x2="100" y2="294"/>
+      <path class="bulb" d="M38,26 Q38,118 96,157 L104,157 Q162,118 162,26 Z"/>
+      <path class="bulb" d="M96,163 Q38,202 38,294 L162,294 Q162,202 104,163 Z"/>
+    </svg>
+  </div>
+  <div class="words">
+    <p class="time" id="r-time" aria-live="polite"></p>
+    <p class="text" id="r-text" aria-live="polite"></p>
+  </div>
+  <div class="actions">
+    <button class="primary" id="b-done"></button>
+    <div class="row">
+      <button class="quiet" id="b-skip" hidden>Oggi lo salto</button>
+      <button class="quiet" id="b-undo" hidden>Ho toccato per sbaglio</button>
+      <button class="quiet" id="b-more">Altro</button>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="closing">
+  <div class="head">
+    <h1 class="name" id="c-title">Il rito è compiuto</h1>
+    <p class="told" id="c-told"></p>
+  </div>
+  <div id="c-qs"></div>
+  <textarea id="c-note" maxlength="280" placeholder="Una nota per il Maestro, se vuoi"></textarea>
+  <div class="foot">
+    <button class="primary" id="b-send">Chiudo il rito</button>
+    <div class="row"><button class="quiet" id="b-undo2" hidden>Ho toccato per sbaglio</button></div>
+    <p class="note" id="c-note2"></p>
+  </div>
+</section>
+
+<div class="veil" id="v-more">
+  <button class="primary" id="b-pause">Mi fermo un momento</button>
+  <button class="primary wait" id="b-level"></button>
+  <button class="quiet" id="b-stop">Interrompo il rito</button>
+  <button class="quiet" id="b-back">Torno al rito</button>
+</div>
+<div class="veil" id="v-pause">
+  <h2 class="name">In pausa</h2>
+  <p class="sub">Il tempo di questo momento è fermo.</p>
+  <button class="primary" id="b-resume">Riprendo</button>
+</div>
+<div class="veil" id="v-stop">
+  <h2 class="name">Interrompo qui?</h2>
+  <p class="sub">Quello che hai fatto resta scritto per il Maestro.</p>
+  <button class="primary" id="b-stop-yes">Sì, interrompo</button>
+  <button class="quiet" id="b-stop-no">No, continuo</button>
+</div>
+<div class="veil" id="v-sound">
+  <h2 class="name">Il suono si è fermato</h2>
+  <p class="sub">Senza suono il rito non ti chiama. Tocca per riaccenderlo, e controlla che il telefono non sia in silenzioso.</p>
+  <button class="primary" id="b-wake">Riaccendo il suono</button>
+</div>
+<div class="veil" id="v-empty">
+  <h2 class="name" id="e-title">Nessun rito da aprire</h2>
+  <p class="sub" id="e-why">Chiedi al Maestro di sauna il rito di oggi: arriva su Telegram con il suo bottone.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const E = window.RitoEngine, S = window.RitoSound;
+  const TG = window.Telegram && window.Telegram.WebApp;
+  const inTG = !!(TG && TG.initData);
+  const $ = (id) => document.getElementById(id);
+  const qs = new URLSearchParams(location.search);
+
+  let R = null, s = null, rid = '', loop = null, wakeLock = null, noSleep = null;
+  let armed = 0, cue = null, answers = {}, sent = false, levelIdx = 1, lastType = '', breath = null;
+  let armedQuick = false, shown = -1, mute0 = 0, idle = null;      // momento a schermo; da quando il suono è fermo; spegnimento a rito finito
+  const LEVELS = [['Suono: piano', 0.4], ['Suono: medio', 0.8], ['Suono: pieno', 1]];
+
+  // Solo per le prove: ?speed=30 fa scorrere il tempo trenta volte più in fretta.
+  let speed = 1, realBase = Date.now(), virtBase = Date.now();
+  function now() { return speed === 1 ? Date.now() : virtBase + (Date.now() - realBase) * speed; }
+
+  function tgv(v) { try { return inTG && TG.isVersionAtLeast(v); } catch (e) { return false; } }
+  function haptic(kind) {
+    try { if (tgv('6.1')) kind === 'tick' ? TG.HapticFeedback.impactOccurred('soft') : TG.HapticFeedback.notificationOccurred(kind); } catch (e) {}
+  }
+
+  // --- memoria sul telefono ---------------------------------------------------
+  const key = () => 'rito_' + rid;
+  function save(extra) {
+    if (speed !== 1) return;
+    try { localStorage.setItem(key(), JSON.stringify(Object.assign({ events: s.events, seen: Date.now(), answers, sent }, extra || {}))); } catch (e) {}
+  }
+  function load() { try { return JSON.parse(localStorage.getItem(key()) || 'null'); } catch (e) { return null; } }
+
+  // --- schermo sveglio ---------------------------------------------------------
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } } catch (e) { wakeLock = null; }
+  }
+  function startNoSleep() {      // dove wakeLock non c'è (WebView iOS): un video muto invisibile in loop
+    try {
+      if (!noSleep) {
+        noSleep = document.createElement('video');
+        noSleep.src = 'nosleep.mp4'; noSleep.loop = true; noSleep.muted = true;
+        noSleep.setAttribute('muted', ''); noSleep.setAttribute('playsinline', ''); noSleep.setAttribute('webkit-playsinline', '');
+        noSleep.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;left:0';
+        noSleep.addEventListener('playing', () => S.wake());
+        document.body.append(noSleep);
+      }
+      const p = noSleep.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+  function letSleep() {
+    try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null;
+    try { if (noSleep) noSleep.pause(); } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && s && E.live(s)) { keepAwake(); startNoSleep(); S.wake(); frame(); }
+  });
+
+  // --- voce ---------------------------------------------------------------------
+  function say(text) {
+    try {
+      if (!text || !window.speechSynthesis || R.voice === false) return;
+      const u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'it-IT'; u.rate = 0.86; u.pitch = 0.9; u.volume = 1;
+      u.onstart = () => S.duck(true);
+      u.onend = u.onerror = () => S.duck(false);
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // --- schermate ----------------------------------------------------------------
+  function show(id) {
+    for (const el of document.querySelectorAll('.screen')) el.classList.toggle('on', el.id === id);
+  }
+  function veil(id) {
+    for (const el of document.querySelectorAll('.veil')) el.classList.toggle('on', el.id === id);
+  }
+  function setType(t) {
+    if (t === lastType) return;
+    lastType = t;
+    document.body.dataset.type = t;
+    const col = { heat: '#2a0f07', air: '#1a2526', cold: '#04252b', rest: '#171d14' }[t] || '#1b211f';
+    try { if (tgv('6.1')) { TG.setHeaderColor(col); TG.setBackgroundColor(col); } } catch (e) {}
+  }
+
+  const WORD = ['', 'Un passaggio', 'Due passaggi', 'Tre passaggi', 'Quattro passaggi'];
+  function passages(n) { return WORD[n] || n + ' passaggi'; }
+
+  function renderIntro(resumable) {
+    const p = E.planned(R);
+    $('i-title').textContent = R.title || 'Rito';
+    const long = p.total_s >= 3300 ? 'circa un\'ora' : 'circa ' + E.minutes(p.total_s);
+    $('i-sub').textContent = R.subtitle || (p.rounds ? passages(p.rounds) + ' nel calore, ' + long + '.' : long + '.');
+    const ol = $('i-path');
+    ol.textContent = '';
+    for (const m of E.timeline(R)) {
+      const li = document.createElement('li'), sm = document.createElement('small');
+      li.dataset.t = m.type;
+      li.append(m.name);
+      sm.textContent = m.target_s ? E.minutes(m.target_s) + (m.optional ? ', se oggi lo vuoi' : '')
+        : (m.optional ? 'se oggi lo vuoi' : 'il tempo che serve');
+      li.append(sm);
+      ol.append(li);
+    }
+    $('b-start').textContent = resumable ? 'Riprendo il rito' : 'Comincio il rito';
+    $('b-fresh').hidden = !resumable || E.summary(s).moments.some((m) => m.type === 'heat' && m.ended !== 'never');
+    setType('prep');
+    show('intro');
+  }
+
+  function drawGlass(v) {
+    const glass = $('r-glass');
+    if (v.frac == null) { glass.style.visibility = 'hidden'; return; }
+    glass.style.visibility = 'visible';
+    const f = Math.pow(v.frac, 0.85), H = 131;
+    const y = 26 + H * f, dip = 9 * (1 - f);                       // sopra: la sabbia cala e si incava al centro
+    $('g-top').setAttribute('d', f >= 1 ? '' : 'M30,' + y + ' Q100,' + (y + dip * 2) + ' 170,' + y + ' L170,157 L30,157 Z');
+    const top = 294 - H * 0.78 * f, peak = f >= 1 ? 4 : 16;        // sotto: il mucchio cresce a cupola
+    $('g-bot').setAttribute('d', f <= 0 ? '' : 'M30,294 L170,294 L170,' + (top + peak) + ' Q100,' + (top - peak) + ' 30,' + (top + peak) + ' Z');
+    const st = $('g-stream');
+    st.style.display = (f < 1 && !v.paused && !v.lead) ? '' : 'none';
+    st.setAttribute('y2', top);
+  }
+
+  function timeWords(v) {
+    const m = v.m;
+    if (v.lead) return 'il tempo parte tra poco';
+    if (v.settling && !v.over) return 'il tempo è già partito';
+    if (R.clock === 'none') return v.over_max ? 'Esci adesso.' : '';
+    if (v.over_max) return m.type === 'cold' ? 'Basta così. Esci dall\'acqua.' : 'Esci adesso.';
+    if (v.over) return { heat: 'È tempo. Esci quando sei pronto.', cold: 'Può bastare.', rest: 'Puoi alzarti quando vuoi.' }[m.type] || 'Quando vuoi.';
+    if (v.remain_s == null) return '';
+    return v.remain_s < 50 ? 'ancora poco' : 'ancora ' + E.minutes(v.remain_s);
+  }
+
+  function renderRun() {
+    const t = now(), v = E.view(s, t);
+    if (v.phase !== 'run') return;
+    const m = v.m;
+    setType(m.type);
+    document.body.classList.toggle('alarm', v.over_max);
+    const rail = $('r-rail');
+    if (rail.children.length !== v.n) { rail.textContent = ''; for (let k = 0; k < v.n; k++) rail.append(document.createElement('i')); }
+    [...rail.children].forEach((el, k) => { el.className = k < v.i ? 'done' : k === v.i ? 'now' : ''; });
+    $('r-name').textContent = m.name;
+    $('r-where').textContent = [m.where, m.temp_c ? m.temp_c + ' gradi' : ''].filter(Boolean).join(', ');
+    drawGlass(v);
+    $('r-time').textContent = timeWords(v);
+    const showCue = cue && cue.m === v.i && Date.now() < cue.until;
+    const tx = $('r-text');
+    tx.textContent = showCue ? cue.text : ((v.lead || v.settling) && m.lead_text ? m.lead_text : m.text);
+    shown = v.i;
+    tx.classList.toggle('cue', !!showCue);
+    const halo = $('r-halo');
+    const breathing = !!(m.type === 'rest' && m.breath && !v.paused);
+    if (breathing !== !!breath) {            // l'alone si allarga con l'inspiro e si stringe, più a lungo, con l'espiro
+      if (breath) { breath.cancel(); breath = null; }
+      if (breathing && halo.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const tin = Math.min(15, Math.max(2, Number(m.breath.in_s) || 4)), tout = Math.min(15, Math.max(2, Number(m.breath.out_s) || 6));
+        try {
+          breath = halo.animate([{ transform: 'scale(.72)' }, { transform: 'scale(1.06)', offset: tin / (tin + tout) }, { transform: 'scale(.72)' }],
+            { duration: (tin + tout) * 1000, iterations: Infinity, easing: 'ease-in-out' });
+        } catch (e) { breath = null; }      // un'animazione che non parte non deve fermare lo schermo
+      }
+    }
+    halo.classList.toggle('on', breathing);
+    const b = $('b-done'), waiting = armed && Date.now() < armed;
+    b.textContent = !waiting ? v.label : armedQuick ? 'Già fuori? Tocca di nuovo.' : 'Resta ancora, se puoi. Tocca di nuovo per alzarti.';
+    b.classList.toggle('wait', !!waiting || v.lead);
+    $('b-skip').hidden = !v.can_skip;
+    $('b-undo').hidden = !v.canUndo;
+    veil(v.paused ? 'v-pause' : (document.querySelector('.veil.on:not(#v-pause)') || {}).id || '');
+  }
+
+  function told(sum) {
+    const out = [];
+    if (sum.rounds) out.push(passages(sum.rounds) + ' nel calore, ' + E.minutes(sum.heat_s) + ' in tutto.');
+    if (sum.cold_s) out.push('Acqua fredda: ' + E.minutes(sum.cold_s) + '.');
+    if (sum.rest_s) out.push('Riposo: ' + E.minutes(sum.rest_s) + '.');
+    return out.join(' ') || 'Oggi il rito si è fermato alla soglia.';
+  }
+
+  function renderClosing() {
+    const sum = E.summary(s);
+    setType('close');
+    document.body.classList.remove('alarm');
+    veil('');
+    $('c-title').textContent = sum.status === 'stop' ? 'Rito interrotto' : 'Il rito è compiuto';
+    $('c-told').textContent = told(sum);
+    const box = $('c-qs');
+    box.textContent = '';
+    for (const q of R.closing || []) {
+      const wrap = document.createElement('div'), p = document.createElement('p'), opts = document.createElement('div');
+      wrap.className = 'q'; opts.className = 'opts';
+      p.textContent = q.q;
+      for (const o of q.options) {
+        const btn = document.createElement('button');
+        btn.className = 'opt' + (answers[q.id] === o ? ' on' : '');
+        btn.textContent = o;
+        btn.onclick = () => { answers[q.id] = answers[q.id] === o ? undefined : o; if (answers[q.id] === undefined) delete answers[q.id]; save(); renderClosing(); };
+        opts.append(btn);
+      }
+      wrap.append(p, opts);
+      box.append(wrap);
+    }
+    $('b-undo2').hidden = !E.canUndo(s, now());
+    $('b-send').textContent = sent ? 'Rito chiuso' : 'Chiudo il rito';
+    $('c-note2').textContent = inTG ? '' : 'Aperto fuori da Telegram: il rito non torna al Maestro.';
+    show('closing');
+  }
+
+  // --- il tempo che scorre --------------------------------------------------------
+  function enterMoment(i, quiet) {
+    const m = s.tl[i];
+    if (!m) return;
+    armed = 0; cue = null;
+    S.bed(m.sound, m.sound === 'respiro' ? (m.breath || {}) : null);      // il tappeto cambia già nel passaggio
+    if (!quiet && !m.lead_s) begun(m);                                    // senza passaggio il momento comincia subito
+  }
+
+  /* Il momento comincia davvero (finito il passaggio, o al «Ci sono»): il suo colpo. */
+  function begun(m) {
+    if (m.enter_sound) S.shot(m.enter_sound);
+    haptic('tick');
+  }
+
+  function play(h) {
+    if (h.kind === 'enter') enterMoment(h.m, h.late);
+    else if (h.kind === 'begin') { if (!h.late) begun(s.tl[h.m]); }
+    else if (h.kind === 'cue' && !h.late) {
+      if (h.cue.sound) S.shot(h.cue.sound);
+      if (h.cue.say) say(h.cue.say);
+      if (h.cue.text) cue = { m: h.m, text: h.cue.text, until: Date.now() + 45000 / Math.min(speed, 8) };
+    } else if (h.kind === 'target' && !h.late) { S.shot('ciotola'); haptic('success'); }
+    else if (h.kind === 'max') { S.alarm(); haptic('warning'); }
+    else if (h.kind === 'end') finish();
+  }
+
+  function frame() {
+    if (!s) return;
+    const before = s.events.length;
+    for (const h of E.tick(s, now())) play(h);
+    if (s.events.length !== before) save();
+    if (s.finished) { if (!document.getElementById('closing').classList.contains('on')) finish(); return; }
+    renderRun();
+    watchSound();
+  }
+
+  /* Il rito chiama col suono: se il suono si ferma (chiamata, altra app, sistema) lo si dice subito. */
+  function watchSound() {
+    if (S.state() === 'running') { mute0 = 0; if ($('v-sound').classList.contains('on')) veil(''); return; }
+    S.wake();
+    if (!mute0) mute0 = Date.now();
+    else if (Date.now() - mute0 > 3000 && !$('v-sound').classList.contains('on') && !s.paused) { veil('v-sound'); haptic('error'); }
+  }
+
+  function run() {
+    show('run');
+    try { if (tgv('6.2')) TG.enableClosingConfirmation(); } catch (e) {}
+    clearInterval(loop);
+    loop = setInterval(frame, 250);
+    frame();
+  }
+
+  function finish() {
+    clearInterval(loop); loop = null;
+    save();
+    S.bed('bordone');
+    if (s.status === 'end') S.shot('gong');
+    renderClosing();
+    loop = setInterval(() => { $('b-undo2').hidden = !E.canUndo(s, now()); }, 1000);
+    clearTimeout(idle);                        // rito finito e mai chiuso: dopo un quarto d'ora suono e schermo si spengono
+    idle = setTimeout(() => { S.stop(4); letSleep(); }, 15 * 60000);
+  }
+
+  // --- gesti ---------------------------------------------------------------------
+  function begin() {
+    S.init(); S.unlock(); S.wake(); S.setLevel(LEVELS[levelIdx][1]);
+    startNoSleep(); keepAwake();
+    try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); } } catch (e) {}
+  }
+
+  $('b-start').onclick = () => {
+    begin();
+    if (s.cur < 0) { E.start(s, now()); save(); enterMoment(0); }
+    else if (s.finished) { finish(); return; }
+    else enterMoment(s.cur, true);
+    run();
+  };
+  $('b-fresh').onclick = () => {
+    try { localStorage.removeItem(key()); } catch (e) {}
+    s = E.createSession(R); answers = {}; sent = false;
+    renderIntro(false);
+  };
+  $('b-sound').onclick = () => {
+    begin();
+    S.bed('brace', null, 1.5);
+    S.shot('gong');
+    setTimeout(() => S.shot('ciotola'), 3500);
+    setTimeout(() => { if (s.cur < 0) S.stop(3); }, 9000);
+  };
+  $('b-done').onclick = () => {
+    const v = E.view(s, now());
+    if (v.phase !== 'run') return;
+    const r = E.tap(s, now(), shown, armed && Date.now() < armed);   // il momento che era a schermo, non quello di adesso
+    if (r === 'begin') { save(); begun(v.m); renderRun(); return; }
+    if (r === 'early') { armed = Date.now() + 6000; armedQuick = !!v.quick; renderRun(); return; }
+    if (r !== 'ok') return;
+    save();
+    if (s.finished) finish(); else { enterMoment(s.cur); renderRun(); }
+  };
+  $('b-skip').onclick = () => {
+    if (E.skip(s, now(), shown) !== 'ok') return;
+    save();
+    if (s.finished) finish(); else { enterMoment(s.cur); renderRun(); }
+  };
+  function undo() {
+    if (!E.undo(s, now())) return;
+    save();
+    clearInterval(loop); clearTimeout(idle);
+    begin();
+    enterMoment(s.cur, true);
+    run();
+  }
+  $('b-undo').onclick = undo;
+  $('b-undo2').onclick = undo;
+  $('b-more').onclick = () => {
+    $('b-level').textContent = LEVELS[levelIdx][0];
+    $('b-pause').hidden = !E.canPause(s);          // nel caldo e nel freddo non c'è pausa: si esce
+    veil('v-more');
+  };
+  $('b-wake').onclick = () => { begin(); mute0 = 0; veil(''); S.shot('ciotola'); };
+  $('b-back').onclick = () => veil('');
+  $('b-level').onclick = () => { levelIdx = (levelIdx + 1) % LEVELS.length; S.setLevel(LEVELS[levelIdx][1]); $('b-level').textContent = LEVELS[levelIdx][0]; S.shot('ciotola'); };
+  $('b-pause').onclick = () => { if (E.pause(s, now())) { save(); S.bed('silenzio', null, 1.5); } veil('v-pause'); };
+  $('b-resume').onclick = () => { begin(); if (E.resume(s, now())) { save(); enterMoment(s.cur, true); } veil(''); renderRun(); };
+  $('b-stop').onclick = () => veil('v-stop');
+  $('b-stop-no').onclick = () => veil('');
+  $('b-stop-yes').onclick = () => { if (E.stop(s, now())) finish(); };
+  $('b-send').onclick = () => {
+    if (sent) return;
+    const payload = E.encodeLog(s, answers, $('c-note').value.trim());
+    const viaKeyboard = inTG && TG.sendData && !(TG.initDataUnsafe && TG.initDataUnsafe.query_id);
+    if (viaKeyboard) {
+      try {
+        sent = true; save();
+        if (tgv('6.2')) TG.disableClosingConfirmation();
+        S.stop(1.5); letSleep();
+        TG.sendData(payload);                    // se va, Telegram chiude la pagina
+        return;
+      } catch (e) {
+        sent = false; save();
+        $('c-note2').textContent = 'Non sono riuscito a mandare il rito al Maestro (' + (e && e.message || e) + '). Tocca di nuovo per riprovare.';
+        return;
+      }
+    }
+    S.stop(3); letSleep();
+    sent = true; save();
+    $('c-note2').textContent = inTG
+      ? 'Il rito è chiuso qui, ma da questo bottone non torna al Maestro: la prossima volta aprilo dal bottone «♨️ Apri il rito» sotto la tastiera.'
+      : 'Il rito è chiuso su questo telefono. Aperto fuori da Telegram non torna al Maestro.';
+    $('b-send').textContent = 'Rito chiuso';
+    window.__RITO_LOG = payload;
+  };
+
+  // --- avvio ---------------------------------------------------------------------
+  function open(r) {
+    const errs = E.validate(r);
+    if (errs.length) { $('e-why').textContent = 'La partitura di oggi ha un errore: ' + errs[0] + '. Dillo al Maestro.'; veil('v-empty'); return; }
+    R = r; rid = E.ritoId(r);
+    if (r.demo && Number(qs.get('speed')) > 1) { speed = Math.min(600, Number(qs.get('speed'))); realBase = Date.now(); virtBase = Date.now(); }
+    const d = new Date(), today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    if (!r.demo && r.date !== today) {           // un rito vale per il suo giorno: i tetti e la soglia erano di allora
+      $('e-title').textContent = 'Questo rito è di un altro giorno';
+      $('e-why').textContent = 'Chiedi al Maestro di sauna il rito di oggi: quello di ' + (r.date || 'ieri') + ' non si riapre.';
+      veil('v-empty'); return;
+    }
+    let rec = load();
+    if (rec && rec.sent && r.demo) { try { localStorage.removeItem(key()); } catch (e) {} rec = null; }   // una prova si può rifare
+    if (rec && rec.sent) {                       // già fatto e chiuso: lo stesso bottone non ne apre un secondo
+      $('e-title').textContent = 'Il rito di oggi è già compiuto';
+      $('e-why').textContent = 'L\'hai chiuso e il Maestro l\'ha ricevuto. Per un altro rito, chiedilo a lui.';
+      veil('v-empty'); return;
+    }
+    if (rec && Array.isArray(rec.events) && rec.events.length) {
+      s = E.replay(R, rec.events); answers = rec.answers || {};
+      E.reopen(s, rec.seen, now());
+      if (s.finished) { begin(); finish(); return; }
+      renderIntro(true);
+    } else {
+      s = E.createSession(R);
+      renderIntro(false);
+    }
+    setInterval(() => { if (s && E.live(s)) save(); }, 5000);
+  }
+
+  try { if (TG) { TG.ready(); TG.expand(); } } catch (e) {}
+  try { if (tgv('7.7') && TG.disableVerticalSwipes) TG.disableVerticalSwipes(); } catch (e) {}
+  E.parseFragment(window.__RITO_HASH || location.hash).then((r) => {
+    if (r) return open(r);
+    if (qs.has('demo')) return fetch('fixtures/demo.rito.json').then((x) => x.json()).then(open);
+    veil('v-empty');
+  }).catch((e) => { $('e-why').textContent = 'Non riesco a leggere il rito (' + (e && e.message || e) + '). Serve iOS 16.4 o più recente.'; veil('v-empty'); });
+})();
+</script>
+</body>
+</html>

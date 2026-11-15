@@ -8,8 +8,8 @@ Il bot, all'avvio, confronta la versione installata con l'ultima annunciata
 (data/hridaya/release.json): di giorno le novità partono subito come messaggio a sé, di notte
 vanno nel cancello e escono col messaggio del mattino. Alla prima installazione (canale mai usato)
 non annuncia nulla; un repo già in uso senza release.json riceve le novità della versione corrente.
-Versioni senza note: niente messaggio. Una riga che comincia con «[canzoni]» o «[vocali]» parla di
-una funzione facoltativa: esce solo se quella funzione è accesa.
+Versioni senza note: niente messaggio. Una riga che comincia con «[canzoni]», «[vocali]» o «[sauna]»
+parla di una funzione facoltativa: esce solo se quella funzione è accesa.
 
     release.py preview      il messaggio che partirebbe adesso (non lo manda)
 """
@@ -74,6 +74,11 @@ def features() -> dict[str, bool]:
         out["vocali"] = bool(voice_note.config())
     except Exception:  # noqa: BLE001
         out["vocali"] = False
+    try:
+        import rito_player
+        out["sauna"] = rito_player.installed() and bool(cc.load_env().get("RITO_PLAYER_URL"))
+    except Exception:  # noqa: BLE001
+        out["sauna"] = False
     return out
 
 

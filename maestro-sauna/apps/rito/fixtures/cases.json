@@ -1,0 +1,980 @@
+{
+ "_nota": "Casi condivisi fra engine.test.js e test_rito_guard.py: i due validatori devono dire la stessa cosa.",
+ "invalid": [
+  [
+   "calore senza massimo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "target_s": 600
+     }
+    ]
+   }
+  ],
+  [
+   "freddo senza massimo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold"
+     }
+    ]
+   }
+  ],
+  [
+   "calore che finisce da solo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "end": "time",
+      "target_s": 300
+     }
+    ]
+   }
+  ],
+  [
+   "freddo che finisce da solo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "end": "time",
+      "target_s": 60,
+      "max_s": 90
+     }
+    ]
+   }
+  ],
+  [
+   "momento a tempo senza traguardo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "air",
+      "end": "time"
+     }
+    ]
+   }
+  ],
+  [
+   "end sconosciuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "end": "auto"
+     }
+    ]
+   }
+  ],
+  [
+   "id non slug",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "X y",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "id booleano",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": true,
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "id numero",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": 1,
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "name lista",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": [
+       "X"
+      ],
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "name vuoto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "name di 21 emoji (42 unità)",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "type sconosciuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "sauna"
+     }
+    ]
+   }
+  ],
+  [
+   "min oltre target",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "min_s": 900,
+      "target_s": 600
+     }
+    ]
+   }
+  ],
+  [
+   "target oltre max",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "target_s": 900
+     }
+    ]
+   }
+  ],
+  [
+   "max_s stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": "600"
+     }
+    ]
+   }
+  ],
+  [
+   "max_s zero",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 0
+     }
+    ]
+   }
+  ],
+  [
+   "target negativo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "target_s": -5
+     }
+    ]
+   }
+  ],
+  [
+   "sound sconosciuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "sound": "rock"
+     }
+    ]
+   }
+  ],
+  [
+   "brace fuori dal calore",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "sound": "brace"
+     }
+    ]
+   }
+  ],
+  [
+   "enter_sound sconosciuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "enter_sound": "tromba"
+     }
+    ]
+   }
+  ],
+  [
+   "riposo facoltativo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "optional": true
+     }
+    ]
+   }
+  ],
+  [
+   "optional stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "max_s": 60,
+      "optional": "true"
+     }
+    ]
+   }
+  ],
+  [
+   "temp_c stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "temp_c": "95"
+     }
+    ]
+   }
+  ],
+  [
+   "temp_c fuori dal calore",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "temp_c": 65
+     }
+    ]
+   }
+  ],
+  [
+   "breath negativo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "breath": {
+       "in_s": -5,
+       "out_s": 6
+      }
+     }
+    ]
+   }
+  ],
+  [
+   "breath minuscolo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "breath": {
+       "in_s": 0.05,
+       "out_s": 6
+      }
+     }
+    ]
+   }
+  ],
+  [
+   "breath senza out_s",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "breath": {
+       "in_s": 4
+      }
+     }
+    ]
+   }
+  ],
+  [
+   "breath lista",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "breath": [
+       4,
+       6
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "lead_s oltre 300",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "lead_s": 900
+     }
+    ]
+   }
+  ],
+  [
+   "lead_s stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "lead_s": "30"
+     }
+    ]
+   }
+  ],
+  [
+   "lead_s booleano",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "lead_s": true
+     }
+    ]
+   }
+  ],
+  [
+   "lead_s del calore oltre 60",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "lead_s": 120
+     }
+    ]
+   }
+  ],
+  [
+   "lead_s del freddo oltre 120",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "max_s": 60,
+      "lead_s": 200
+     }
+    ]
+   }
+  ],
+  [
+   "text di 201 emoji (402 unità)",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "text": "🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊"
+     }
+    ]
+   }
+  ],
+  [
+   "text numero",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "text": 5
+     }
+    ]
+   }
+  ],
+  [
+   "where lista",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "where": [
+       "fuori"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue oltre la fine",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "cues": [
+       {
+        "at_s": 700,
+        "sound": "gong"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue senza at_s",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": [
+       {
+        "sound": "gong"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue at_s null",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": [
+       {
+        "at_s": null,
+        "sound": "gong"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue at_s stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": [
+       {
+        "at_s": "10",
+        "sound": "gong"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue senza contenuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": [
+       {
+        "at_s": 10
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cue suono sconosciuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": [
+       {
+        "at_s": 10,
+        "sound": "tromba"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "cues non lista",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "cues": {
+       "at_s": 10
+      }
+     }
+    ]
+   }
+  ],
+  [
+   "id ripetuto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     },
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "v booleano",
+   {
+    "v": true,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "v stringa",
+   {
+    "v": "1",
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "moments vuoto",
+   {
+    "v": 1,
+    "moments": []
+   }
+  ],
+  [
+   "momento non oggetto",
+   {
+    "v": 1,
+    "moments": [
+     "calore"
+    ]
+   }
+  ],
+  [
+   "domanda con una sola opzione",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": [
+     {
+      "id": "a",
+      "q": "?",
+      "options": [
+       "uno"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "opzione di 16 emoji (32 unità)",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": [
+     {
+      "id": "a",
+      "q": "?",
+      "options": [
+       "🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶",
+       "no"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "domanda senza testo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": [
+     {
+      "id": "a",
+      "options": [
+       "sì",
+       "no"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "domanda id numero",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": [
+     {
+      "id": 3,
+      "q": "?",
+      "options": [
+       "sì",
+       "no"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "closing non lista",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": {
+     "id": "a"
+    }
+   }
+  ]
+ ],
+ "valid": [
+  [
+   "riposo nudo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "calore con tutto",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "target_s": 480,
+      "temp_c": 65,
+      "lead_s": 45,
+      "sound": "brace",
+      "enter_sound": false,
+      "cues": [
+       {
+        "at_s": 360,
+        "sound": "ciotola",
+        "say": "Siediti.",
+        "text": "Siediti."
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "freddo facoltativo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "max_s": 120,
+      "target_s": 60,
+      "optional": true,
+      "lead_s": 0
+     }
+    ]
+   }
+  ],
+  [
+   "aria a tempo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "air",
+      "end": "time",
+      "target_s": 120
+     }
+    ]
+   }
+  ],
+  [
+   "riposo col respiro",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "min_s": 300,
+      "target_s": 600,
+      "breath": {
+       "in_s": 4,
+       "out_s": 6
+      },
+      "sound": "respiro"
+     }
+    ]
+   }
+  ],
+  [
+   "name di 20 emoji (40 unità)",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "opzione di 15 emoji",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ],
+    "closing": [
+     {
+      "id": "a",
+      "q": "Com'è?",
+      "options": [
+       "🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶🪶",
+       "no"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "end esplicito tap",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "end": "tap"
+     }
+    ]
+   }
+  ]
+ ]
+}

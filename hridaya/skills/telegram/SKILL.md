@@ -149,6 +149,10 @@ arrivata e non aggiungi altro (niente consigli, niente council). `done`.
 - `workout_session` — seduta salvata dal player: proponi alla persona il debrief, o
   avvia la skill `coach-longevita` (debrief) se l'ha chiesto; l'esito arriva firmato
   «🏋️ Coach Longevità».
+- `rito_session` — rito della sauna salvato (anche nel diario, `movement.sauna`): skill
+  `maestro-sauna`, run_type `debrief`, con il file della seduta; le sue due righe arrivano firmate
+  «♨️ Maestro di sauna», con `telegram_send` (un'iniziativa: passa dal cancello), senza domande: ha
+  appena finito e si sta rivestendo. Se il Maestro ha una domanda, la tiene per quando scrive lei.
 - `red_flag` — come Fase 0.
 - `practice_done` — la persona ha fatto una pratica coi bottoni (`data`: titolo, data, inizio,
   fine). Leggi la finestra sulla FC al minuto: `meditation_detect.py <inizio> <fine> --date <data>
@@ -175,6 +179,13 @@ state.json, aggiorna l'evento con `answer` e `answered_at`), ringrazia in breve
    - semplice / dato da registrare → rispondi tu, aggiorna il diario
    - allenamento → skill `coach-longevita` (passa i vincoli del quadro)
    - sonno, ora di letto → skill `dream-agent`
+   - sauna («faccio la sauna?», «il rito di oggi», «setup della sauna») → skill `maestro-sauna`
+     (run_type `rito`, o `setup` la prima volta), con i vincoli del quadro: giorno e ora del coach,
+     semaforo, carico e uscite delle ultime 36 ore, prelievo domani, ora di letto. Torna un testo
+     firmato «♨️ Maestro di sauna» e il path della partitura: **prima** `telegram_send_rito(rito_json,
+     text=<il suo testo>, parse_mode="HTML", in_reply_to)`. Se la soglia resta chiusa, i motivi tornano al Maestro: o
+     riscrive, o dici alla persona in una riga perché oggi no. Le domande del `setup` le fai tu,
+     una alla volta, con i bottoni
    - pratica, meditazione, coppia, giornata nera → il Kaula: subagente `tantra-guide:kaula`
      (tipo `risposta`, con il messaggio e il quadro; «vocali accesi» se lo sono); il suo testo va
      intatto in un blocco «🕉️ Kaula» (solo ciò che sta prima dei blocchi `---…---`); il blocco

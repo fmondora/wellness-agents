@@ -91,7 +91,13 @@ def _movement(day: str, log: dict) -> list[str]:
         out.append(f"{int(azm)} minuti attivi")
     if (root / "coach-longevita" / "daily" / f"{day}.session.json").exists():
         out.append("seduta registrata col player")
-    return [" · ".join(out)] if out else []
+    rows = [" · ".join(out)] if out else []
+    sauna = _d(_d(log.get("movement")).get("sauna"))
+    if sauna.get("done") and sauna.get("rounds"):
+        n = sauna["rounds"]
+        rows.append(_e(f"sauna: {'un passaggio' if n == 1 else f'{n} passaggi'} nel calore, {sauna.get('heat_min', '?')} minuti"
+                       + (f", riposo {sauna['rest_min']} minuti" if sauna.get("rest_min") else "")))
+    return rows
 
 
 def _practice(log: dict) -> list[str]:

@@ -362,6 +362,14 @@ RECUPERO TERMICO
 home_box e mountain: sauna + acqua fredda + hot tub disponibili.
 vacation/travel: nessuno salvo detto dall'utente.
 
+Se è installato il plugin `maestro-sauna`, **il rito della sauna è suo**: tu decidi il giorno e
+l'ora (week_plan, `thermal_week`) e passi i vincoli — semaforo, carico, picco del WOD, uscita lunga
+con sudorazione nelle ore prima — e lui scrive la partitura dentro i tetti di `data/sauna/rules.json`.
+Tu non scrivi durate, passaggi o freddo della sauna; hot tub e cold da soli restano tuoi. Nella
+scheda `recovery_block.offer` è `sauna` senza minuti («il rito lo scrive il Maestro di sauna»), e
+nel debrief il termico non lo chiedi: lo leggi dal diario (`movement.sauna`), dove lo scrive il canale.
+Senza quel plugin vale quanto segue.
+
 Opzionale. 10–20 min. Sera. Fuori dal duration_cap. UNA modalità.
 Default: sauna 8–15 min (1–2 turni) OPPURE hot tub 10–15 OPPURE cold 1–3.
 Contrasto solo se è in recovery_love.

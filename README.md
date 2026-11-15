@@ -105,6 +105,7 @@ Per hridaya, ogni versione nuova ha la sua sezione in `hridaya/NOVITA.md`, scrit
 | `hridaya` | frontline | Hṛdaya, il cuore: voce unica e coordinatore (/diario, /telegram, /servizio, /setup), quadro della giornata con le scadenze cliniche, convocazione degli specialisti; registro delle cose da seguire per giorni (domande a bottoni, follow-up); canale Telegram (bot, cancello dei push col silenzio notturno fino all'alzata, server MCP, `/diario`, vocali, meditazioni e canzoni generate in locale, novità di versione) |
 | `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico; workout player (Telegram Mini App) |
 | `dream-agent` | coaching | DreamAgent: il sonno — ora di letto a fine ciclo, piano settimanale, review settimanale e mensile |
+| `maestro-sauna` | coaching | Maestro di sauna: il rito del calore con il rigore di una Spa — partitura (soglia, calore, aria, acqua, riposo) dentro i tetti della persona, rito guidato sul telefono con clessidra e suoni (Mini App `apps/rito`), debrief |
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi; /sonno; pipeline dati del corpo (sync wearable, insights, trends, FC al minuto, webhook) |
 | `nutritionist` | dominio | Pattern alimentari, ricette, obiettivi mai punitivi |
 | `longevity` | dominio | Hallmarks dell'aging, forza e VO2max come predittori; swarm Attia · Patrick · Longo |

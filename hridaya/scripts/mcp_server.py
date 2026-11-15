@@ -172,6 +172,15 @@ TOOLS = [
                     "(data/coach-longevita/daily/YYYY-MM-DD.player.json). Valida lo schema prima di inviare.",
      "inputSchema": _schema({"player_json": {"type": "string"}, "text": {"type": "string"},
                              "in_reply_to": REPLY_TO, "dry_run": {"type": "boolean"}}, ["player_json"])},
+    {"name": "telegram_send_rito",
+     "description": "Manda il bottone «♨️ Apri il rito» (Mini App del Maestro di sauna) per una partitura "
+                    "(data/sauna/riti/YYYY-MM-DD.rito.json). Prima passa dalla soglia del Maestro (forma, tetti "
+                    "della persona, condizioni del giorno): se non passa, torna l'elenco dei motivi e il rito "
+                    "torna al Maestro. text = le righe del Maestro, firmate (parse_mode HTML per il grassetto "
+                    "della firma). dry_run=true controlla senza mandare. Un rito già chiuso oggi non si rimanda.",
+     "inputSchema": _schema({"rito_json": {"type": "string"}, "text": {"type": "string"},
+                             "parse_mode": {"type": "string", "enum": ["HTML"]},
+                             "in_reply_to": REPLY_TO, "dry_run": {"type": "boolean"}}, ["rito_json"])},
     {"name": "telegram_inbox",
      "description": "Messaggi in attesa nella coda Telegram (della persona e, kind=system, eventi per Hṛdaya: "
                     "alzata rilevata, seduta registrata, red flag).",
@@ -587,6 +596,44 @@ def call_tool(name: str, args: dict) -> Any:
             return {"status": "silent", "note": "finestra di silenzio: riprova dopo l'alzata (messaggio lasciato in coda)"}
         s = _sender()
         wp.send_player_button(s.token, chat or s.chat_id, w, base, call=transport_call, text=args.get("text"))
+        if reply:
+            tq.mark_done(reply)
+        return {"status": "sent", "url_length": len(url), "done": bool(reply)}
+    if name == "telegram_send_rito":
+        import rito_player as rp
+        path = cc.safe_path(args["rito_json"], kind="rito")
+        try:
+            r = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            raise ToolError(f"rito illeggibile: {e}") from e
+        if not isinstance(r, dict) or (not r.get("demo") and r.get("date") != path.name[:10]):
+            raise ToolError(f"la partitura dice date={r.get('date') if isinstance(r, dict) else None!r} ma il file è "
+                            f"{path.name}: un rito vale per il suo giorno")
+        blocked = rp.guard(r, cc.data_root())
+        if blocked:
+            raise ToolError("la soglia resta chiusa: " + "; ".join(blocked) + " — torna al Maestro di sauna")
+        if not r.get("demo") and rp.closed_session(cc.data_root()):
+            raise ToolError("il rito di oggi è già stato fatto e chiuso: per un secondo rito serve una partitura nuova "
+                            "e il sì della persona")
+        base = cc.load_env().get("RITO_PLAYER_URL", "")
+        if not base:
+            raise ToolError("manca RITO_PLAYER_URL nel .env del repo dati (la pagina del rito va pubblicata: "
+                            "maestro-sauna/apps/rito/deploy.sh)")
+        try:
+            url = rp.build_url(base, r)
+        except ValueError as e:
+            raise ToolError(str(e)) from e
+        if args.get("dry_run"):
+            return {"status": "ok", "url_length": len(url)}
+        reply = args.get("in_reply_to")
+        chat = _reply_target(reply)[0] if reply else None
+        if _is_night():
+            return {"status": "silent", "note": "finestra di silenzio: niente riti di notte"}
+        s = _sender()
+        rp.send_rito_button(s.token, chat or s.chat_id, r, base, call=transport_call, text=args.get("text"),
+                            parse_mode=args.get("parse_mode"))
+        if not r.get("demo"):
+            rp.mark_sent(cc.data_root())
         if reply:
             tq.mark_done(reply)
         return {"status": "sent", "url_length": len(url), "done": bool(reply)}

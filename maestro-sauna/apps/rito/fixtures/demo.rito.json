@@ -1,0 +1,140 @@
+{
+ "v": 1,
+ "kind": "sauna",
+ "demo": true,
+ "date": "2026-01-01",
+ "title": "Rito della sera",
+ "subtitle": "Due passaggi nel calore, aria, acqua, riposo",
+ "moments": [
+  {
+   "id": "soglia",
+   "name": "Soglia",
+   "type": "prep",
+   "where": "fuori",
+   "text": "Doccia calda, poi asciugati bene. Togli orologio e anelli. Un bicchiere d'acqua.",
+   "done_label": "Entro in cabina"
+  },
+  {
+   "id": "calore-1",
+   "name": "Primo calore",
+   "type": "heat",
+   "where": "cabina",
+   "temp_c": 65,
+   "target_s": 600,
+   "max_s": 780,
+   "text": "Sdraiato sulla panca di mezzo, il telo sotto tutto il corpo. Respira dal naso.",
+   "cues": [
+    {
+     "at_s": 480,
+     "sound": "ciotola",
+     "text": "Siediti. Ancora due minuti, poi esci piano."
+    }
+   ],
+   "lead_text": "Entra, chiudi la porta, stenditi sulla panca di mezzo."
+  },
+  {
+   "id": "aria-1",
+   "name": "Aria",
+   "type": "air",
+   "where": "fuori",
+   "end": "time",
+   "target_s": 120,
+   "text": "Cammina piano. Prima l'aria, poi l'acqua: lascia che il respiro scenda."
+  },
+  {
+   "id": "acqua-1",
+   "name": "Acqua fredda",
+   "type": "cold",
+   "where": "tinozza",
+   "optional": true,
+   "target_s": 60,
+   "max_s": 180,
+   "text": "Dai piedi verso il cuore. Esci quando il respiro è tornato tuo."
+  },
+  {
+   "id": "riposo-1",
+   "name": "Riposo",
+   "type": "rest",
+   "where": "lettino",
+   "min_s": 480,
+   "target_s": 600,
+   "breath": {
+    "in_s": 4,
+    "out_s": 6
+   },
+   "text": "Disteso, coperto, i piedi al caldo. Niente da fare.",
+   "lead_text": "Asciugati bene, copriti, stenditi. Il riposo comincia da solo."
+  },
+  {
+   "id": "calore-2",
+   "name": "Secondo calore",
+   "type": "heat",
+   "where": "cabina",
+   "temp_c": 65,
+   "target_s": 600,
+   "max_s": 720,
+   "text": "Come prima. Questo è il passaggio più quieto.",
+   "cues": [
+    {
+     "at_s": 300,
+     "sound": "vapore",
+     "text": "Se vuoi, un mestolo d'acqua sulle pietre. Poi resta fermo."
+    },
+    {
+     "at_s": 480,
+     "sound": "ciotola",
+     "text": "Siediti. Ancora due minuti."
+    }
+   ]
+  },
+  {
+   "id": "aria-2",
+   "name": "Aria",
+   "type": "air",
+   "where": "fuori",
+   "end": "time",
+   "target_s": 120,
+   "text": "Fuori, piano."
+  },
+  {
+   "id": "riposo-2",
+   "name": "Riposo lungo",
+   "type": "rest",
+   "where": "lettino",
+   "min_s": 600,
+   "target_s": 900,
+   "breath": {
+    "in_s": 4,
+    "out_s": 6
+   },
+   "text": "Il rito finisce qui, sdraiato. Lascia che il calore resti."
+  },
+  {
+   "id": "chiusura",
+   "name": "Chiusura",
+   "type": "close",
+   "where": "fuori",
+   "text": "Bevi con calma. Un velo d'olio sulla pelle, vestiti caldo."
+  }
+ ],
+ "closing": [
+  {
+   "id": "corpo",
+   "q": "Il corpo adesso?",
+   "options": [
+    "🪶 Leggero",
+    "🌊 Sciolto",
+    "🪨 Pesante"
+   ]
+  },
+  {
+   "id": "testa",
+   "q": "La testa?",
+   "options": [
+    "🌙 Quieta",
+    "〰️ Uguale",
+    "⚡ Accesa"
+   ]
+  }
+ ]
+}

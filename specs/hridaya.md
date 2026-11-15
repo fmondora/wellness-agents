@@ -36,12 +36,12 @@ servizio), `memory/agents/hridaya.md`. Non legge `memory/agents/tantra-guide.md`
 
 ## Il canale
 
-- Bot launchd (long polling) → coda; comandi locali `/allenamento /chiudi /diario /nota /sonno /help`
+- Bot launchd (long polling) → coda; comandi locali `/allenamento /sauna /chiudi /diario /nota /sonno /help`
   (`/meditazione` e `/studio` vanno alla sessione); red flag; `web_app_data`; bottoni di risposta,
   di pratica, del registro e del diario; novità di versione all'avvio (`NOVITA.md`); 409 ripetuti →
   un avviso; sessione spenta → una riga.
 - Server MCP stdio (`.mcp.json`): `telegram_send`, `telegram_send_card`, `telegram_send_file`,
-  `telegram_send_player`, `telegram_inbox`, `telegram_reply`, `telegram_react`,
+  `telegram_send_player`, `telegram_send_rito`, `telegram_inbox`, `telegram_reply`, `telegram_react`,
   `telegram_send_voice`, `telegram_send_meditation`, `telegram_send_song`, `log_plan`,
   `hridaya_service`, `gate_status`, `reviews_due`, `review_done`.
 - Registro delle cose da loggare (`log_plan.py`, `data/hridaya/log_plan.json`): voci con domande a

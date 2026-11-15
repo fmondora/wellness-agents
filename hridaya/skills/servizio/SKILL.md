@@ -54,6 +54,7 @@ watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e la per
      riprendi i messaggi rimasti in coda di notte (`telegram_inbox`: file, bottoni, vocali e
      meditazioni non partono di notte).
    - `SYS workout_session …` → proponi il debrief al Coach Longevità
+   - `SYS rito_session …` → debrief del Maestro di sauna (skill `telegram`, Fase 1)
    - `SYS red_flag …` → verifica l'escalation, nient'altro
    - `SERA <data>` → messaggio della sera (P6): lancia il subagente `tantra-guide:kaula`
      (tool Agent; tipo `meditazione_sera`; brief: HRV/semaforo, carico, sonno, emozioni del

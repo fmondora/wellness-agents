@@ -2,7 +2,7 @@
 """Configurazione del canale di Hṛdaya: repo dati, segreti, ritmo della giornata.
 
 Tutto ciò che è personale vive nel repo dati (cwd o WELLNESS_DATA):
-  .env                   ALLOWED_CHAT_IDS, WORKOUT_PLAYER_URL, (TELEGRAM_BOT_TOKEN solo come fallback)
+  .env                   ALLOWED_CHAT_IDS, WORKOUT_PLAYER_URL, RITO_PLAYER_URL, (TELEGRAM_BOT_TOKEN solo come fallback)
   portachiavi macOS      il token del bot (servizio `wellness-agents.telegram`,
                          account TELEGRAM_KEYCHAIN_ACCOUNT del .env o nome della cartella del repo dati)
   config/hridaya.json    ritmo: messaggio della sera, ora di letto, alzata (facoltativo, default sotto)
@@ -238,6 +238,7 @@ def rhythm(root: Path | None = None) -> dict:
 #   image   (foto delle schede): le stesse + asset dei plugin (coach-longevita/assets/),
 #           solo .png .jpg .jpeg .webp .gif
 #   player  (telegram_send_player): data/coach-longevita/daily/*.player.json
+#   rito    (telegram_send_rito): data/sauna/riti/*.rito.json
 
 import fnmatch  # noqa: E402
 
@@ -256,6 +257,8 @@ def allowed_roots(kind: str = "file", root: Path | None = None) -> list[Path]:
     base = (root or data_root()).resolve()
     if kind == "player":
         return [base / "data" / "coach-longevita" / "daily"]
+    if kind == "rito":
+        return [base / "data" / "sauna" / "riti"]
     roots = [base / d for d in FILE_DIRS]
     if kind == "image":
         try:
@@ -269,7 +272,7 @@ def allowed_roots(kind: str = "file", root: Path | None = None) -> list[Path]:
 
 
 def safe_path(p: str | Path, base: Path | None = None, kind: str = "file", dir_ok: bool = False) -> Path:
-    """Path risolto e ammesso per `kind` (file | image | player), o PathNotAllowed."""
+    """Path risolto e ammesso per `kind` (file | image | player | rito), o PathNotAllowed."""
     q = Path(p).expanduser()
     q = q if q.is_absolute() else (base or data_root()) / q
     r = q.resolve()
@@ -278,7 +281,8 @@ def safe_path(p: str | Path, base: Path | None = None, kind: str = "file", dir_o
         raise PathNotAllowed(f"{p}: nome riservato (segreti, chiavi, log): non esce sul canale")
     if not any(r == a or r.is_relative_to(a) for a in allowed_roots(kind)):
         raise PathNotAllowed(f"{p}: fuori dalle cartelle ammesse per {kind} ("
-                             + ", ".join(FILE_DIRS if kind != "player" else ("data/coach-longevita/daily",))
+                             + ", ".join({"player": ("data/coach-longevita/daily",),
+                                          "rito": ("data/sauna/riti",)}.get(kind, FILE_DIRS))
                              + (", asset dei plugin" if kind == "image" else "") + ")")
     if r.is_dir() and not dir_ok:
         raise PathNotAllowed(f"{p}: è una cartella")
@@ -286,6 +290,8 @@ def safe_path(p: str | Path, base: Path | None = None, kind: str = "file", dir_o
         raise PathNotAllowed(f"{p}: non è un'immagine ({', '.join(sorted(IMAGE_EXT))})")
     if kind == "player" and not r.name.endswith(".player.json"):
         raise PathNotAllowed(f"{p}: non è un player.json")
+    if kind == "rito" and not r.name.endswith(".rito.json"):
+        raise PathNotAllowed(f"{p}: non è un rito.json")
     return r
 
 

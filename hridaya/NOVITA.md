@@ -2,8 +2,12 @@
 
 Scritte per chi usa il canale: il bot le manda una volta, quando arriva la versione nuova.
 Una riga per novità, in prosa semplice, al massimo cinque per versione. Una riga che comincia con
-«[canzoni]» o «[vocali]» esce solo a chi ha quella funzione accesa. Le versioni X.Y.0 hanno sempre
+«[canzoni]», «[vocali]» o «[sauna]» esce solo a chi ha quella funzione accesa. Le versioni X.Y.0 hanno sempre
 le loro note (un test lo controlla); le patch solo se cambia qualcosa che la persona vede.
+
+## 0.14.0
+- [sauna] La sauna ha il suo Maestro: chiedimi «facciamo la sauna?» e ti arriva il rito di oggi con il bottone «♨️ Apri il rito». Il telefono resta fuori dalla cabina, acceso e non in silenzioso: clessidra, suoni sotto ogni momento, gong ai passaggi. Alla fine i tempi veri vanno nel diario e il Maestro ti dice due righe.
+- [sauna] /sauna riapre il rito di oggi; /chiudi toglie il bottone, come per l'allenamento.
 
 ## 0.13.0
 - Se smetto di ascoltare la coda me ne accorgo e mi riaccendo da solo: non dovresti più trovarmi muto per ore.

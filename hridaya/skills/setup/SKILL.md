@@ -91,11 +91,14 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
    e `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<label>.plist`.
    Controlla `data/telegram/bot.log` (riga «bot Telegram avviato»).
 6. **Menu comandi** — `python3.12 $S/telegram_setup.py commands`
-   (/allenamento /chiudi /diario /nota /sonno /meditazione /studio /help).
+   (/allenamento /sauna /chiudi /diario /nota /sonno /meditazione /studio /help).
 7. **Opzionale, se c'è `coach-longevita`** — pubblicazione del player
    (`apps/workout-player/deploy.sh` del plugin coach, serve wrangler e un progetto
    Pages), `WORKOUT_PLAYER_URL` nel `.env`, poi una demo: tool `telegram_send_player`
    sul `fixtures/demo.player.json` del player → verifica audio e schermo acceso.
+   **Se c'è `maestro-sauna`** — lo stesso per il rito: `apps/rito/deploy.sh` del plugin (progetto
+   Pages `rito-player`), `RITO_PLAYER_URL` nel `.env`, poi il `setup` del Maestro (la sua sauna, i
+   tetti) e una prova: `telegram_send_rito` su una partitura di oggi con `demo: true`.
 8. **Opzionale — Vocali** (Mac con Apple Silicon): «Vuoi che alcune pratiche arrivino anche come
    vocale, letto da una voce sintetica che gira sul Mac?» Se sì:
    - **Prima cerca ciò che c'è già**: `voice_note.py discover` (script di questo plugin) elenca i
