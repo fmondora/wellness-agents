@@ -31,6 +31,9 @@ dalla cabina e il rito parla col suono.
 `demo: true`: prova a secco, senza sauna (il canale lo salva come `.demo.session.json`, non entra nel
 diario e non conta come seduta; solo un demo accetta `?speed=` e si può riaprire in un altro giorno). `clock: "none"` toglie anche le parole del tempo; `voice: false` non dice le frasi `say`.
 `threshold` è la soglia dichiarata dal Maestro (la legge `rito_guard.py`, la pagina la ignora).
+`prepare`: da 1 a 12 cose da preparare prima di cominciare (teli, acqua, tinozza, mestolo, olio). La
+soglia della pagina le mostra in testa, sopra «Come andrà» (ogni momento con dove, gradi, durata,
+massimo, acqua, vapore); acqua e acqua fredda si aggiungono da sole se il rito le usa.
 
 Ogni **momento**:
 
@@ -50,8 +53,10 @@ Ogni **momento**:
 | `where`, `temp_c` | sotto il nome: «cabina, 65 gradi». `temp_c` solo sul calore (la soglia lo confronta col tetto) |
 | `sound` | tappeto: `silenzio` `brace` (solo calore) `bordone` `acqua` `aria` `respiro` |
 | `breath` | `{in_s, out_s}` (da 2 a 15 secondi) per il tappeto `respiro` e l'alone a schermo |
-| `enter_sound` | colpo d'inizio: `gong` `ciotola` `campanella` `legno` `vapore`, o `false` |
+| `enter_sound` | colpo d'inizio: `tingsha` `ciotola` `campanella` `legno` `vapore` `goccia`, o `false`. Il `gong` è del richiamo oltre il limite: non usarlo per aprire un momento |
 | `cues` | richiami dentro il momento: `[{at_s, sound?, say?, text?}]` (almeno uno dei tre) |
+| `checklist` | da 1 a 8 voci brevi da spuntare (prima e dopo: cosa preparare, cosa fare). La pagina le mostra al posto della clessidra; se ne manca qualcuna, «Avanti» chiede un secondo tocco, non blocca. Non nel caldo né nel freddo |
+| `drink` | `true`: un minuto dopo l'inizio del momento (a metà, se è più corto) suona la goccia e lo schermo dice «Un sorso d'acqua». Nei riposi, nell'aria, prima e dopo; mai nel caldo né nel freddo |
 | `done_label` | la parola del bottone, se quella predefinita non va («Entro in cabina») |
 
 Esempio completo: `fixtures/demo.rito.json`.
@@ -61,7 +66,7 @@ Esempio completo: `fixtures/demo.rito.json`.
 - **Passaggio.** Finito un momento comincia il passaggio verso il successivo: il tappeto cambia, la
   clessidra è piena e ferma, lo schermo dice dove andare. Il tempo parte da solo alla fine del
   passaggio, col colpo d'inizio; un tocco su «Ci sono» lo fa partire prima. Il calore no: chi ha
-  toccato «Entro» è già dentro, quindi la sabbia scende subito e il gong d'inizio suona dopo mezzo minuto.
+  toccato «Entro» è già dentro, quindi la sabbia scende subito e il tingsha d'inizio suona dopo mezzo minuto.
 - **Sicurezza.** Caldo e freddo finiscono solo con un tocco, hanno sempre un massimo, non si mettono
   in pausa; uscirne nei primi 20 secondi chiede un secondo tocco (dita bagnate). Se la pagina torna
   dopo essere stata chiusa durante un calore, il tempo è continuato e il richiamo suona subito. Un

@@ -22,7 +22,8 @@ test('la partitura di esempio è valida e si legge prima di cominciare', () => {
   const p = E.planned(DEMO);
   assert.equal(p.rounds, 2);
   assert.equal(p.heat_s, 1200);
-  assert.equal(p.moments.length, 9);
+  assert.equal(p.moments.length, 13);
+  assert.equal(p.total_s, 3660);                              // lo stesso numero della soglia in Python
 });
 
 test('partiture sbagliate: dice cosa non va', () => {
@@ -216,7 +217,7 @@ test('il log che torna: andata, ritorno, e sta nei limiti di sendData', () => {
   const s = E.createSession(DEMO);
   E.start(s, at(0));
   let t = 0;
-  for (let k = 0; k < 60 && !s.finished; k++) {
+  for (let k = 0; k < 120 && !s.finished; k++) {
     t += 700;
     E.tick(s, at(t));
     if (!s.finished && E.moment(s).end === 'tap') E.tap(s, at(t + 2), s.cur, true);
@@ -228,7 +229,7 @@ test('il log che torna: andata, ritorno, e sta nei limiti di sendData', () => {
   assert.equal(d.status, 'end');
   assert.equal(d.demo, true);
   assert.equal(d.answers.corpo, '🌊 Sciolto');
-  assert.equal(d.moments.length, 9);
+  assert.equal(d.moments.length, 13);
   assert.equal(d.events.length, s.events.length);
   assert.deepEqual(d.events.map((e) => e.e), s.events.map((e) => e.e));
   const small = E.encodeLog(s, {}, 'x'.repeat(280), 700);
@@ -299,7 +300,7 @@ test('passaggi: momenti a tempo, salti, pause e valori di tipo', () => {
   assert.match(tl[1].lead_text, /stenditi/);
   assert.match(E.validate(rito([lead(REST, 900)])).join(), /lead_s/);
   assert.match(E.validate(rito([lead(HEAT, 120)])).join(), /da 0 a 60/);
-  assert.equal(E.planned(DEMO).total_s, 600 + 120 + 60 + 600 + 600 + 120 + 900 + 15 + 30 + 60 + 15 + 60);
+  assert.equal(E.planned(DEMO).total_s, 180 + 600 + 120 + 60 + 600 + 600 + 120 + 900 + 300 + 15 + 30 + 60 + 15 + 60);
 });
 
 test('il calore conta dal tocco: il passaggio è solo il tempo per sistemarsi', () => {
@@ -366,4 +367,22 @@ test('i due validatori dicono la stessa cosa: casi condivisi con la soglia in Py
   const cases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'cases.json'), 'utf8'));
   for (const [why, r] of cases.invalid) assert.ok(E.validate(r).length > 0, 'doveva essere rifiutato: ' + why);
   for (const [why, r] of cases.valid) assert.deepEqual(E.validate(r), [], 'doveva passare: ' + why);
+});
+
+test('prima e dopo: un sorso d\'acqua nei momenti con drink, la lista non tocca il tempo', () => {
+  const r = rito([{ id: 'prep', name: 'Prepara', type: 'prep', checklist: ['Acqua', 'Telo'] },
+    Object.assign({}, HEAT), Object.assign({}, REST, { drink: true }),
+    { id: 'dopo', name: 'Rinfrescati', type: 'close', end: 'time', target_s: 300, drink: true, lead_s: 0 },
+    { id: 'breve', name: 'Breve', type: 'close', end: 'time', target_s: 40, drink: true, lead_s: 0 }]);
+  assert.deepEqual(E.validate(r), []);
+  const tl = E.timeline(r);
+  assert.deepEqual(tl[0].checklist, ['Acqua', 'Telo']);
+  assert.deepEqual(tl[2].cues.map((c) => [c.at_s, c.sound, c.drink]), [[60, 'goccia', true]]);
+  assert.deepEqual(tl[3].cues.map((c) => c.at_s), [60]);
+  assert.deepEqual(tl[4].cues, []);                            // un momento di 40 s a tempo: niente sorso
+  const s = E.createSession(r);
+  E.start(s, at(0));
+  E.tap(s, at(30), 0);                                         // la lista non spuntata non ferma il motore: è la pagina che chiede
+  E.tap(s, at(630), 1);
+  assert.deepEqual(E.tick(s, at(691)).map((x) => [x.kind, x.cue && x.cue.text]), [['cue', 'Un sorso d\'acqua.']]);
 });

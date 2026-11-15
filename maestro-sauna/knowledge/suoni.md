@@ -24,17 +24,19 @@ Comporre:
 - Rapporto del respiro: espiro più lungo dell'inspiro (4 e 6 secondi è un buon inizio). È un
   appoggio, non una pratica: se la persona vuole una pratica, è del Kaula.
 - Se in cabina il suono non arriva (`setup.sound.heard_inside: false`), nel calore conta solo ciò
-  che si sente attraverso la porta: gong e ciotola. Il tappeto del calore è per chi sta fuori.
+  che si sente attraverso la porta: tingsha, ciotola e il gong del richiamo. Il tappeto del calore è per chi sta fuori.
 
 ## Colpi — ai passaggi e nei richiami (`enter_sound`, `cues[].sound`)
 
 | Nome | Cos'è | Uso |
 |---|---|---|
-| `gong` | profondo, lungo | comincia il calore; il richiamo oltre il massimo (due colpi, ogni 30 secondi); fine del rito |
-| `ciotola` | una ciotola che canta | traguardo di un momento; comincia il riposo; «siediti» due minuti prima di uscire |
+| `gong` | profondo, lungo | **solo il richiamo oltre il massimo** (due colpi a volume pieno, ogni 30 secondi): quando suona vuol dire una cosa sola, esci. Non usarlo per altro |
+| `tingsha` | due piattini che si toccano, chiari e brevi | comincia il calore (predefinito) |
+| `ciotola` | una ciotola che canta | traguardo di un momento; comincia il riposo; «siediti» due minuti prima di uscire; fine del rito |
 | `campanella` | chiara, breve | comincia l'acqua |
 | `legno` | un tocco asciutto | comincia l'aria |
 | `vapore` | acqua sulle pietre | la gettata: «adesso il mestolo» |
+| `goccia` | due gocce in una ciotola | un sorso d'acqua (lo suona da solo `drink: true`) |
 
 Ogni tipo di momento ha il suo colpo d'inizio predefinito; `enter_sound: false` lo toglie. Il colpo
 suona quando il momento **comincia davvero**, cioè alla fine del passaggio (o al «Ci sono»).
@@ -51,6 +53,6 @@ schermo; non va bene per spiegare. Con `"voice": false` nella partitura (o se `s
 
 ## Un rito, i suoi suoni: esempio
 
-Soglia `bordone` → calore `brace`, gong all'inizio, ciotola a due minuti dalla fine, ciotola al
+Soglia `bordone` → calore `brace`, tingsha all'inizio, ciotola a due minuti dalla fine, ciotola al
 traguardo → aria `aria`, legno → acqua `acqua`, campanella → riposo `respiro` 4/6, ciotola → secondo
-calore `brace` con `vapore` a metà → aria → riposo lungo `bordone` → chiusura `bordone`, gong.
+calore `brace` con `vapore` a metà → aria → riposo lungo `bordone` → chiusura `bordone`, ciotola.

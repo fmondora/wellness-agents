@@ -29,7 +29,9 @@
   const EVENTS = ['start', 'enter', 'tap', 'auto', 'skip', 'pause', 'resume', 'undo', 'stop', 'end', 'begin'];
   const TYPES = ['prep', 'heat', 'air', 'cold', 'rest', 'close'];
   const BEDS = ['silenzio', 'brace', 'bordone', 'acqua', 'aria', 'respiro'];
-  const SHOTS = ['gong', 'ciotola', 'campanella', 'legno', 'vapore'];
+  const SHOTS = ['gong', 'tingsha', 'ciotola', 'campanella', 'legno', 'vapore', 'goccia'];
+  const DRINK_AT_S = 60;           // `drink`: un sorso d'acqua un minuto dopo l'inizio del momento
+  const DRINK_TEXT = 'Un sorso d\'acqua.';
 
   const TAP_GUARD_MS = 700;        // tocchi ignorati subito dopo un cambio di momento (doppio tocco)
   const QUICK_EXIT_S = 20;         // uscire dal caldo o dal freddo nei primi secondi vuole un secondo tocco (dita bagnate)
@@ -42,11 +44,11 @@
   // lead = il passaggio: secondi per arrivare al momento prima che il suo tempo cominci
   const DEFAULTS = {
     prep:  { sound: 'bordone',  enter: null,         done: 'Entro',          lead: 0,  arrive: '' },
-    heat:  { sound: 'brace',    enter: 'gong',       done: 'Sono uscito',    lead: 30, arrive: 'Entra, chiudi la porta, stenditi.' },
+    heat:  { sound: 'brace',    enter: 'tingsha',    done: 'Sono uscito',    lead: 30, arrive: 'Entra, chiudi la porta, stenditi.' },
     air:   { sound: 'aria',     enter: 'legno',      done: 'Avanti',         lead: 15, arrive: 'Esci all\'aria, senza fretta.' },
     cold:  { sound: 'acqua',    enter: 'campanella', done: 'Fatto',          lead: 30, arrive: 'Vai all\'acqua con calma.' },
     rest:  { sound: 'respiro',  enter: 'ciotola',    done: 'Mi alzo',        lead: 60, arrive: 'Asciugati, copriti, stenditi.' },
-    close: { sound: 'bordone',  enter: 'gong',       done: 'Chiudi il rito', lead: 0,  arrive: '' },
+    close: { sound: 'bordone',  enter: 'ciotola',    done: 'Chiudi il rito', lead: 0,  arrive: '' },
   };
   const NO_HOLD = ['heat', 'cold'];   // dal caldo e dal freddo si esce quando lo dice il corpo; niente pause, niente fine a tempo
   const LEAD_MAX = { heat: 60, cold: 120 };   // gli altri 300
@@ -88,6 +90,11 @@
           errs.push(p + ': breath vuole in_s e out_s fra 2 e 15 secondi');
       }
       for (const k2 of ['where', 'done_label']) if (!optStr(m[k2], 40)) errs.push(p + ': ' + k2 + ' è un testo di al massimo 40 caratteri');
+      if (m.checklist != null && !(Array.isArray(m.checklist) && m.checklist.length >= 1 && m.checklist.length <= 8
+          && m.checklist.every((x) => str(x, 60)))) errs.push(p + ': checklist è una lista da 1 a 8 voci brevi (60 caratteri)');
+      if (m.checklist != null && hot) errs.push(p + ': la checklist non sta nel caldo né nel freddo');
+      if (m.drink != null && typeof m.drink !== 'boolean') errs.push(p + ': drink deve essere true o false');
+      if (m.drink === true && hot) errs.push(p + ': nel caldo e nel freddo non si beve: drink va nei riposi, nell\'aria, prima o dopo');
       const mn = num(m.min_s), tg = num(m.target_s), mx = num(m.max_s);
       for (const [k2, v] of [['min_s', m.min_s], ['target_s', m.target_s], ['max_s', m.max_s]]) {
         if (v != null && !(num(v) > 0)) errs.push(p + ': ' + k2 + ' deve essere un numero > 0');
@@ -99,6 +106,7 @@
       if (mn && mx && mn > mx) errs.push(p + ': min_s oltre max_s');
       if (m.sound != null && !BEDS.includes(m.sound)) errs.push(p + ': sound non tra ' + BEDS.join(', '));
       if (m.enter_sound != null && m.enter_sound !== false && !SHOTS.includes(m.enter_sound)) errs.push(p + ': enter_sound non tra ' + SHOTS.join(', '));
+      if (m.enter_sound === 'gong') errs.push(p + ': il gong è del richiamo oltre il limite, non apre un momento');
       if (!optStr(m.text, 400)) errs.push(p + ': text è un testo di al massimo 400 caratteri');
       const lmax = LEAD_MAX[m.type] || 300;
       if (m.lead_s != null && !(num(m.lead_s) !== null && m.lead_s >= 0 && m.lead_s <= lmax)) errs.push(p + ': lead_s (il passaggio) va da 0 a ' + lmax + ' secondi');
@@ -117,6 +125,8 @@
         });
       }
     });
+    if (r.prepare != null && !(Array.isArray(r.prepare) && r.prepare.length >= 1 && r.prepare.length <= 12
+        && r.prepare.every((x) => str(x, 60)))) errs.push('prepare è una lista da 1 a 12 cose da preparare (60 caratteri)');
     if (r.closing != null) {
       if (!Array.isArray(r.closing) || r.closing.length > 5) errs.push('closing è una lista di al massimo 5 domande');
       else r.closing.forEach((c, j) => {
@@ -142,7 +152,10 @@
         min_s: num(m.min_s), target_s: num(m.target_s), max_s: num(m.max_s),
         optional: !!m.optional, sound: m.sound || d.sound,
         enter_sound: m.enter_sound === false ? null : (m.enter_sound || d.enter),
-        done_label: m.done_label || d.done, cues: Array.isArray(m.cues) ? m.cues : [],
+        done_label: m.done_label || d.done, checklist: Array.isArray(m.checklist) ? m.checklist : [],
+        cues: (Array.isArray(m.cues) ? m.cues : []).concat(m.drink === true
+          && !(num(m.target_s) && m.end === 'time' && m.target_s <= DRINK_AT_S)
+          ? [{ at_s: Math.min(DRINK_AT_S, num(m.target_s) ? m.target_s / 2 : DRINK_AT_S), sound: 'goccia', text: DRINK_TEXT, drink: true }] : []),
         // il calore conta dal tocco: il suo passaggio è solo il tempo per sistemarsi (settle_s), non ferma l'orologio
         lead_s: i === 0 || m.type === 'heat' ? 0 : (num(m.lead_s) != null ? m.lead_s : d.lead),
         settle_s: i === 0 || m.type !== 'heat' ? 0 : (num(m.lead_s) != null ? m.lead_s : d.lead),
@@ -156,7 +169,13 @@
   function planned(r) {
     const tl = timeline(r);
     const sum = (t) => tl.filter((m) => m.type === t).reduce((a, m) => a + (m.target_s || m.max_s || 0), 0);
+    // cosa preparare: la lista del Maestro, più quello che il rito chiede da sé (acqua, tinozza)
+    const prep = Array.isArray(r.prepare) ? r.prepare.slice() : [];
+    const has = (re) => prep.some((x) => re.test(x));
+    if (tl.some((m) => m.cues.some((c) => c.drink)) && !has(/acqua|bere|bottiglia|borraccia/i)) prep.push('Acqua da bere a portata di mano');
+    if (tl.some((m) => m.type === 'cold') && !has(/tinozza|fredd|doccia/i)) prep.push('L\'acqua fredda pronta');
     return {
+      prepare: prep,
       rounds: tl.filter((m) => m.type === 'heat').length,
       heat_s: sum('heat'), cold_s: sum('cold'), rest_s: sum('rest'),
       total_s: tl.reduce((a, m) => a + (m.target_s || m.min_s || 0) + m.lead_s, 0),

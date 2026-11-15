@@ -1,6 +1,14 @@
 #!/usr/bin/env python3.12
 """Google Health API → repo dati: sync giornaliero dei dati Fitbit.
 
+Per giorno, in data/fitbit/YYYY-MM-DD.json (e nel diario, chiave `fitbit`): sonno, HRV, SpO2, respiro,
+FC a riposo, temperatura cutanea, peso e massa grassa (se una bilancia li scrive), FC oraria e per
+zone, passi, AZM, intraday; e dal 15/11/2026 calorie (totali, attive, a riposo, per zona di FC),
+distanza, piani, minuti attivi per livello, minuti sedentari, minuti per zona e soglie delle zone,
+allenamenti (tipo, orari, kcal, FC media), HRV della notte a campioni, ossigeno della notte
+(minimo, mediana, campioni sotto 90/88%), respiro per fase del sonno, VO2 max e altezza se presenti.
+Cibo, acqua, ECG chiedono permessi in più (nutrition, ecg): non sono negli SCOPES di health_api.
+
 Uso:
   python3.12 scripts/health_sync.py --auth                 # prima autorizzazione
   python3.12 scripts/health_sync.py --identity             # verifica connessione
@@ -23,7 +31,11 @@ from health_extract import (extract_azm, extract_daily_value,
                                     extract_hr_hourly, extract_hr_intraday,
                                     extract_hr_stats, extract_sleep,
                                     extract_steps, extract_steps_intraday,
-                                    extract_body, extract_sleep_temperature)
+                                    extract_body, extract_sleep_temperature,
+                            extract_active_minutes, extract_calories, extract_count, extract_distance_km,
+                            extract_exercises, extract_height_cm, extract_hr_zone_minutes, extract_hr_zones,
+                            extract_hrv_samples, extract_respiratory_by_stage, extract_sedentary_min,
+                            extract_spo2_summary, extract_vo2_max)
 
 import os
 BASE_DIR = Path(os.environ.get("WELLNESS_DATA", Path.cwd()))
@@ -108,6 +120,8 @@ def sync_date(client: HealthClient, base_dir: Path, date_str: str) -> dict:
     if steps is not None:
         result["steps"] = steps
 
+    result.update(fetch_activity(client, start, end, date_str, try_call))
+
     # Intraday (chiavi additive, per l'insight engine): bucket 900s + AZM al minuto
     result.update(fetch_intraday(client, start, end, try_call))
 
@@ -121,6 +135,66 @@ def sync_date(client: HealthClient, base_dir: Path, date_str: str) -> dict:
     print(f"  Dati: {', '.join(fields)}")
     print(f"  Salvato: {out_file}")
     return result
+
+
+def fetch_activity(client: HealthClient, start: str, end: str, date_str: str, try_call) -> dict:
+    """Tutto il resto che il Fitbit misura e i permessi già dati consentono di leggere: calorie
+    (totali, attive, per zona), distanza, piani, minuti attivi e sedentari, zone di frequenza,
+    allenamenti, HRV della notte a campioni, ossigeno della notte, respiro per fase, VO2 max, altezza."""
+    out: dict = {}
+
+    def roll(kebab):
+        return try_call(kebab, lambda: client.daily_rollup(kebab, start, end)) or {}
+
+    cal = extract_calories(roll("total-calories"), roll("active-energy-burned"), roll("calories-in-heart-rate-zone"))
+    if cal:
+        out["calories"] = cal
+    km = extract_distance_km(roll("distance"))
+    if km is not None:
+        out["distance_km"] = km
+    floors = extract_count(roll("floors"), "floors")
+    if floors is not None:
+        out["floors"] = floors
+    sed = extract_sedentary_min(roll("sedentary-period"))
+    if sed is not None:
+        out["sedentary_min"] = sed
+    am = extract_active_minutes(roll("active-minutes"))
+    if am:
+        out["active_minutes"] = am
+    zm = extract_hr_zone_minutes(roll("time-in-heart-rate-zone"))
+    if zm:
+        out["hr_zone_minutes"] = zm
+
+    def lst(kebab, snake, prefer):
+        return try_call(kebab, lambda: client.list_data_points(kebab, snake, start, end, prefer=prefer)) or []
+
+    zones = extract_hr_zones(lst("daily-heart-rate-zones", "daily_heart_rate_zones", "date"))
+    if zones:
+        out["hr_zones"] = zones
+    vo2 = extract_vo2_max(lst("daily-vo2-max", "daily_vo2_max", "date")) or \
+        extract_vo2_max(lst("vo2-max", "vo2_max", "sample_time"))
+    if vo2:
+        out["vo2_max"] = vo2
+    # allenamenti: il tipo `exercise` si filtra solo sull'ora civile di inizio
+    day0 = datetime.strptime(date_str, "%Y-%m-%d")
+    flt = (f'exercise.interval.civil_start_time >= "{day0:%Y-%m-%dT00:00:00}" AND '
+           f'exercise.interval.civil_start_time < "{day0 + timedelta(days=1):%Y-%m-%dT00:00:00}"')
+    ex = extract_exercises(try_call("exercise", lambda: client._list_all_pages("exercise", flt)) or [])
+    if ex:
+        out["exercises"] = ex
+    hrv = extract_hrv_samples(lst("heart-rate-variability", "heart_rate_variability", "sample_time"))
+    if hrv:
+        out["hrv_samples"] = hrv
+    spo2 = extract_spo2_summary(lst("oxygen-saturation", "oxygen_saturation", "sample_time"))
+    if spo2:
+        out["spo2_night"] = spo2
+    rr = extract_respiratory_by_stage(lst("respiratory-rate-sleep-summary", "respiratory_rate_sleep_summary", "sample_time"))
+    if rr:
+        out["respiratory_by_stage"] = rr
+    h = extract_height_cm(lst("height", "height", "sample_time"))
+    if h:
+        out["height_cm"] = h
+    return out
 
 
 def fetch_intraday(client: HealthClient, start: str, end: str, try_call) -> dict:

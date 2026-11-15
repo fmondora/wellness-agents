@@ -1,7 +1,8 @@
 /* Rito — i suoni, sintetizzati sul telefono (WebAudio): niente file, niente rete, niente diritti.
  *
  *   tappeti (uno alla volta, in dissolvenza): silenzio · brace · bordone · acqua · aria · respiro
- *   colpi (sopra il tappeto):                 gong · ciotola · campanella · legno · vapore
+ *   colpi (sopra il tappeto):                 tingsha · ciotola · campanella · legno · vapore · goccia
+ *   richiamo (solo oltre il limite):          gong
  *
  * Il tappeto sta sotto tutto il momento e cambia con il momento; i colpi segnano i passaggi.
  */
@@ -19,6 +20,14 @@
     // iOS: senza questo l'audio di una pagina è «ambiente» e il tasto del silenzioso lo zittisce, gong compreso
     try { if (root.navigator && navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     ctx = new AC();
+    // iOS: quando un <audio>/<video> parte, il contesto passa a «interrupted» o «suspended» e resta muto
+    // senza un altro tocco. Lo si riprende appena succede (come nel workout player).
+    let last = 0;
+    ctx.onstatechange = () => {
+      if (ctx.state === 'running' || ctx.state === 'closed' || Date.now() - last < 500) return;
+      last = Date.now();
+      try { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    };
     master = ctx.createGain();
     master.gain.value = level;
     const comp = ctx.createDynamicsCompressor();          // i colpi sopra il tappeto non devono mai gracchiare
@@ -296,7 +305,36 @@
         return g;
       }, bus);
     },
-    /* Ciotola che canta: il traguardo di un momento, l'inizio del riposo. */
+    /* Goccia: un sorso d'acqua, adesso. Due gocce che cadono in una ciotola. */
+    goccia() {
+      const drop = (delay, f) => setTimeout(() => {
+        if (!ctx) return;
+        const t = ctx.currentTime, o = ctx.createOscillator(), eg = gain(0);
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.exponentialRampToValueAtTime(f * 1.9, t + 0.08);
+        eg.gain.setValueAtTime(0, t);
+        eg.gain.linearRampToValueAtTime(0.32, t + 0.004);
+        eg.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        o.connect(eg); eg.connect(shotBus); o.start(t); o.stop(t + 0.3);
+        partials([[f * 2.2, 0.12, 0.9]], 0.5, 0.003);          // la risonanza della ciotola
+      }, delay);
+      drop(0, 620);
+      drop(320, 760);
+    },
+    /* Tingsha: due piattini che si toccano. Chiaro, breve, con un battimento che si spegne: comincia il calore. */
+    tingsha() {
+      const strike = (delay, f0) => setTimeout(() => {
+        if (!ctx) return;
+        const list = [];
+        for (const [r, a, d] of [[1, 0.8, 3.2], [2.76, 0.32, 2.0], [5.4, 0.12, 1.1]]) {
+          list.push([f0 * r - 1.6 * r, a * 0.5, d], [f0 * r + 1.6 * r, a * 0.5, d]);   // due piattini, quasi uguali
+        }
+        partials(list, 0.16, 0.002);
+      }, delay);
+      strike(0, 1318);
+      strike(150, 1325);
+    },
+    /* Ciotola che canta: il traguardo di un momento, l'inizio del riposo, la fine del rito. */
     ciotola() {
       const f0 = 214, list = [];
       for (const [r, a, d] of [[1, 1, 9], [2.71, 0.5, 6], [5.15, 0.22, 3.5], [8.4, 0.09, 1.8]]) {

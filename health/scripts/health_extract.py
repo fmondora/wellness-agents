@@ -365,3 +365,226 @@ def extract_body(weight_points: list, fat_points: list) -> dict:
         out["body_fat_pct"] = round(_num(max(fs, key=_sample_time)["percentage"]), 1)
     return out
 
+
+
+# --- attività, calorie e notte: i tipi aggiunti il 15/11/2026 ---------------------------
+
+def _rollup_record(daily_rollup: dict, key: str) -> dict | None:
+    """Il record `key` del primo bucket di un dailyRollup ({} se il giorno non ha dati)."""
+    if not isinstance(daily_rollup, dict):
+        return None
+    for bucket in daily_rollup.get("rollupDataPoints", []) or []:
+        if isinstance(bucket, dict) and isinstance(bucket.get(key), dict):
+            return bucket[key]
+    return None
+
+
+def _seconds(v) -> float | None:
+    """'44520s' → 44520.0"""
+    if isinstance(v, (int, float)):
+        return float(v)
+    if isinstance(v, str) and v.endswith("s"):
+        try:
+            return float(v[:-1])
+        except ValueError:
+            return None
+    return None
+
+
+def _zone_key(z: str) -> str:
+    return str(z or "").lower() or "?"
+
+
+def extract_calories(total_roll: dict, active_roll: dict, zone_roll: dict) -> dict | None:
+    """Calorie del giorno: totali (metabolismo compreso), attive, e per zona di frequenza."""
+    out: dict = {}
+    t = _rollup_record(total_roll, "totalCalories")
+    if t and (n := _num(t.get("kcalSum"))) is not None:
+        out["total"] = int(round(n))
+    a = _rollup_record(active_roll, "activeEnergyBurned")
+    if a and (n := _num(a.get("kcalSum"))) is not None:
+        out["active"] = int(round(n))
+    if "total" in out and "active" in out:
+        out["resting"] = out["total"] - out["active"]
+    z = _rollup_record(zone_roll, "caloriesInHeartRateZone")
+    if z:
+        zones = {_zone_key(x.get("heartRateZone")): int(round(_num(x.get("kcal")) or 0))
+                 for x in z.get("caloriesInHeartRateZones") or [] if isinstance(x, dict)}
+        if zones:
+            out["by_hr_zone"] = zones
+    return out or None
+
+
+def extract_distance_km(roll: dict) -> float | None:
+    r = _rollup_record(roll, "distance")
+    n = _num(r.get("millimetersSum")) if r else None
+    return round(n / 1_000_000, 2) if n is not None else None
+
+
+def extract_count(roll: dict, key: str) -> int | None:
+    r = _rollup_record(roll, key)
+    n = _num(r.get("countSum")) if r else None
+    return int(n) if n is not None else None
+
+
+def extract_sedentary_min(roll: dict) -> int | None:
+    r = _rollup_record(roll, "sedentaryPeriod")
+    s = _seconds(r.get("durationSum")) if r else None
+    return int(round(s / 60)) if s is not None else None
+
+
+def extract_active_minutes(roll: dict) -> dict | None:
+    """Minuti attivi per livello: {"light": 125, "moderate": 9, "vigorous": 0}."""
+    r = _rollup_record(roll, "activeMinutes")
+    if not r:
+        return None
+    out = {}
+    for x in r.get("activeMinutesRollupByActivityLevel") or []:
+        if isinstance(x, dict) and (n := _num(x.get("activeMinutesSum"))) is not None:
+            out[_zone_key(x.get("activityLevel"))] = int(n)
+    return out or None
+
+
+def extract_hr_zone_minutes(roll: dict) -> dict | None:
+    """Minuti passati in ogni zona di frequenza nel giorno."""
+    r = _rollup_record(roll, "timeInHeartRateZone")
+    if not r:
+        return None
+    out = {}
+    for x in r.get("timeInHeartRateZones") or []:
+        if isinstance(x, dict) and (s := _seconds(x.get("duration"))) is not None:
+            out[_zone_key(x.get("heartRateZone"))] = int(round(s / 60))
+    return out or None
+
+
+def extract_hr_zones(points: list) -> dict | None:
+    """Le soglie delle zone del giorno: {"light": [30, 98], "moderate": [99, 121], ...}."""
+    for p in points or []:
+        rec = p.get("dailyHeartRateZones") if isinstance(p, dict) else None
+        if not isinstance(rec, dict):
+            continue
+        out = {}
+        for z in rec.get("heartRateZones") or []:
+            if isinstance(z, dict):
+                lo, hi = _num(z.get("minBeatsPerMinute")), _num(z.get("maxBeatsPerMinute"))
+                if lo is not None and hi is not None:
+                    out[_zone_key(z.get("heartRateZoneType"))] = [int(lo), int(hi)]
+        if out:
+            return out
+    return None
+
+
+def extract_exercises(points: list) -> list:
+    """Gli allenamenti riconosciuti o registrati: orari locali, tipo, calorie, passi, FC media, AZM."""
+    out = []
+    for p in points or []:
+        e = p.get("exercise") if isinstance(p, dict) else None
+        if not isinstance(e, dict):
+            continue
+        iv = e.get("interval") or {}
+        m = e.get("metricsSummary") or {}
+        row = {"start": _local_hhmm(iv.get("startTime") or ""), "end": _local_hhmm(iv.get("endTime") or ""),
+               "type": str(e.get("exerciseType") or "").lower(),
+               "recorded": str((p.get("dataSource") or {}).get("recordingMethod") or "").lower()}
+        for src, dst, conv in (("caloriesKcal", "kcal", int), ("steps", "steps", int),
+                               ("averageHeartRateBeatsPerMinute", "avg_hr", int), ("activeZoneMinutes", "azm", int)):
+            n = _num(m.get(src))
+            if n is not None:
+                row[dst] = conv(n)
+        d = _num(m.get("distanceMillimeters"))
+        if d:
+            row["km"] = round(d / 1_000_000, 2)
+        if row["start"]:
+            out.append(row)
+    return sorted(out, key=lambda r: r["start"])
+
+
+def _civil_hhmm(sample_time: dict) -> str | None:
+    t = ((sample_time or {}).get("civilTime") or {}).get("time") or {}
+    if "hours" not in t and "minutes" not in t:
+        return _local_hhmm((sample_time or {}).get("physicalTime") or "")
+    return f"{int(t.get('hours', 0)):02d}:{int(t.get('minutes', 0)):02d}"
+
+
+def extract_hrv_samples(points: list) -> list:
+    """HRV della notte a campioni (ogni 5′): [["23:55", 43.5], ...]."""
+    out = []
+    for p in points or []:
+        r = p.get("heartRateVariability") if isinstance(p, dict) else None
+        if not isinstance(r, dict):
+            continue
+        v = _num(r.get("rootMeanSquareOfSuccessiveDifferencesMilliseconds"))
+        hm = _civil_hhmm(r.get("sampleTime"))
+        if v is not None and hm:
+            out.append([hm, round(v, 1)])
+    return sorted(out)
+
+
+def extract_spo2_summary(points: list) -> dict | None:
+    """Ossigeno nel sangue durante la notte: minimo, mediana, quanti campioni sotto 90% e sotto 88%.
+    (Un dato da osservare, non da interpretare da soli: l'apnea sospetta è una questione del medico.)"""
+    vals = []
+    for p in points or []:
+        r = p.get("oxygenSaturation") if isinstance(p, dict) else None
+        if isinstance(r, dict) and (v := _num(r.get("percentage"))) is not None and 50 <= v <= 100:
+            vals.append(v)
+    if not vals:
+        return None
+    vals.sort()
+    mid = len(vals) // 2
+    med = vals[mid] if len(vals) % 2 else (vals[mid - 1] + vals[mid]) / 2
+    return {"min": round(vals[0], 1), "median": round(med, 1), "samples": len(vals),
+            "below_90": sum(1 for v in vals if v < 90), "below_88": sum(1 for v in vals if v < 88)}
+
+
+def extract_respiratory_by_stage(points: list) -> dict | None:
+    """Respiri al minuto nella notte per fase del sonno (la sessione principale: quella con più segnale)."""
+    best, best_snr = None, -1.0
+    for p in points or []:
+        r = p.get("respiratoryRateSleepSummary") if isinstance(p, dict) else None
+        if not isinstance(r, dict):
+            continue
+        snr = _num((r.get("fullSleepStats") or {}).get("signalToNoise")) or 0
+        if snr > best_snr:
+            best, best_snr = r, snr
+    if not best:
+        return None
+    out = {}
+    for key, name in (("fullSleepStats", "full"), ("deepSleepStats", "deep"), ("lightSleepStats", "light"),
+                      ("remSleepStats", "rem")):
+        v = _num((best.get(key) or {}).get("breathsPerMinute"))
+        if v:
+            out[name] = round(v, 1)
+    return out or None
+
+
+def extract_vo2_max(points: list) -> float | None:
+    """VO2 max del giorno (stima del dispositivo), se c'è."""
+    for p in points or []:
+        if not isinstance(p, dict):
+            continue
+        for key in ("dailyVo2Max", "vo2Max", "runVo2Max"):
+            r = p.get(key)
+            if isinstance(r, dict):
+                for k in ("vo2Max", "vo2MaxMlPerKgPerMinute", "value"):
+                    n = _num(r.get(k))
+                    if n:
+                        return round(n, 1)
+                n = first_number({k: v for k, v in r.items() if k not in ("date", "sampleTime")})
+                if n and 10 < n < 90:
+                    return round(n, 1)
+    return None
+
+
+def extract_height_cm(points: list) -> float | None:
+    for p in reversed(points or []):
+        r = p.get("height") if isinstance(p, dict) else None
+        if isinstance(r, dict):
+            for k in ("heightMillimeters", "millimeters"):
+                n = _num(r.get(k))
+                if n:
+                    return round(n / 10, 1)
+            n = _num(r.get("heightMeters")) or _num(r.get("meters"))
+            if n:
+                return round(n * 100, 1)
+    return None

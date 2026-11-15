@@ -61,7 +61,11 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 #intro .head { margin-top: 4vh; }
 #intro .scroll { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(#000 calc(100% - 28px), transparent); -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
-.path { list-style: none; padding: 0; margin: 1.8rem auto 1.4rem; width: min(100%, 23rem); }
+.part { font-weight: 400; font-size: 1.16rem; color: var(--sabbia); width: min(100%, 23rem); margin: 1.6rem auto .7rem; }
+.prep { list-style: none; padding: 0; margin: 0 auto; width: min(100%, 23rem); }
+.prep li { position: relative; padding: .2rem 0 .45rem 1.6rem; font-size: var(--t-body); line-height: 1.35; }
+.prep li::before { content: "·"; position: absolute; left: .45rem; top: .05rem; color: var(--sabbia); font-size: 1.4rem; line-height: 1; }
+.path { list-style: none; padding: 0; margin: .4rem auto 1.4rem; width: min(100%, 23rem); }
 .path li { position: relative; padding: 0 0 1.05rem 2.1rem; font-size: var(--t-body); line-height: 1.35; }
 .path li::before { content: ""; position: absolute; left: .32rem; top: .42rem; width: .62rem; height: .62rem; border-radius: 50%; background: var(--dot, var(--cenere)); }
 .path li::after { content: ""; position: absolute; left: .6rem; top: 1.25rem; bottom: -.3rem; width: 1px; background: rgba(237, 230, 214, .22); }
@@ -96,6 +100,16 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 .text { font-size: var(--t-body); line-height: 1.5; margin: .5rem auto 0; max-width: 24rem; color: rgba(237, 230, 214, .86); transition: opacity .6s ease; }
 .text.cue { color: var(--lino); font-size: 1.24rem; }
 .actions { margin-top: .9rem; }
+.checks { list-style: none; padding: 0; margin: .9rem auto 0; max-width: 24rem; text-align: left; }
+.checks li { margin: 0 0 .45rem; }
+.check { display: flex; align-items: center; gap: .8rem; width: 100%; min-height: 50px; padding: .35rem .9rem;
+  border-radius: 25px; box-shadow: inset 0 0 0 1.2px rgba(237, 230, 214, .32); font-size: 1.08rem; text-align: left; transition: all .25s ease; }
+.check i { flex: none; width: 1.35rem; height: 1.35rem; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(237, 230, 214, .6);
+  display: grid; place-items: center; font-style: normal; font-size: .9rem; }
+.check.on { color: var(--cenere); }
+.check.on i { background: var(--grain); box-shadow: none; color: var(--basalto); }
+.check.on span { text-decoration: line-through; text-decoration-thickness: 1px; }
+body.has-checks .stage { display: none; }
 .veil { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem;
   background: rgba(15, 19, 18, .93); padding: var(--pad); text-align: center; z-index: 5; }
 .veil.on { display: flex; }
@@ -130,7 +144,12 @@ textarea::placeholder { color: var(--cenere); }
     <h1 class="name" id="i-title">Rito</h1>
     <p class="sub" id="i-sub"></p>
   </div>
-  <div class="scroll"><ol class="path" id="i-path"></ol></div>
+  <div class="scroll">
+    <h3 class="part" id="i-prep-h">Prima di cominciare, prepara</h3>
+    <ul class="prep" id="i-prep"></ul>
+    <h3 class="part">Come andrà</h3>
+    <ol class="path" id="i-path"></ol>
+  </div>
   <div class="foot">
     <p class="note" id="i-note">Il rito parla col suono: togli il silenzioso e alza il volume. Lascia il telefono fuori dalla cabina, acceso su questa pagina. In cabina tieni d'occhio la clessidra: il telefono accompagna, non sorveglia.</p>
     <button class="primary" id="b-start">Comincio il rito</button>
@@ -164,6 +183,7 @@ textarea::placeholder { color: var(--cenere); }
   <div class="words">
     <p class="time" id="r-time" aria-live="polite"></p>
     <p class="text" id="r-text" aria-live="polite"></p>
+    <ul class="checks" id="r-checks"></ul>
   </div>
   <div class="actions">
     <button class="primary" id="b-done"></button>
@@ -221,13 +241,15 @@ textarea::placeholder { color: var(--cenere); }
   'use strict';
   const E = window.RitoEngine, S = window.RitoSound;
   const TG = window.Telegram && window.Telegram.WebApp;
-  const inTG = !!(TG && TG.initData);
+  // Dentro Telegram? Non da initData: aperta da un bottone della tastiera (l'unico da cui sendData funziona)
+  // la Mini App riceve initData vuoto. Come nel workout player: conta la piattaforma.
+  const inTG = !!(TG && TG.platform && TG.platform !== 'unknown');
   const $ = (id) => document.getElementById(id);
   const qs = new URLSearchParams(location.search);
 
   let R = null, s = null, rid = '', loop = null, wakeLock = null, noSleep = null;
   let armed = 0, cue = null, answers = {}, sent = false, levelIdx = 1, lastType = '', breath = null;
-  let armedQuick = false, shown = -1, mute0 = 0, idle = null;      // momento a schermo; da quando il suono è fermo; spegnimento a rito finito
+  let armedChecks = 0, armedQuick = false, shown = -1, mute0 = 0, idle = null, ticks = {};      // momento a schermo; da quando il suono è fermo; spegnimento a rito finito
   const LEVELS = [['Suono: piano', 0.4], ['Suono: medio', 0.8], ['Suono: pieno', 1]];
 
   // Solo per le prove: ?speed=30 fa scorrere il tempo trenta volte più in fretta.
@@ -243,7 +265,7 @@ textarea::placeholder { color: var(--cenere); }
   const key = () => 'rito_' + rid;
   function save(extra) {
     if (speed !== 1) return;
-    try { localStorage.setItem(key(), JSON.stringify(Object.assign({ events: s.events, seen: Date.now(), answers, sent }, extra || {}))); } catch (e) {}
+    try { localStorage.setItem(key(), JSON.stringify(Object.assign({ events: s.events, seen: Date.now(), answers, sent, ticks }, extra || {}))); } catch (e) {}
   }
   function load() { try { return JSON.parse(localStorage.getItem(key()) || 'null'); } catch (e) { return null; } }
 
@@ -311,14 +333,22 @@ textarea::placeholder { color: var(--cenere); }
     $('i-title').textContent = R.title || 'Rito';
     const long = p.total_s >= 3300 ? 'circa un\'ora' : 'circa ' + E.minutes(p.total_s);
     $('i-sub').textContent = R.subtitle || (p.rounds ? passages(p.rounds) + ' nel calore, ' + long + '.' : long + '.');
+    const pl = $('i-prep');
+    pl.textContent = '';
+    for (const x of p.prepare) { const li = document.createElement('li'); li.textContent = x; pl.append(li); }
+    $('i-prep-h').hidden = pl.hidden = !p.prepare.length;
     const ol = $('i-path');
     ol.textContent = '';
     for (const m of E.timeline(R)) {
       const li = document.createElement('li'), sm = document.createElement('small');
       li.dataset.t = m.type;
       li.append(m.name);
-      sm.textContent = m.target_s ? E.minutes(m.target_s) + (m.optional ? ', se oggi lo vuoi' : '')
-        : (m.optional ? 'se oggi lo vuoi' : 'il tempo che serve');
+      const how = m.target_s ? E.minutes(m.target_s) + (m.max_s && m.type === 'heat' ? ', al massimo ' + E.minutes(m.max_s) : '')
+        : (m.optional ? '' : 'il tempo che serve');
+      const bits = [m.where, m.temp_c ? m.temp_c + ' gradi' : '', how, m.optional ? 'se oggi lo vuoi' : '',
+        m.cues.some((c) => c.drink) ? 'un sorso d\'acqua' : '', m.cues.some((c) => c.sound === 'vapore') ? 'acqua sulle pietre' : '',
+        m.checklist.length ? m.checklist.length + ' cose da fare' : ''].filter(Boolean);
+      sm.textContent = bits.join(' · ');
       li.append(sm);
       ol.append(li);
     }
@@ -384,12 +414,54 @@ textarea::placeholder { color: var(--cenere); }
       }
     }
     halo.classList.toggle('on', breathing);
+    renderChecks(m, v);
     const b = $('b-done'), waiting = armed && Date.now() < armed;
-    b.textContent = !waiting ? v.label : armedQuick ? 'Già fuori? Tocca di nuovo.' : 'Resta ancora, se puoi. Tocca di nuovo per alzarti.';
+    b.textContent = !waiting ? v.label : armedQuick ? 'Già fuori? Tocca di nuovo.'
+      : armedChecks ? (armedChecks === 1 ? 'Manca una voce: tocca di nuovo per andare avanti' : 'Mancano ' + armedChecks + ' voci: tocca di nuovo per andare avanti')
+      : 'Resta ancora, se puoi. Tocca di nuovo per alzarti.';
     b.classList.toggle('wait', !!waiting || v.lead);
     $('b-skip').hidden = !v.can_skip;
     $('b-undo').hidden = !v.canUndo;
     veil(v.paused ? 'v-pause' : (document.querySelector('.veil.on:not(#v-pause)') || {}).id || '');
+  }
+
+  /* La lista da spuntare di un momento (prima e dopo): si tocca una voce, si accende. */
+  function renderChecks(m, v) {
+    const ul = $('r-checks'), list = (!v.lead && m.checklist) || [];
+    document.body.classList.toggle('has-checks', list.length > 0);
+    const done = ticks[m.id] || [];
+    if (ul.dataset.m !== m.id || ul.children.length !== list.length) {
+      ul.textContent = '';
+      ul.dataset.m = m.id;
+      list.forEach((item, k) => {
+        const li = document.createElement('li'), b = document.createElement('button'), dot = document.createElement('i'), sp = document.createElement('span');
+        b.className = 'check'; b.type = 'button';
+        sp.textContent = item;
+        b.append(dot, sp);
+        b.onclick = () => {
+          const cur = new Set(ticks[m.id] || []);
+          cur.has(k) ? cur.delete(k) : cur.add(k);
+          ticks[m.id] = [...cur];
+          if (armedChecks) {                      // la conferma segue le voci che restano; spuntate tutte, non serve più
+            armedChecks = checksLeft(m);
+            if (!armedChecks) armed = 0;
+          }
+          haptic('tick'); save(); renderRun();
+        };
+        li.append(b); ul.append(li);
+      });
+    }
+    [...ul.querySelectorAll('.check')].forEach((b, k) => {
+      const on = done.includes(k);
+      b.classList.toggle('on', on);
+      b.querySelector('i').textContent = on ? '✓' : '';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function checksLeft(m) {
+    const list = m.checklist || [];
+    return list.length - (ticks[m.id] || []).filter((k) => k < list.length).length;
   }
 
   function told(sum) {
@@ -433,7 +505,7 @@ textarea::placeholder { color: var(--cenere); }
   function enterMoment(i, quiet) {
     const m = s.tl[i];
     if (!m) return;
-    armed = 0; cue = null;
+    armed = 0; armedChecks = 0; cue = null;
     S.bed(m.sound, m.sound === 'respiro' ? (m.breath || {}) : null);      // il tappeto cambia già nel passaggio
     if (!quiet && !m.lead_s) begun(m);                                    // senza passaggio il momento comincia subito
   }
@@ -450,7 +522,8 @@ textarea::placeholder { color: var(--cenere); }
     else if (h.kind === 'cue' && !h.late) {
       if (h.cue.sound) S.shot(h.cue.sound);
       if (h.cue.say) say(h.cue.say);
-      if (h.cue.text) cue = { m: h.m, text: h.cue.text, until: Date.now() + 45000 / Math.min(speed, 8) };
+      if (h.cue.text) cue = { m: h.m, text: h.cue.text, until: Date.now() + (h.cue.drink ? 90000 : 45000) / Math.min(speed, 8) };
+      if (h.cue.drink) haptic('tick');
     } else if (h.kind === 'target' && !h.late) { S.shot('ciotola'); haptic('success'); }
     else if (h.kind === 'max') { S.alarm(); haptic('warning'); }
     else if (h.kind === 'end') finish();
@@ -464,6 +537,17 @@ textarea::placeholder { color: var(--cenere); }
     if (s.finished) { if (!document.getElementById('closing').classList.contains('on')) finish(); return; }
     renderRun();
     watchSound();
+    stayAwake();
+  }
+
+  /* Lo schermo non deve spegnersi durante il rito: il wake lock cade quando la pagina perde il fuoco,
+     il video «caffeina» si ferma con un'interruzione. Si riprendono a ogni giro, come nel workout. */
+  let lastAwake = 0;
+  function stayAwake() {
+    if (Date.now() - lastAwake < 5000) return;
+    lastAwake = Date.now();
+    if (!wakeLock) keepAwake();
+    try { if (noSleep && noSleep.paused) { const p = noSleep.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
   }
 
   /* Il rito chiama col suono: se il suono si ferma (chiamata, altra app, sistema) lo si dice subito. */
@@ -486,7 +570,7 @@ textarea::placeholder { color: var(--cenere); }
     clearInterval(loop); loop = null;
     save();
     S.bed('bordone');
-    if (s.status === 'end') S.shot('gong');
+    if (s.status === 'end') S.shot('ciotola');
     renderClosing();
     loop = setInterval(() => { $('b-undo2').hidden = !E.canUndo(s, now()); }, 1000);
     clearTimeout(idle);                        // rito finito e mai chiuso: dopo un quarto d'ora suono e schermo si spengono
@@ -495,8 +579,10 @@ textarea::placeholder { color: var(--cenere); }
 
   // --- gesti ---------------------------------------------------------------------
   function begin() {
-    S.init(); S.unlock(); S.wake(); S.setLevel(LEVELS[levelIdx][1]);
-    startNoSleep(); keepAwake();
+    S.unlock();                 // prima i media element (audio muto, video «caffeina»), poi l'AudioContext:
+    startNoSleep();             // su iOS riconfigurano la sessione audio, e il contesto creato dopo resta vivo
+    S.init(); S.wake(); S.setLevel(LEVELS[levelIdx][1]);
+    keepAwake();
     try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); } } catch (e) {}
   }
 
@@ -512,19 +598,25 @@ textarea::placeholder { color: var(--cenere); }
     s = E.createSession(R); answers = {}; sent = false;
     renderIntro(false);
   };
-  $('b-sound').onclick = () => {
+  $('b-sound').onclick = () => {             // l'inizio del calore, il traguardo, e il richiamo (perché si riconosca)
     begin();
     S.bed('brace', null, 1.5);
-    S.shot('gong');
+    S.shot('tingsha');
     setTimeout(() => S.shot('ciotola'), 3500);
-    setTimeout(() => { if (s.cur < 0) S.stop(3); }, 9000);
+    setTimeout(() => S.alarm(), 8500);
+    setTimeout(() => { if (s.cur < 0) S.stop(3); }, 17000);
   };
   $('b-done').onclick = () => {
     const v = E.view(s, now());
     if (v.phase !== 'run') return;
+    const left = v.lead ? 0 : checksLeft(v.m);
+    if (left && !(armed && Date.now() < armed)) {    // voci non spuntate: si chiede una conferma, non si blocca
+      armed = Date.now() + 6000; armedQuick = false; armedChecks = left; renderRun(); return;
+    }
     const r = E.tap(s, now(), shown, armed && Date.now() < armed);   // il momento che era a schermo, non quello di adesso
     if (r === 'begin') { save(); begun(v.m); renderRun(); return; }
-    if (r === 'early') { armed = Date.now() + 6000; armedQuick = !!v.quick; renderRun(); return; }
+    if (r === 'early') { armed = Date.now() + 6000; armedQuick = !!v.quick; armedChecks = 0; renderRun(); return; }
+    armedChecks = 0;
     if (r !== 'ok') return;
     save();
     if (s.finished) finish(); else { enterMoment(s.cur); renderRun(); }
@@ -563,7 +655,7 @@ textarea::placeholder { color: var(--cenere); }
     const viaKeyboard = inTG && TG.sendData && !(TG.initDataUnsafe && TG.initDataUnsafe.query_id);
     if (viaKeyboard) {
       try {
-        sent = true; save();
+        sent = true; save({ via: 'telegram' });
         if (tgv('6.2')) TG.disableClosingConfirmation();
         S.stop(1.5); letSleep();
         TG.sendData(payload);                    // se va, Telegram chiude la pagina
@@ -575,7 +667,7 @@ textarea::placeholder { color: var(--cenere); }
       }
     }
     S.stop(3); letSleep();
-    sent = true; save();
+    sent = true; save({ via: 'local' });
     $('c-note2').textContent = inTG
       ? 'Il rito è chiuso qui, ma da questo bottone non torna al Maestro: la prossima volta aprilo dal bottone «♨️ Apri il rito» sotto la tastiera.'
       : 'Il rito è chiuso su questo telefono. Aperto fuori da Telegram non torna al Maestro.';
@@ -588,7 +680,17 @@ textarea::placeholder { color: var(--cenere); }
     const errs = E.validate(r);
     if (errs.length) { $('e-why').textContent = 'La partitura di oggi ha un errore: ' + errs[0] + '. Dillo al Maestro.'; veil('v-empty'); return; }
     R = r; rid = E.ritoId(r);
+    keepAwake();                                 // anche mentre si legge la soglia lo schermo resta acceso
     if (r.demo && Number(qs.get('speed')) > 1) { speed = Math.min(600, Number(qs.get('speed'))); realBase = Date.now(); virtBase = Date.now(); }
+    const pending = load();
+    if (pending && pending.sent && pending.via !== 'telegram' && Array.isArray(pending.events) && pending.events.length && inTG) {
+      // chiuso ma mai arrivato al Maestro (aperto fuori da Telegram, o la pagina di prima che lo credeva): si può mandare adesso
+      s = E.replay(R, pending.events); answers = pending.answers || {}; ticks = pending.ticks || {}; sent = false;
+      if (!s.finished) E.stop(s, Math.max(...pending.events.map((e) => e.t)));
+      finish();
+      $('c-note2').textContent = 'Questo rito non era arrivato al Maestro: tocca «Chiudo il rito» per mandarlo.';
+      return;
+    }
     const d = new Date(), today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     if (!r.demo && r.date !== today) {           // un rito vale per il suo giorno: i tetti e la soglia erano di allora
       $('e-title').textContent = 'Questo rito è di un altro giorno';
@@ -603,7 +705,7 @@ textarea::placeholder { color: var(--cenere); }
       veil('v-empty'); return;
     }
     if (rec && Array.isArray(rec.events) && rec.events.length) {
-      s = E.replay(R, rec.events); answers = rec.answers || {};
+      s = E.replay(R, rec.events); answers = rec.answers || {}; ticks = rec.ticks || {};
       E.reopen(s, rec.seen, now());
       if (s.finished) { begin(); finish(); return; }
       renderIntro(true);

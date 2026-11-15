@@ -66,10 +66,19 @@ Se la persona vuole provare il rito senza fare la sauna, scrivi una partitura co
 3. **Scrivi** `data/sauna/riti/YYYY-MM-DD.rito.json` (schema nel README dell'app):
    - `threshold`: una voce per ogni `judgement` di `rules.json`, `{id, ok, note}`;
    - `date` di oggi (un rito vale per un giorno solo);
-   - soglia (`prep`), poi per ogni passaggio calore (`heat`, con `target_s`, `max_s`, `temp_c`,
+   - `prepare`: tutto quello che va preparato prima, come la lista degli attrezzi del workout (teli,
+     coperta, acqua, tinozza piena, mestolo per le pietre, olio, calze): la persona lo legge sulla
+     soglia e prepara tutto prima di cominciare;
+   - il **prima** guidato (AGENT P1): `prep` in fila con `checklist` e `drink` — preparare, bere,
+     doccia e asciugarsi — l'ultimo con `done_label: "Entro in cabina"`;
+   - poi per ogni passaggio calore (`heat`, con `target_s`, `max_s`, `temp_c`,
      un richiamo due minuti prima del traguardo; mai `end: time`) → aria (`air`, a tempo) → acqua
      (`cold`, `optional: true`, se i tetti la ammettono) → riposo (`rest`, con `min_s`, `breath`,
-     lungo almeno quanto il calore appena fatto, mai `optional`); l'ultimo riposo è il più lungo; `close`;
+     lungo almeno quanto il calore appena fatto, mai `optional`, con `drink: true`); l'ultimo riposo
+     è il più lungo;
+   - il **dopo** guidato: `close` in fila — bere (`drink`), raffreddarsi (`end: "time"`, 5-10′),
+     vestirsi caldi (`checklist`: doccia tiepida senza sapone, olio, calze), l'ultimo con
+     `done_label: "Chiudo il rito"`. Se la sera è tarda, il dopo dice anche quando conviene dormire;
    - `lead_s` e `lead_text` per i passaggi, sulla sua casa (`setup.json`);
    - `sound` per momento e colpi dei richiami (`knowledge/suoni.md`);
    - `closing`: 2-3 domande con icona e parola.

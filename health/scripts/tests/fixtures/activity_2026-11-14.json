@@ -1,0 +1,712 @@
+{
+ "total-calories": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "totalCalories": {
+     "kcalSum": 2290.6855840000003
+    }
+   }
+  ]
+ },
+ "active-energy-burned": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "activeEnergyBurned": {
+     "kcalSum": 211.64603200000002
+    }
+   }
+  ]
+ },
+ "calories-in-heart-rate-zone": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "caloriesInHeartRateZone": {
+     "caloriesInHeartRateZones": [
+      {
+       "heartRateZone": "LIGHT",
+       "kcal": 2107.834104
+      },
+      {
+       "heartRateZone": "MODERATE",
+       "kcal": 37.05628
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "distance": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "distance": {
+     "millimetersSum": "2438000"
+    }
+   }
+  ]
+ },
+ "floors": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "floors": {
+     "countSum": "3"
+    }
+   }
+  ]
+ },
+ "sedentary-period": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "sedentaryPeriod": {
+     "durationSum": "44520s"
+    }
+   }
+  ]
+ },
+ "active-minutes": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "activeMinutes": {
+     "activeMinutesRollupByActivityLevel": [
+      {
+       "activityLevel": "LIGHT",
+       "activeMinutesSum": "125"
+      },
+      {
+       "activityLevel": "MODERATE",
+       "activeMinutesSum": "9"
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "time-in-heart-rate-zone": {
+  "rollupDataPoints": [
+   {
+    "civilStartTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 14
+     },
+     "time": {}
+    },
+    "civilEndTime": {
+     "date": {
+      "year": 2026,
+      "month": 11,
+      "day": 15
+     },
+     "time": {}
+    },
+    "timeInHeartRateZone": {
+     "timeInHeartRateZones": [
+      {
+       "heartRateZone": "LIGHT",
+       "duration": "78660s"
+      },
+      {
+       "heartRateZone": "MODERATE",
+       "duration": "540s"
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "altitude": {},
+ "daily-heart-rate-zones": [
+  {
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "platform": "FITBIT"
+   },
+   "dailyHeartRateZones": {
+    "date": {
+     "year": 2026,
+     "month": 11,
+     "day": 14
+    },
+    "heartRateZones": [
+     {
+      "heartRateZoneType": "LIGHT",
+      "minBeatsPerMinute": "30",
+      "maxBeatsPerMinute": "98"
+     },
+     {
+      "heartRateZoneType": "MODERATE",
+      "minBeatsPerMinute": "99",
+      "maxBeatsPerMinute": "121"
+     },
+     {
+      "heartRateZoneType": "VIGOROUS",
+      "minBeatsPerMinute": "122",
+      "maxBeatsPerMinute": "149"
+     },
+     {
+      "heartRateZoneType": "PEAK",
+      "minBeatsPerMinute": "150",
+      "maxBeatsPerMinute": "220"
+     }
+    ]
+   }
+  }
+ ],
+ "heart-rate-variability": [
+  {
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "heartRateVariability": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T22:55:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 23,
+       "minutes": 55
+      }
+     }
+    },
+    "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 43.5,
+    "metadata": {
+     "highFrequencyPower": 724.6,
+     "lowFrequencyPower": 7710.9
+    }
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "heartRateVariability": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T22:50:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 23,
+       "minutes": 50
+      }
+     }
+    },
+    "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 31.1,
+    "metadata": {
+     "highFrequencyPower": 160.2,
+     "lowFrequencyPower": 6516.7
+    }
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "heartRateVariability": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T22:45:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 23,
+       "minutes": 45
+      }
+     }
+    },
+    "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 45.4,
+    "metadata": {
+     "highFrequencyPower": 429.7,
+     "lowFrequencyPower": 5047
+    }
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "heartRateVariability": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T22:40:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 23,
+       "minutes": 40
+      }
+     }
+    },
+    "rootMeanSquareOfSuccessiveDifferencesMilliseconds": 37.7,
+    "metadata": {
+     "highFrequencyPower": 263.5,
+     "lowFrequencyPower": 4106.2
+    }
+   }
+  }
+ ],
+ "oxygen-saturation": [
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T05:01:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 6,
+       "minutes": 1,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 94.2
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T05:00:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 6,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 93.9
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:59:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 59,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 94.2
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:58:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 58,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 93.4
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:57:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 57,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 93.6
+   }
+  },
+  {
+   "dataSource": {
+    "recordingMethod": "PASSIVELY_MEASURED",
+    "device": {
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "oxygenSaturation": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:56:35Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 56,
+       "seconds": 35
+      }
+     }
+    },
+    "percentage": 93.7
+   }
+  }
+ ],
+ "respiratory-rate-sleep-summary": [
+  {
+   "name": "users/me/x",
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "respiratoryRateSleepSummary": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:43:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 43
+      }
+     }
+    },
+    "deepSleepStats": {
+     "breathsPerMinute": 14.8,
+     "standardDeviation": 0.7,
+     "signalToNoise": 3
+    },
+    "lightSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 5
+    },
+    "remSleepStats": {
+     "breathsPerMinute": 0,
+     "standardDeviation": 0,
+     "signalToNoise": 0
+    },
+    "fullSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 5
+    }
+   }
+  },
+  {
+   "name": "users/me/x",
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "respiratoryRateSleepSummary": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T04:13:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 5,
+       "minutes": 13
+      }
+     }
+    },
+    "deepSleepStats": {
+     "breathsPerMinute": 15,
+     "standardDeviation": 0.6,
+     "signalToNoise": 3.3
+    },
+    "lightSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 4.7
+    },
+    "remSleepStats": {
+     "breathsPerMinute": 0,
+     "standardDeviation": 0,
+     "signalToNoise": 0
+    },
+    "fullSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 4.7
+    }
+   }
+  },
+  {
+   "name": "users/me/x",
+   "dataSource": {
+    "recordingMethod": "DERIVED",
+    "device": {
+     "formFactor": "FITNESS_BAND",
+     "displayName": "Fitbit Air"
+    },
+    "platform": "FITBIT"
+   },
+   "respiratoryRateSleepSummary": {
+    "sampleTime": {
+     "physicalTime": "2026-11-14T03:44:00Z",
+     "utcOffset": "3600s",
+     "civilTime": {
+      "date": {
+       "year": 2026,
+       "month": 11,
+       "day": 14
+      },
+      "time": {
+       "hours": 4,
+       "minutes": 44
+      }
+     }
+    },
+    "deepSleepStats": {
+     "breathsPerMinute": 14.8,
+     "standardDeviation": 0.7,
+     "signalToNoise": 3
+    },
+    "lightSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 4.8
+    },
+    "remSleepStats": {
+     "breathsPerMinute": 0,
+     "standardDeviation": 0,
+     "signalToNoise": 0
+    },
+    "fullSleepStats": {
+     "breathsPerMinute": 15.2,
+     "standardDeviation": 0.8,
+     "signalToNoise": 4.8
+    }
+   }
+  }
+ ]
+}

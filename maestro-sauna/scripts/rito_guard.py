@@ -44,7 +44,7 @@ from zoneinfo import ZoneInfo
 TYPES = ("prep", "heat", "air", "cold", "rest", "close")
 HOT = ("heat", "cold")          # finiscono solo con un tocco, hanno sempre un massimo
 BEDS = ("silenzio", "brace", "bordone", "acqua", "aria", "respiro")
-SHOTS = ("gong", "ciotola", "campanella", "legno", "vapore")
+SHOTS = ("gong", "tingsha", "ciotola", "campanella", "legno", "vapore", "goccia")
 LEADS = {"prep": 0, "heat": 0, "air": 15, "cold": 30, "rest": 60, "close": 0}   # come engine.js (il calore conta dal tocco)
 LEAD_MAX = {"heat": 60, "cold": 120}
 DEFAULT_RULES: dict = {"heat_round_max_min": 12, "heat_total_max_min": 24, "rounds_max": 2, "temp_max_c": 80,
@@ -138,6 +138,15 @@ def validate(r: Any) -> list[str]:
         for key in ("where", "done_label"):
             if not _opt_str(m.get(key), 40):
                 errs.append(f"{p}: {key} è un testo di al massimo 40 caratteri")
+        cl = m.get("checklist")
+        if cl is not None and not (isinstance(cl, list) and 1 <= len(cl) <= 8 and all(_str(x, 60) for x in cl)):
+            errs.append(f"{p}: checklist è una lista da 1 a 8 voci brevi (60 caratteri)")
+        if cl is not None and hot:
+            errs.append(f"{p}: la checklist non sta nel caldo né nel freddo")
+        if m.get("drink") is not None and not isinstance(m["drink"], bool):
+            errs.append(f"{p}: drink deve essere true o false")
+        if m.get("drink") is True and hot:
+            errs.append(f"{p}: nel caldo e nel freddo non si beve: drink va nei riposi, nell'aria, prima o dopo")
         for key in ("min_s", "target_s", "max_s"):
             if m.get(key) is not None and not ((_num(m[key]) or 0) > 0):
                 errs.append(f"{p}: {key} deve essere un numero > 0")
@@ -156,6 +165,8 @@ def validate(r: Any) -> list[str]:
             errs.append(f"{p}: sound non tra {', '.join(BEDS)}")
         if m.get("enter_sound") is not None and m["enter_sound"] is not False and m["enter_sound"] not in SHOTS:
             errs.append(f"{p}: enter_sound non tra {', '.join(SHOTS)}")
+        if m.get("enter_sound") == "gong":
+            errs.append(f"{p}: il gong è del richiamo oltre il limite, non apre un momento")
         if not _opt_str(m.get("text"), 400):
             errs.append(f"{p}: text è un testo di al massimo 400 caratteri")
         lmax = LEAD_MAX.get(t, 300)
@@ -183,6 +194,9 @@ def validate(r: Any) -> list[str]:
                         errs.append(f"{q}: {key} è un testo di al massimo 200 caratteri")
                 if c.get("sound") is None and c.get("say") is None and c.get("text") is None:
                     errs.append(f"{q}: serve sound, say o text")
+    pr = r.get("prepare")
+    if pr is not None and not (isinstance(pr, list) and 1 <= len(pr) <= 12 and all(_str(x, 60) for x in pr)):
+        errs.append("prepare è una lista da 1 a 12 cose da preparare (60 caratteri)")
     closing = r.get("closing")
     if closing is not None:
         if not isinstance(closing, list) or len(closing) > 5:

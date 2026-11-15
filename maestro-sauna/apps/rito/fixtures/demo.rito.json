@@ -4,14 +4,53 @@
  "demo": true,
  "date": "2026-01-01",
  "title": "Rito della sera",
- "subtitle": "Due passaggi nel calore, aria, acqua, riposo",
+ "subtitle": "Prepararsi, due passaggi nel calore, aria, acqua, riposo, e un dopo con calma",
+ "prepare": [
+  "Bottiglia d'acqua fuori dalla cabina",
+  "Un telo per la panca",
+  "Un telo e una coperta per il riposo",
+  "Ciabatte",
+  "La tinozza piena",
+  "Un mestolo d'acqua per le pietre",
+  "Olio per il dopo, calze calde"
+ ],
  "moments": [
   {
-   "id": "soglia",
-   "name": "Soglia",
+   "id": "prepara",
+   "name": "Prepara",
    "type": "prep",
    "where": "fuori",
-   "text": "Doccia calda, poi asciugati bene. Togli orologio e anelli. Un bicchiere d'acqua.",
+   "text": "Tutto pronto prima di cominciare: dopo non dovrai cercare niente.",
+   "checklist": [
+    "Bottiglia d'acqua fuori dalla cabina",
+    "Un telo per la panca",
+    "Un telo e una coperta per il riposo",
+    "Ciabatte",
+    "Telefono acceso su questa pagina, senza silenzioso"
+   ],
+   "done_label": "È tutto pronto"
+  },
+  {
+   "id": "bevi-prima",
+   "name": "Bevi",
+   "type": "prep",
+   "where": "fuori",
+   "drink": true,
+   "text": "Un bicchiere d'acqua, con calma. Non a stomaco pieno, non a digiuno lungo.",
+   "done_label": "Ho bevuto"
+  },
+  {
+   "id": "doccia",
+   "name": "Doccia calda",
+   "type": "prep",
+   "where": "doccia",
+   "target_s": 180,
+   "text": "Calda, con il sapone. Poi asciugati bene, anche i piedi.",
+   "checklist": [
+    "Doccia calda",
+    "Asciugato bene",
+    "Via orologio, anelli, occhiali"
+   ],
    "done_label": "Entro in cabina"
   },
   {
@@ -63,7 +102,8 @@
     "out_s": 6
    },
    "text": "Disteso, coperto, i piedi al caldo. Niente da fare.",
-   "lead_text": "Asciugati bene, copriti, stenditi. Il riposo comincia da solo."
+   "lead_text": "Asciugati bene, copriti, stenditi. Il riposo comincia da solo.",
+   "drink": true
   },
   {
    "id": "calore-2",
@@ -107,14 +147,40 @@
     "in_s": 4,
     "out_s": 6
    },
-   "text": "Il rito finisce qui, sdraiato. Lascia che il calore resti."
+   "text": "Il rito finisce qui, sdraiato. Lascia che il calore resti.",
+   "drink": true
   },
   {
-   "id": "chiusura",
-   "name": "Chiusura",
+   "id": "bevi-dopo",
+   "name": "Bevi",
    "type": "close",
    "where": "fuori",
-   "text": "Bevi con calma. Un velo d'olio sulla pelle, vestiti caldo."
+   "drink": true,
+   "text": "Acqua o una tisana tiepida, a piccoli sorsi.",
+   "done_label": "Ho bevuto"
+  },
+  {
+   "id": "rinfresca",
+   "name": "Rinfrescati",
+   "type": "close",
+   "where": "doccia",
+   "end": "time",
+   "target_s": 300,
+   "text": "Lascia che il corpo si raffreddi da solo. Tra poco una doccia tiepida, senza sapone."
+  },
+  {
+   "id": "vestiti",
+   "name": "Vestiti caldo",
+   "type": "close",
+   "where": "fuori",
+   "text": "La pelle è pulita e aperta: proteggila.",
+   "checklist": [
+    "Doccia tiepida, senza sapone",
+    "Un velo d'olio sulla pelle",
+    "Calze e qualcosa di caldo",
+    "Ancora acqua a portata di mano"
+   ],
+   "done_label": "Chiudo il rito"
   }
  ],
  "closing": [

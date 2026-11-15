@@ -89,6 +89,9 @@ def _movement(day: str, log: dict) -> list[str]:
         out.append(f"{int(steps):,} passi".replace(",", "."))
     if azm:
         out.append(f"{int(azm)} minuti attivi")
+    cal = _d(fit.get("calories"))
+    if _num(cal.get("total")):
+        out.append(f"{int(cal['total']):,} kcal bruciate".replace(",", "."))
     if (root / "coach-longevita" / "daily" / f"{day}.session.json").exists():
         out.append("seduta registrata col player")
     rows = [" · ".join(out)] if out else []

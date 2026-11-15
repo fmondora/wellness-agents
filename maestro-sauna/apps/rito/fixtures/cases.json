@@ -830,6 +830,193 @@
      "id": "a"
     }
    }
+  ],
+  [
+   "gong come apertura",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "enter_sound": "gong"
+     }
+    ]
+   }
+  ],
+  [
+   "checklist vuota",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "checklist": []
+     }
+    ]
+   }
+  ],
+  [
+   "checklist troppo lunga",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "checklist": [
+       "a",
+       "a",
+       "a",
+       "a",
+       "a",
+       "a",
+       "a",
+       "a",
+       "a"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "voce di checklist oltre 60",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "checklist": [
+       "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "voce di checklist numero",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "checklist": [
+       3
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "checklist nel calore",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "max_s": 600,
+      "checklist": [
+       "telo"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "drink stringa",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "drink": "sì"
+     }
+    ]
+   }
+  ],
+  [
+   "drink nel freddo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "max_s": 60,
+      "drink": true
+     }
+    ]
+   }
+  ],
+  [
+   "prepare non lista",
+   {
+    "v": 1,
+    "prepare": "teli",
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "prepare vuota",
+   {
+    "v": 1,
+    "prepare": [],
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "prepare troppo lunga",
+   {
+    "v": 1,
+    "prepare": [
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a",
+     "a"
+    ],
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
+     }
+    ]
+   }
   ]
  ],
  "valid": [
@@ -972,6 +1159,71 @@
       "type": "heat",
       "max_s": 600,
       "end": "tap"
+     }
+    ]
+   }
+  ],
+  [
+   "tingsha come apertura",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "enter_sound": "tingsha"
+     }
+    ]
+   }
+  ],
+  [
+   "soglia con checklist e acqua",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "prep",
+      "drink": true,
+      "checklist": [
+       "Bottiglia d'acqua fuori dalla cabina",
+       "Due teli"
+      ]
+     }
+    ]
+   }
+  ],
+  [
+   "dopo a tempo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "close",
+      "end": "time",
+      "target_s": 600,
+      "drink": true
+     }
+    ]
+   }
+  ],
+  [
+   "prepare",
+   {
+    "v": 1,
+    "prepare": [
+     "Due teli",
+     "Acqua"
+    ],
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest"
      }
     ]
    }
