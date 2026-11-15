@@ -1045,6 +1045,42 @@
      }
     ]
    }
+  ],
+  [
+   "humid fuori dal calore",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "humid": true
+     }
+    ]
+   }
+  ],
+  [
+   "humid non booleano",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "heat",
+      "target_s": 300,
+      "max_s": 400,
+      "humid": "sì"
+     },
+     {
+      "id": "r",
+      "name": "R",
+      "type": "rest",
+      "target_s": 400
+     }
+    ]
+   }
   ]
  ],
  "valid": [

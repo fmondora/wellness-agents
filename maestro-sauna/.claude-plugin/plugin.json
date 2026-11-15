@@ -1,7 +1,7 @@
 {
   "name": "maestro-sauna",
   "description": "Maestro di sauna — il rito del calore con il rigore di una Spa: scrive la partitura della seduta (soglia, calore, aria, acqua, riposo, chiusura) dentro i limiti clinici e quelli decisi dalla persona, la consegna come rito guidato sul telefono (Telegram Mini App con clessidra e suoni sintetizzati) tramite il canale di Hṛdaya, e legge com'è andata. Non decide il giorno e non allarga i limiti.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": {
     "name": "Francesco Mondora"
   }

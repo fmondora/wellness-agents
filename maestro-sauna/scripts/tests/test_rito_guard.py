@@ -215,3 +215,41 @@ def test_riapertura_a_meta_rito(tmp_path):
     assert any("tetto" in x for x in g.check(r, root, late, reopen=True))
     assert any("non dichiarata" in x for x in g.check(rito(), root, late, reopen=True))
     assert any("riscrive per oggi" in x for x in g.check(rito(date="2026-11-18"), root, late, reopen=True))
+
+
+BANDS = [{"from_c": 60, "to_c": 70, "round_max_min": 15, "total_max_min": 30, "source": "consiglio"},
+         {"from_c": 40, "to_c": 55, "round_max_min": 35, "total_max_min": 60, "source": "di volta in volta"},
+         {"from_c": 40, "to_c": 50, "humid": True, "round_max_min": 12, "total_max_min": 20}]
+
+
+def test_fasce_ogni_calore_il_tetto_della_sua_cabina(tmp_path):
+    root = repo(tmp_path, {**RULES, "heat_bands": BANDS})
+    assert g.check(rito(), root, NOW) == []                       # 65 °C secchi: 14′ a passaggio, 28′ in tutto
+    r = rito()
+    for mid in ("calore-1", "calore-2"):                          # 45 °C secchi: 30′ a passaggio stanno nella fascia tiepida…
+        moment(r, mid).update(temp_c=45, target_s=1500, max_s=1800)
+    for mid in ("riposo-1", "riposo-2"):
+        moment(r, mid).update(min_s=1800, target_s=1800)
+    out = g.check(r, root, NOW.replace(hour=8))
+    assert not any("tetto" in x and "passaggio" in x for x in out), out
+    assert not any("calore in tutto" in x for x in out), out     # …e 60′ in tutto, il tetto della fascia, non i 25′ generali
+    for mid in ("calore-1", "calore-2"):                          # gli stessi 45 °C umidi: un'altra fascia, molto più stretta
+        moment(r, mid)["humid"] = True
+    out = g.check(r, root, NOW.replace(hour=8))
+    assert any("tetto è 12′ a passaggio" in x for x in out) and any("il tetto è 20′" in x for x in out), out
+
+
+def test_fasce_un_calore_senza_fascia_chiude_la_soglia(tmp_path):
+    root = repo(tmp_path, {**RULES, "heat_bands": BANDS[:1]})
+    r = rito()
+    moment(r, "calore-2")["temp_c"] = 45
+    out = g.check(r, root, NOW)
+    assert any("Secondo calore" in x and "non c'è ancora un tetto deciso" in x for x in out), out
+
+
+def test_fasce_scritte_male_chiudono_la_soglia(tmp_path):
+    for bad in ([], [{"from_c": 70, "to_c": 60, "round_max_min": 10, "total_max_min": 20}],
+                [{"from_c": 60, "to_c": 70, "round_max_min": 0, "total_max_min": 20}],
+                [{"from_c": 60, "to_c": 70, "humid": "no", "round_max_min": 10, "total_max_min": 20}], "60-70"):
+        root = repo(tmp_path / str(abs(hash(str(bad)))), {**RULES, "heat_bands": bad})
+        assert any("la soglia resta chiusa" in x for x in g.check(rito(), root, NOW)), bad

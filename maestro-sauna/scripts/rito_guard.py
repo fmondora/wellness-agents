@@ -16,6 +16,15 @@ Il Maestro scrive la partitura; questo controllo è deterministico e sta fra lui
       "wod_peak_max_bpm": 165, "hold": {"until": "2026-11-20", "why": "febbre"},
       "judgement": [{"id": "uscita-lunga", "text": "nelle 24-36 h prima nessuna uscita lunga con sudorazione profusa"}]}
    Li cambiano la persona, il consiglio o il medico: il Maestro li rispetta, non li allarga.
+   I tetti del calore possono valere per fascia di cabina (`heat_bands`): il calore non pesa uguale a
+   40 °C secchi, a 65 °C o a 45 °C umidi.
+     "heat_bands": [{"from_c": 60, "to_c": 70, "humid": false, "round_max_min": 15, "total_max_min": 25,
+                     "source": "consiglio 22/7"}]
+   Con le fasce, ogni calore prende il tetto della sua (`temp_c` e `humid` del momento; più fasce →
+   la più stretta) e il totale non supera il più stretto delle fasce usate: `heat_round_max_min` e
+   `heat_total_max_min` non contano più. Un calore che non cade in nessuna fascia chiude la soglia:
+   quel numero non è ancora deciso, e lo si decide quando serve, non lo inventa il Maestro.
+   `temp_max_c` resta il tetto assoluto.
    Il file è obbligatorio (lo scrive il `setup` del Maestro) e si legge in modo stretto: un valore
    del tipo sbagliato, o un file che non si legge, **chiude** la soglia invece di spegnere un
    controllo. Le chiavi che mancano prendono i valori prudenti di DEFAULT_RULES. `hold` senza
@@ -129,6 +138,10 @@ def validate(r: Any) -> list[str]:
             errs.append(f"{p}: temp_c deve essere un numero")
         if m.get("temp_c") is not None and t != "heat":
             errs.append(f"{p}: temp_c vale solo per il calore")
+        if m.get("humid") is not None and not isinstance(m["humid"], bool):
+            errs.append(f"{p}: humid deve essere true o false")
+        if m.get("humid") is not None and t != "heat":
+            errs.append(f"{p}: humid vale solo per il calore")
         if m.get("sound") == "brace" and t != "heat":
             errs.append(f"{p}: il tappeto brace è del calore")
         b = m.get("breath")
@@ -293,6 +306,18 @@ def load_rules(root: str | Path | None = None) -> dict:
         _need(ru.get(k) is None or (_num(ru[k]) or 0) > 0, f"{k} deve essere un numero > 0 (o mancare)")
     for k in ("latest_end", "earliest_start"):
         _need(ru.get(k) is None or (isinstance(ru[k], str) and HM.fullmatch(ru[k])), f"{k} deve essere HH:MM")
+    bands = raw.get("heat_bands")
+    if bands is not None:
+        _need(isinstance(bands, list) and bands, "heat_bands deve essere una lista non vuota")
+        for i, b in enumerate(bands):
+            w = f"heat_bands[{i}]"
+            _need(isinstance(b, dict), f"{w} deve essere un oggetto")
+            _need(_num(b.get("from_c")) is not None and _num(b.get("to_c")) is not None and b["from_c"] < b["to_c"],
+                  f"{w}: from_c e to_c sono numeri, from_c < to_c")
+            _need(isinstance(b.get("humid", False), bool), f"{w}: humid deve essere true o false")
+            for k in ("round_max_min", "total_max_min"):
+                _need((_num(b.get(k)) or 0) > 0, f"{w}: {k} deve essere un numero > 0")
+    ru["heat_bands"] = bands
     cold = raw.get("cold", {})
     _need(isinstance(cold, dict), "cold deve essere un oggetto")
     cold = {**DEFAULT_RULES["cold"], **cold}                       # i pezzi che mancano restano prudenti
@@ -385,18 +410,32 @@ def check(r: Any, root: str | Path | None = None, now: datetime | None = None, r
     elif r["date"] != today:
         out.append(f"la partitura è del {r['date']}, oggi è il {today}: il Maestro la riscrive per oggi")
 
-    cap, tmax = ru["heat_round_max_min"], ru["temp_max_c"]
+    tmax, bands = ru["temp_max_c"], ru.get("heat_bands")
+    total_cap = None if bands else ru["heat_total_max_min"]
     for m in ms:
         if m.get("type") != "heat":
             continue
-        if m["max_s"] > cap * 60:
-            out.append(f"«{m['name']}»: fino a {m['max_s'] / 60:g}′ nel calore, il tetto è {cap:g}′ a passaggio")
+        cap = ru["heat_round_max_min"]
         if m.get("temp_c") is None:
             out.append(f"«{m['name']}»: manca temp_c (il tetto è {tmax:g} °C e va confrontato)")
+            if bands:
+                continue
         elif m["temp_c"] > tmax:
             out.append(f"«{m['name']}»: {m['temp_c']:g} °C, il tetto è {tmax:g} °C")
-    if p["heat_max_s"] > ru["heat_total_max_min"] * 60:
-        out.append(f"calore in tutto fino a {p['heat_max_s'] / 60:g}′, il tetto è {ru['heat_total_max_min']:g}′ "
+        if bands:
+            humid = m.get("humid") is True
+            fit = [b for b in bands if b["from_c"] <= m["temp_c"] <= b["to_c"] and b.get("humid", False) == humid]
+            if not fit:
+                out.append(f"«{m['name']}»: per {m['temp_c']:g} °C {'umidi' if humid else 'secchi'} non c'è ancora un tetto "
+                           "deciso: lo decidono la persona, il consiglio o il medico, poi va in heat_bands")
+                continue
+            cap = min(b["round_max_min"] for b in fit)
+            band_total = min(b["total_max_min"] for b in fit)
+            total_cap = band_total if total_cap is None else min(total_cap, band_total)
+        if m["max_s"] > cap * 60:
+            out.append(f"«{m['name']}»: fino a {m['max_s'] / 60:g}′ nel calore, il tetto è {cap:g}′ a passaggio")
+    if total_cap is not None and p["heat_max_s"] > total_cap * 60:
+        out.append(f"calore in tutto fino a {p['heat_max_s'] / 60:g}′, il tetto è {total_cap:g}′ "
                    "(contano i massimi, non i traguardi)")
     if p["rounds"] > ru["rounds_max"]:
         out.append(f"{p['rounds']} passaggi nel calore, il tetto è {ru['rounds_max']}"

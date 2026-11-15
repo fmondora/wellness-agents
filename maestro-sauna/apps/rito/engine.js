@@ -83,6 +83,8 @@
       if (m.optional === true && m.type === 'rest') errs.push(p + ': il riposo non si salta (niente optional)');
       if (m.temp_c != null && !(num(m.temp_c) > 0)) errs.push(p + ': temp_c deve essere un numero');
       if (m.temp_c != null && m.type !== 'heat') errs.push(p + ': temp_c vale solo per il calore');
+      if (m.humid != null && typeof m.humid !== 'boolean') errs.push(p + ': humid deve essere true o false');
+      if (m.humid != null && m.type !== 'heat') errs.push(p + ': humid vale solo per il calore');
       if (m.sound === 'brace' && m.type !== 'heat') errs.push(p + ': il tappeto brace è del calore');
       if (m.breath != null) {
         const b = m.breath;
