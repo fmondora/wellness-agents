@@ -11,6 +11,9 @@ DATA="${WELLNESS_DATA:-}"
 DIST="$(mktemp -d -t rito-player)"
 trap 'rm -rf "$DIST"' EXIT
 cp "$HERE"/index.html "$HERE"/engine.js "$HERE"/sound.js "$HERE"/nosleep.mp4 "$DIST/"
+# le figure dei gesti (generate con scripts/rito_img.py): illustrazioni generiche, nessun dato personale
+IMGS=("$HERE"/img/*.webp(N))
+if (( ${#IMGS} )); then mkdir -p "$DIST/img"; cp "${IMGS[@]}" "$DIST/img/"; fi
 # pagina, motore e suoni vanno insieme: la versione nel src evita una pagina nuova col motore vecchio in cache
 for f in engine.js sound.js; do
   V="$(shasum "$HERE/$f" | cut -c1-10)"

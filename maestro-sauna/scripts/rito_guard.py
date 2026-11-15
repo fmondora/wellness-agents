@@ -138,6 +138,11 @@ def validate(r: Any) -> list[str]:
         for key in ("where", "done_label"):
             if not _opt_str(m.get(key), 40):
                 errs.append(f"{p}: {key} è un testo di al massimo 40 caratteri")
+        if not _opt_str(m.get("detail"), 160):
+            errs.append(f"{p}: detail è un testo di al massimo 160 caratteri")
+        img = m.get("img")
+        if img is not None and not (isinstance(img, str) and re.fullmatch(r"[a-z0-9-]{1,40}", img)):
+            errs.append(f"{p}: img è il nome di una figura (lettere minuscole, cifre, trattini)")
         cl = m.get("checklist")
         if cl is not None and not (isinstance(cl, list) and 1 <= len(cl) <= 8 and all(_str(x, 60) for x in cl)):
             errs.append(f"{p}: checklist è una lista da 1 a 8 voci brevi (60 caratteri)")

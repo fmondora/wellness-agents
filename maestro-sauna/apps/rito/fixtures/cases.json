@@ -1017,6 +1017,34 @@
      }
     ]
    }
+  ],
+  [
+   "detail troppo lungo",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "detail": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     }
+    ]
+   }
+  ],
+  [
+   "img con spazi",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "img": "Tinozza fredda"
+     }
+    ]
+   }
   ]
  ],
  "valid": [
@@ -1224,6 +1252,37 @@
       "id": "x",
       "name": "X",
       "type": "rest"
+     }
+    ]
+   }
+  ],
+  [
+   "detail",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "rest",
+      "detail": "Venti minuti sdraiato e coperto."
+     }
+    ]
+   }
+  ],
+  [
+   "img",
+   {
+    "v": 1,
+    "moments": [
+     {
+      "id": "x",
+      "name": "X",
+      "type": "cold",
+      "target_s": 60,
+      "max_s": 120,
+      "optional": true,
+      "img": "tinozza"
      }
     ]
    }

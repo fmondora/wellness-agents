@@ -4,14 +4,15 @@
  "demo": true,
  "date": "2026-01-01",
  "title": "Rito della sera",
- "subtitle": "Prepararsi, due passaggi nel calore, aria, acqua, riposo, e un dopo con calma",
+ "subtitle": "Alla maniera alpina e finlandese: un primo calore lento col löyly, l'Aufguss nel secondo, Kneipp, riposo lungo",
  "prepare": [
   "Bottiglia d'acqua fuori dalla cabina",
   "Un telo per la panca",
   "Un telo e una coperta per il riposo",
   "Ciabatte",
-  "La tinozza piena",
-  "Un mestolo d'acqua per le pietre",
+  "Il secchio pieno e il mestolo per le pietre",
+  "La tinozza piena, o il getto della doccia",
+  "Una bacinella d'acqua calda per i piedi",
   "Olio per il dopo, calze calde"
  ],
  "moments": [
@@ -51,7 +52,9 @@
     "Asciugato bene",
     "Via orologio, anelli, occhiali"
    ],
-   "done_label": "Entro in cabina"
+   "done_label": "Entro in cabina",
+   "detail": "Calda, col sapone, poi asciugati del tutto: la pelle asciutta suda prima. Se i piedi sono freddi, qualche minuto nella bacinella calda.",
+   "img": "doccia"
   },
   {
    "id": "calore-1",
@@ -59,17 +62,19 @@
    "type": "heat",
    "where": "cabina",
    "temp_c": 65,
-   "target_s": 600,
-   "max_s": 780,
-   "text": "Sdraiato sulla panca di mezzo, il telo sotto tutto il corpo. Respira dal naso.",
+   "target_s": 720,
+   "max_s": 840,
+   "text": "Sdraiato sulla panca di mezzo. Se lo vuoi, un mestolo d'acqua sulle pietre, e resta.",
    "cues": [
     {
-     "at_s": 480,
+     "at_s": 600,
      "sound": "ciotola",
      "text": "Siediti. Ancora due minuti, poi esci piano."
     }
    ],
-   "lead_text": "Entra, chiudi la porta, stenditi sulla panca di mezzo."
+   "lead_text": "Entra, chiudi la porta, stenditi sulla panca di mezzo.",
+   "detail": "Alla finlandese: lento, in silenzio. Il löyly quando lo chiedi tu, un mestolo per volta. Gli ultimi due minuti seduto.",
+   "img": "panca"
   },
   {
    "id": "aria-1",
@@ -78,7 +83,9 @@
    "where": "fuori",
    "end": "time",
    "target_s": 120,
-   "text": "Cammina piano. Prima l'aria, poi l'acqua: lascia che il respiro scenda."
+   "text": "Cammina piano. Prima l'aria, poi l'acqua: lascia che il respiro scenda.",
+   "detail": "Prima l'aria, poi l'acqua: due minuti fuori, camminando, respirando dal naso.",
+   "img": "aria"
   },
   {
    "id": "acqua-1",
@@ -88,22 +95,26 @@
    "optional": true,
    "target_s": 60,
    "max_s": 180,
-   "text": "Dai piedi verso il cuore. Esci quando il respiro è tornato tuo."
+   "text": "Il getto dai piedi verso il cuore. Esci quando il respiro è tornato tuo.",
+   "detail": "Il getto di Kneipp: ginocchio destro, sinistro, poi le cosce, le braccia; il busto per ultimo. La tinozza dopo il getto, se vuoi.",
+   "img": "kneipp"
   },
   {
    "id": "riposo-1",
    "name": "Riposo",
    "type": "rest",
    "where": "lettino",
-   "min_s": 480,
-   "target_s": 600,
+   "min_s": 900,
+   "target_s": 1200,
    "breath": {
     "in_s": 4,
     "out_s": 6
    },
    "text": "Disteso, coperto, i piedi al caldo. Niente da fare.",
    "lead_text": "Asciugati bene, copriti, stenditi. Il riposo comincia da solo.",
-   "drink": true
+   "drink": true,
+   "detail": "Venti minuti sdraiato e coperto, i piedi al caldo. Un sorso d'acqua a metà.",
+   "img": "riposo"
   },
   {
    "id": "calore-2",
@@ -111,21 +122,34 @@
    "type": "heat",
    "where": "cabina",
    "temp_c": 65,
-   "target_s": 600,
-   "max_s": 720,
-   "text": "Come prima. Questo è il passaggio più quieto.",
+   "target_s": 720,
+   "max_s": 840,
+   "text": "Il passaggio della cerimonia. Tra una gettata e l'altra, fermo.",
    "cues": [
     {
-     "at_s": 300,
+     "at_s": 180,
      "sound": "vapore",
-     "text": "Se vuoi, un mestolo d'acqua sulle pietre. Poi resta fermo."
+     "text": "Prima gettata: due mestoli, piano."
     },
     {
-     "at_s": 480,
+     "at_s": 360,
+     "sound": "vapore",
+     "text": "Seconda gettata: tre mestoli."
+    },
+    {
+     "at_s": 540,
+     "sound": "vapore",
+     "text": "Terza gettata, l'ultima. Poi fermo."
+    },
+    {
+     "at_s": 600,
      "sound": "ciotola",
      "text": "Siediti. Ancora due minuti."
     }
-   ]
+   ],
+   "detail": "L'Aufguss alla maniera alpina: arieggia col telo prima di entrare, poi tre gettate, a tre, sei e nove minuti. Dopo ognuna resta fermo.",
+   "lead_text": "Porta aperta, fai girare il telo come un'elica per far entrare aria fresca. Poi chiudi ed entra.",
+   "img": "gettata"
   },
   {
    "id": "aria-2",
@@ -134,21 +158,23 @@
    "where": "fuori",
    "end": "time",
    "target_s": 120,
-   "text": "Fuori, piano."
+   "text": "Fuori, piano.",
+   "img": "aria"
   },
   {
    "id": "riposo-2",
    "name": "Riposo lungo",
    "type": "rest",
    "where": "lettino",
-   "min_s": 600,
-   "target_s": 900,
+   "min_s": 900,
+   "target_s": 1500,
    "breath": {
     "in_s": 4,
     "out_s": 6
    },
    "text": "Il rito finisce qui, sdraiato. Lascia che il calore resti.",
-   "drink": true
+   "drink": true,
+   "img": "riposo"
   },
   {
    "id": "bevi-dopo",
@@ -166,7 +192,8 @@
    "where": "doccia",
    "end": "time",
    "target_s": 300,
-   "text": "Lascia che il corpo si raffreddi da solo. Tra poco una doccia tiepida, senza sapone."
+   "text": "Lascia che il corpo si raffreddi da solo. Tra poco una doccia tiepida, senza sapone.",
+   "detail": "Cinque minuti senza fare niente: il corpo smette di sudare da solo. Poi la doccia tiepida, senza sapone."
   },
   {
    "id": "vestiti",

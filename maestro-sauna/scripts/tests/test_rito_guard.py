@@ -15,7 +15,7 @@ FIX = HERE.parents[1] / "apps" / "rito" / "fixtures"
 DEMO = json.loads((FIX / "demo.rito.json").read_text(encoding="utf-8"))
 CASES = json.loads((FIX / "cases.json").read_text(encoding="utf-8"))
 NOW = datetime(2026, 11, 19, 17, 30, tzinfo=g.tz())
-RULES = {"heat_round_max_min": 15, "heat_total_max_min": 25, "rounds_max": 2, "temp_max_c": 70,
+RULES = {"heat_round_max_min": 15, "heat_total_max_min": 30, "rounds_max": 2, "temp_max_c": 70,
          "cold": {"allowed": True, "max_min": 5, "optional": True}, "rest_ratio_min": 1.0, "latest_end": "20:00"}
 
 
@@ -44,10 +44,10 @@ def test_la_partitura_di_esempio_passa(tmp_path):
     assert g.validate(DEMO) == []
     assert g.check(rito(), repo(tmp_path), NOW) == []
     p = g.planned(DEMO)
-    assert (p["rounds"], p["heat_s"], p["heat_max_s"], p["rest_s"]) == (2, 1200, 1500, 1500)
+    assert (p["rounds"], p["heat_s"], p["heat_max_s"], p["rest_s"]) == (2, 1440, 1680, 2700)
     # traguardi e minimi (doccia 3′, dopo 5′) più i passaggi; quello del calore no (conta dal tocco)
-    assert p["total_s"] == 3000 + 180 + 300 + 180
-    assert p["longest_s"] == p["total_s"] + 300 + 120         # caldo e freddo fino al massimo
+    assert p["total_s"] == 4440 + 180 + 300 + 180
+    assert p["longest_s"] == p["total_s"] + 240 + 120         # caldo e freddo fino al massimo
 
 
 def test_i_due_validatori_dicono_la_stessa_cosa():
@@ -123,7 +123,7 @@ def test_ordine_del_rito_e_riposo_per_ogni_calore(tmp_path):
 def test_ora_ultima_seduta_picco_e_blocco(tmp_path):
     root = repo(tmp_path, {**RULES, "min_hours_between": 20, "wod_peak_max_bpm": 165, "earliest_start": "07:00"})
     late = datetime(2026, 11, 19, 19, 30, tzinfo=g.tz())
-    assert any("potrebbe finire alle 20:38, oltre le 20:00" in x for x in g.check(rito(), root, late))
+    assert any("potrebbe finire alle 21:01, oltre le 20:00" in x for x in g.check(rito(), root, late))
     after = datetime(2026, 11, 19, 21, 0, tzinfo=g.tz())
     assert any("oltre le 20:00: oggi il rito non comincia più" in x for x in g.check(rito(), root, after))
     night = datetime(2026, 11, 19, 0, 15, tzinfo=g.tz())      # dopo mezzanotte non «passa» perché 01:09 < 20:00

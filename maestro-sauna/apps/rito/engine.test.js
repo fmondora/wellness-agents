@@ -21,9 +21,9 @@ test('la partitura di esempio è valida e si legge prima di cominciare', () => {
   assert.deepEqual(E.validate(DEMO), []);
   const p = E.planned(DEMO);
   assert.equal(p.rounds, 2);
-  assert.equal(p.heat_s, 1200);
+  assert.equal(p.heat_s, 1440);
   assert.equal(p.moments.length, 13);
-  assert.equal(p.total_s, 3660);                              // lo stesso numero della soglia in Python
+  assert.equal(p.total_s, 5100);                              // lo stesso numero della soglia in Python
 });
 
 test('partiture sbagliate: dice cosa non va', () => {
@@ -300,7 +300,7 @@ test('passaggi: momenti a tempo, salti, pause e valori di tipo', () => {
   assert.match(tl[1].lead_text, /stenditi/);
   assert.match(E.validate(rito([lead(REST, 900)])).join(), /lead_s/);
   assert.match(E.validate(rito([lead(HEAT, 120)])).join(), /da 0 a 60/);
-  assert.equal(E.planned(DEMO).total_s, 180 + 600 + 120 + 60 + 600 + 600 + 120 + 900 + 300 + 15 + 30 + 60 + 15 + 60);
+  assert.equal(E.planned(DEMO).total_s, 180 + 720 + 120 + 60 + 1200 + 720 + 120 + 1500 + 300 + 15 + 30 + 60 + 15 + 60);
 });
 
 test('il calore conta dal tocco: il passaggio è solo il tempo per sistemarsi', () => {

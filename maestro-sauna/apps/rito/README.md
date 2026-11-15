@@ -50,6 +50,8 @@ Ogni **momento**:
 | `lead_text` | cosa fare nel passaggio («Asciugati, copriti, stenditi») |
 | `optional` | si può saltare («Oggi lo salto»). Solo per ciò che il corpo può non volere, come l'acqua fredda; **mai per il riposo** |
 | `text` | due righe: un gesto e una sensazione |
+| `detail` | facoltativo, al massimo 160 caratteri: come si fa il momento, mostrato prima di cominciare in «Come andrà» («Tre gettate: a tre, sei e nove minuti. Dopo ognuna, fermo»). Il gesto, non la spiegazione |
+| `img` | facoltativo: la figura del gesto, `img/<nome>.webp` (generate con `scripts/rito_img.py`, `--list` dà i nomi: kneipp, tinozza, doccia, pediluvio, panca, seduto, elica, gettata, aria, riposo). Si vede in «Come andrà» e, al posto della clessidra, mentre si va verso il momento o se il momento non ha tempo da contare. Una figura che manca non si mostra |
 | `where`, `temp_c` | sotto il nome: «cabina, 65 gradi». `temp_c` solo sul calore (la soglia lo confronta col tetto) |
 | `sound` | tappeto: `silenzio` `brace` (solo calore) `bordone` `acqua` `aria` `respiro` |
 | `breath` | `{in_s, out_s}` (da 2 a 15 secondi) per il tappeto `respiro` e l'alone a schermo |

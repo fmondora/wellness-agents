@@ -90,6 +90,8 @@
           errs.push(p + ': breath vuole in_s e out_s fra 2 e 15 secondi');
       }
       for (const k2 of ['where', 'done_label']) if (!optStr(m[k2], 40)) errs.push(p + ': ' + k2 + ' è un testo di al massimo 40 caratteri');
+      if (!optStr(m.detail, 160)) errs.push(p + ': detail è un testo di al massimo 160 caratteri');
+      if (m.img != null && !(typeof m.img === 'string' && /^[a-z0-9-]{1,40}$/.test(m.img))) errs.push(p + ': img è il nome di una figura (lettere minuscole, cifre, trattini)');
       if (m.checklist != null && !(Array.isArray(m.checklist) && m.checklist.length >= 1 && m.checklist.length <= 8
           && m.checklist.every((x) => str(x, 60)))) errs.push(p + ': checklist è una lista da 1 a 8 voci brevi (60 caratteri)');
       if (m.checklist != null && hot) errs.push(p + ': la checklist non sta nel caldo né nel freddo');
@@ -148,7 +150,7 @@
       if (m.type === 'heat') round += 1;
       return {
         i, id: m.id, name: String(m.name || ''), type: m.type, where: m.where || '',
-        text: m.text || '', end: m.end || 'tap',
+        text: m.text || '', detail: m.detail || '', img: m.img || '', end: m.end || 'tap',
         min_s: num(m.min_s), target_s: num(m.target_s), max_s: num(m.max_s),
         optional: !!m.optional, sound: m.sound || d.sound,
         enter_sound: m.enter_sound === false ? null : (m.enter_sound || d.enter),

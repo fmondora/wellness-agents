@@ -77,6 +77,7 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 .path small { display: block; font-size: var(--t-small); color: var(--cenere); }
 #intro .foot { padding-top: .6rem; }
 #intro .note { margin: 0 auto .8rem; max-width: 23rem; }
+#i-path .i-detail { margin: .2rem 0 0; font-size: var(--t-small); line-height: 1.4; color: var(--cenere); font-style: italic; }
 
 /* --- il rito --- */
 .rail { display: flex; justify-content: center; gap: 9px; height: 14px; align-items: center; }
@@ -87,6 +88,9 @@ button:focus-visible { outline: 2px solid var(--sabbia); outline-offset: 3px; }
 #run .where { text-align: center; color: var(--cenere); font-size: var(--t-small); margin-top: .35rem; min-height: 1.3em; }
 .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
 .glass { height: 100%; max-height: 44vh; width: auto; position: relative; z-index: 1; }
+.fig { height: 100%; max-height: 44vh; aspect-ratio: 1; width: auto; max-width: 100%; object-fit: cover; border-radius: 22px; position: relative; z-index: 1; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+#i-path .i-fig { float: right; width: 88px; height: 88px; border-radius: 12px; margin: 0 0 .3rem .6rem; object-fit: cover; }
+#i-path li::after { content: ''; display: block; clear: both; }
 .glass .frame { fill: var(--legno); }
 .glass .bulb { fill: rgba(237, 230, 214, .05); stroke: rgba(237, 230, 214, .42); stroke-width: 1.4; }
 .glass .sand { fill: var(--grain); transition: fill var(--slow) ease; }
@@ -166,6 +170,7 @@ textarea::placeholder { color: var(--cenere); }
   <p class="where" id="r-where"></p>
   <div class="stage">
     <div class="halo" id="r-halo"></div>
+    <img class="fig" id="r-fig" alt="" hidden>
     <svg class="glass" id="r-glass" viewBox="0 0 200 320" role="img" aria-label="Clessidra">
       <defs>
         <clipPath id="c-top"><path d="M38,26 Q38,118 96,157 L104,157 Q162,118 162,26 Z"/></clipPath>
@@ -311,6 +316,17 @@ textarea::placeholder { color: var(--cenere); }
   }
 
   // --- schermate ----------------------------------------------------------------
+  const figBad = {};
+  function figImg(slug, cls) {
+    const im = document.createElement('img');
+    im.className = cls; im.alt = ''; im.loading = 'lazy'; im.src = 'img/' + slug + '.webp';
+    im.onerror = () => { figBad[slug] = true; im.remove(); };
+    return im;
+  }
+  function gettate(cues) {
+    const n = cues.filter((c) => c.sound === 'vapore').length;
+    return n === 0 ? '' : n === 1 ? 'una gettata sulle pietre' : (['', '', 'due', 'tre', 'quattro'][n] || n) + ' gettate sulle pietre';
+  }
   function show(id) {
     for (const el of document.querySelectorAll('.screen')) el.classList.toggle('on', el.id === id);
   }
@@ -342,14 +358,16 @@ textarea::placeholder { color: var(--cenere); }
     for (const m of E.timeline(R)) {
       const li = document.createElement('li'), sm = document.createElement('small');
       li.dataset.t = m.type;
+      if (m.img && !figBad[m.img]) li.append(figImg(m.img, 'i-fig'));
       li.append(m.name);
       const how = m.target_s ? E.minutes(m.target_s) + (m.max_s && m.type === 'heat' ? ', al massimo ' + E.minutes(m.max_s) : '')
         : (m.optional ? '' : 'il tempo che serve');
       const bits = [m.where, m.temp_c ? m.temp_c + ' gradi' : '', how, m.optional ? 'se oggi lo vuoi' : '',
-        m.cues.some((c) => c.drink) ? 'un sorso d\'acqua' : '', m.cues.some((c) => c.sound === 'vapore') ? 'acqua sulle pietre' : '',
+        m.cues.some((c) => c.drink) ? 'un sorso d\'acqua' : '', gettate(m.cues),
         m.checklist.length ? m.checklist.length + ' cose da fare' : ''].filter(Boolean);
       sm.textContent = bits.join(' · ');
       li.append(sm);
+      if (m.detail) { const d = document.createElement('p'); d.className = 'i-detail'; d.textContent = m.detail; li.append(d); }
       ol.append(li);
     }
     $('b-start').textContent = resumable ? 'Riprendo il rito' : 'Comincio il rito';
@@ -395,6 +413,15 @@ textarea::placeholder { color: var(--cenere); }
     $('r-name').textContent = m.name;
     $('r-where').textContent = [m.where, m.temp_c ? m.temp_c + ' gradi' : ''].filter(Boolean).join(', ');
     drawGlass(v);
+    // la figura del gesto al posto della clessidra mentre si va verso il momento, o se non c'è tempo da contare
+    const fig = $('r-fig'), wantFig = !!(m.img && figBad[m.img] !== true && (v.lead || v.settling || !m.target_s));
+    if (wantFig && fig.dataset.img !== m.img) {
+      fig.dataset.img = m.img;
+      fig.onerror = () => { figBad[m.img] = true; fig.hidden = true; $('r-glass').style.display = ''; };
+      fig.src = 'img/' + m.img + '.webp';
+    }
+    fig.hidden = !wantFig;
+    $('r-glass').style.display = wantFig ? 'none' : '';
     $('r-time').textContent = timeWords(v);
     const showCue = cue && cue.m === v.i && Date.now() < cue.until;
     const tx = $('r-text');
