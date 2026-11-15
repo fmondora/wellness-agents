@@ -131,3 +131,145 @@ def test_meditazione_con_inizia(data, tmp_path, monkeypatch):
     jid = payload(out[0])["job"]
     sent = _wait_sent(log, "sendAudio")[0]["params"]
     assert sent["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == f"pr:{jid}:start"
+
+
+SONG = """[Intro - tanpura drone]
+
+[Verse 1]
+Il respiro entra, il respiro esce,
+resto a guardare l'onda che viene.
+
+[Chorus]
+So Ham, So Ham,
+Om Namah Shivaya.
+"""
+
+
+def _song_cfg(data, **over):
+    p = data / "config" / "hridaya.json"
+    cfg = json.loads(p.read_text()) if p.exists() else {}
+    cfg["song"] = {"enabled": True, "acestep_dir": str(data / "ace"), **over}
+    p.write_text(json.dumps(cfg))
+    (data / "ace" / ".venv" / "bin").mkdir(parents=True, exist_ok=True)
+    (data / "ace" / ".venv" / "bin" / "python").write_text("")
+
+
+def test_canzone_validata():
+    import song
+    assert song.validate(SONG, "devotional, female voice")["duration_s"] == 240
+    for kw, msg in [({"lyrics": "senza tag"}, "tag"), ({"style": ""}, "style"),
+                    ({"duration_s": 10}, "duration"), ({"key": "Z major"}, "key"), ({"language": "xx"}, "language")]:
+        args = {"lyrics": SONG, "style": "devotional", **kw}
+        with pytest.raises(song.SongError, match=msg):
+            song.validate(**args)
+
+
+def test_tool_canzone_in_background(data, tmp_path, monkeypatch):
+    _song_cfg(data)
+    monkeypatch.setenv("HRIDAYA_VOICE_FAKE", "1")
+    mid = tq.enqueue(42, "mi fai una canzone della meditazione di oggi?")
+    log = tmp_path / "log.jsonl"
+    out = run(data, [call(1, "telegram_send_song", {"lyrics": "niente tag", "style": "x", "title": "t",
+                                                    "in_reply_to": mid}),
+                     call(2, "telegram_send_song", {"lyrics": SONG, "style": "devotional mantra, female voice",
+                                                    "title": "Il canto del respiro", "duration_s": 200,
+                                                    "caption": "🕉️ <b>Kaula</b> · Il canto del respiro",
+                                                    "in_reply_to": mid})], log)
+    assert out[0]["result"]["isError"]
+    assert payload(out[1])["status"] == "preparing"
+    sent = _wait_sent(log, "sendAudio")[0]["params"]
+    assert sent["title"] == "Il canto del respiro" and sent["performer"] == "Kaula" and sent["duration"] == 200
+    assert "/data/exports/canzoni/" in sent["_files"]["audio"] and sent["_files"]["audio"].endswith(".m4a")
+
+
+def test_canzoni_spente_e_solo_su_richiesta(data, tmp_path):
+    mid = tq.enqueue(42, "una canzone?")
+    out = run(data, [call(1, "telegram_send_song", {"lyrics": SONG, "style": "x", "title": "t", "in_reply_to": mid}),
+                     call(2, "telegram_send_song", {"lyrics": SONG, "style": "x", "title": "t"})],
+              tmp_path / "log.jsonl")
+    assert out[0]["result"]["isError"] and "spente" in out[0]["result"]["content"][0]["text"]
+    assert out[1]["result"]["isError"]
+
+
+def test_canzone_build_con_ace_step_finto(data, tmp_path, monkeypatch):
+    import subprocess
+    import song
+    ace = tmp_path / "ace"
+    (ace / ".venv" / "bin").mkdir(parents=True)
+    (ace / ".venv" / "bin" / "python").write_text("")
+    monkeypatch.setattr(vn, "_ffmpeg", lambda: "ffmpeg")
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append((cmd, kw))
+        if cmd[0] == "ffmpeg":
+            Path(cmd[-1]).write_bytes(b"m4a")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        spec = json.loads(kw["input"])
+        wav = Path(spec["out_dir"]) / "x.wav"
+        wav.write_bytes(b"wav")
+        return subprocess.CompletedProcess(cmd, 0, "log\nSONG_RESULT " + json.dumps(
+            {"ok": True, "path": str(wav), "duration": spec["duration_s"]}) + "\n", "")
+    res = song.build({"lyrics": SONG, "style": "devotional"}, tmp_path / "o.m4a", {"acestep_dir": str(ace)},
+                     run=fake_run)
+    assert res["duration"] == 240 and Path(res["path"]).read_bytes() == b"m4a"
+    spec = json.loads(calls[0][1]["input"])
+    assert spec["language"] == "it" and calls[0][1]["cwd"] == str(ace)
+
+    def failing(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, 0, "SONG_RESULT " + json.dumps({"ok": False, "error": "OOM"}), "")
+    with pytest.raises(song.SongError, match="OOM"):
+        song.build({"lyrics": SONG, "style": "devotional"}, tmp_path / "p.m4a", {"acestep_dir": str(ace)}, run=failing)
+
+
+def test_tonalita_normalizzata_e_tag_tolleranti():
+    import song
+    for k, want in [("Am", "A minor"), ("d", "D major"), ("F♯ minor", "F♯ minor"), ("Bb maj", "Bb major"),
+                    ("D major", "D major"), ("", "")]:
+        assert song.normalize_key(k) == want, k
+    with pytest.raises(song.SongError):
+        song.normalize_key("H major")
+    assert song.validate("[Verse1] \nciao\n[Chorus]  \nOm", "devotional")["lyrics"]
+
+
+def test_canzone_tiene_testo_e_seed_e_non_si_pota(data, tmp_path, monkeypatch):
+    import subprocess
+    import song
+    ace = tmp_path / "ace"
+    (ace / ".venv" / "bin").mkdir(parents=True)
+    (ace / ".venv" / "bin" / "python").write_text("")
+    monkeypatch.setattr(vn, "_ffmpeg", lambda: "ffmpeg")
+
+    def fake_run(cmd, **kw):
+        if cmd[0] == "ffmpeg":
+            Path(cmd[-1]).write_bytes(b"m4a")
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        assert kw["env"]["HF_HUB_DISABLE_XET"] == "1"
+        spec = json.loads(kw["input"])
+        wav = Path(spec["out_dir"]) / "x.wav"
+        wav.write_bytes(b"wav")
+        return subprocess.CompletedProcess(cmd, 0, "progress 50%SONG_RESULT " + json.dumps(
+            {"ok": True, "path": str(wav), "duration": 240, "seed": 1234}), "")
+    res = song.build({"lyrics": SONG, "style": "devotional"}, tmp_path / "o.m4a", {"acestep_dir": str(ace)},
+                     run=fake_run)
+    side = json.loads((tmp_path / "o.json").read_text())
+    assert res["seed"] == 1234 and side["seed"] == 1234 and side["lyrics"].startswith("[Intro")
+
+    def no_path(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, 0, "SONG_RESULT " + json.dumps({"ok": True}), "")
+    with pytest.raises(song.SongError, match="nessun file"):
+        song.build({"lyrics": SONG, "style": "devotional"}, tmp_path / "p.m4a", {"acestep_dir": str(ace)}, run=no_path)
+
+    def killed(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, -9, "", "")
+    with pytest.raises(vn.VoiceError, match="codice -9"):
+        song.build({"lyrics": SONG, "style": "devotional"}, tmp_path / "q.m4a", {"acestep_dir": str(ace)}, run=killed)
+
+
+def test_ace_step_mancante_errore_subito(data, tmp_path):
+    _song_cfg(data, acestep_dir=str(tmp_path / "non-c-e"))
+    mid = tq.enqueue(42, "una canzone?")
+    out = run(data, [call(1, "telegram_send_song", {"lyrics": SONG, "style": "x", "title": "t", "in_reply_to": mid}),
+                     call(2, "hridaya_service", {"action": "status"})], tmp_path / "log.jsonl")
+    assert out[0]["result"]["isError"] and "ACE-Step non trovato" in out[0]["result"]["content"][0]["text"]
+    assert "canzoni: accese ma ACE-Step non trovato" in json.dumps(payload(out[1]), ensure_ascii=False)

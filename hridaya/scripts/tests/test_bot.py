@@ -31,7 +31,7 @@ def test_help_e_nota_e_log(data, fake_call):
     assert b.process_update(upd("/help"), {42}) == "help"
     assert "Hṛdaya" in fake_call.texts()[-1]
     assert b.process_update(upd("/nota dormito male"), {42}) == "nota"
-    assert b.process_update(upd("/log"), {42}) == "log"
+    assert b.process_update(upd("/log"), {42}) == "diario"
     assert "dormito male" in fake_call.texts()[-1]
     assert tq.list_pending() == []           # i comandi non vanno in coda
 
@@ -244,3 +244,117 @@ def test_sta_scrivendo_no_senza_sessione_di_notte_o_se_vecchio(data, fake_call):
         {"bedtime": "00:01", "wake": {"fallback": "23:59", "fallback_max": "23:59", "late_cutoff": "23:59"}}))
     assert make(fake_call, active=True).typing_tick() == set()
     assert not [c for c in fake_call.calls if c[0] == "sendChatAction"]
+
+
+def test_novita_una_volta_per_versione(data):
+    import release
+    notes = ("## 0.11.0\n- Le canzoni.\n- Le novità\n  su due righe.\n- [canzoni] Solo con ACE-Step.\n\n"
+             "## 0.10.0 — 14/11\n- Il registro.\n\n## 0.9\n- Vecchio.\n")
+    sent = []
+
+    def send(text):
+        sent.append(text)
+        return "sent"
+    off = {"canzoni": False}
+    assert release.announce(send, "0.10.0", notes, off) is None and not sent      # prima installazione
+    assert release.announce(send, "0.11.0", notes, off) == "sent"
+    assert "Hṛdaya 0.11.0" in sent[0] and "Le novità su due righe." in sent[0]
+    assert "Il registro" not in sent[0] and "ACE-Step" not in sent[0]
+    assert release.announce(send, "0.11.0", notes, off) is None and len(sent) == 1   # una volta sola
+    (data / "data" / "hridaya" / "release.json").write_text('{"announced": "0.9.0"}')
+    release.announce(send, "0.11.0", notes, {"canzoni": True})
+    assert "<b>0.10.0</b>" in sent[1] and "Solo con ACE-Step." in sent[1] and "Vecchio" not in sent[1]
+    assert release.announce(send, "0.12.0", notes, off) is None and len(sent) == 2   # versione senza note
+
+
+def test_novita_su_repo_gia_in_uso_senza_stato(data):
+    import release
+    import telegram_queue as tq
+    tq.enqueue(42, "ciao")                                # il canale è già stato usato
+    sent = []
+    release.announce(lambda t: sent.append(t) or "sent", "0.11.0",
+                     "## 0.11.0\n- Nuova.\n\n## 0.10.0\n- Vecchia.\n", {})
+    assert len(sent) == 1 and "Nuova." in sent[0] and "Vecchia." not in sent[0]
+
+
+def test_novita_del_plugin_si_leggono():
+    import release
+    notes = release.parse(release.NOTES.read_text(encoding="utf-8"))
+    v = release.version()
+    if v.endswith(".0"):                                  # le minor hanno sempre le loro novità
+        assert v in notes and notes[v]
+
+
+def test_diario_in_ordine_con_i_bottoni(data, fake_call):
+    import json as _j
+    import journal
+    import telegram_queue as tq
+    logs = data / "data" / "logs"
+    logs.mkdir(parents=True)
+    day = tb.today_str()
+    (logs / f"{day}.json").write_text(_j.dumps({
+        "symptoms": {"acufeni": {"reported": "forti al risveglio"}},
+        "energy": {"morning_note": "un po' stanco"},
+        "notes": "[Telegram 07:23] [coda 1c] Oggi fischi forti\n[Telegram 07:24] [coda 1d] Oggi fischi forti!\n"
+                 "[Telegram 07:30] [coda 2a] /allenamento\n[Telegram 07:31] [coda 2b] [bottone] 6"}))
+    text, info = journal.text(day)
+    assert "🩺 <b>Corpo</b>" in text and "acufeni: forti al risveglio" in text and "energia: un po' stanco" in text
+    assert text.count("Oggi fischi forti") == 1 and "/allenamento" not in text and info["own"]
+    b = tb.Bot("123:T", call=fake_call, session_active=lambda: True)
+    assert b.process_update(upd("/diario"), {42}) == "diario"
+    assert b.process_update(upd("/journal"), {42}) == "diario"
+    sent = [p for m, p in fake_call.calls if m == "sendMessage"][-1]
+    assert sent["parse_mode"] == "HTML" and sent["reply_markup"]["inline_keyboard"][0][0]["callback_data"] == "dj:aggiorna"
+    cq = {"id": "q", "data": "dj:aggiorna", "from": {"username": "f"}, "message": {"message_id": 3, "chat": {"id": 42}}}
+    assert b.process_update({"callback_query": cq}, {42}) == "diario-aggiorna"
+    assert b.process_update({"callback_query": {**cq, "id": "q2"}}, {42}) == "diario-gia-chiesto"
+    assert [r["text"] for r in tq.list_pending(include_system=False)] == [journal.UPDATE_TEXT]
+
+
+def test_diario_forme_strane_e_parole_sue(data):
+    import json as _j
+    import journal
+    logs = data / "data" / "logs"
+    logs.mkdir(parents=True)
+    (logs / "2026-11-14.json").write_text(_j.dumps({
+        "morning": {"tinnitus": {"score": 7, "at": "08:00", "context": "dopo il box"},
+                    "meditation": {"start": "05:21", "end": "06:02", "minutes": "<b>41"}},
+        "practices": [{"title": "Il buio che guarda", "start": "18:44", "end": "19:15"}, {}, "x"],
+        "symptoms": {"acufeni": None, "gola": "un po' secca"}, "fitbit": "rotto", "energy": ["a"],
+        "notes": "[Telegram 22:07] [coda 5ddf] hey ciao\n[Telegram 22:07] [coda 5ddf] saluta (riscritto dalla sessione)\n"
+                 "[Telegram 14:05] [log] fischi stamattina: 7\n[Telegram 22:14] [coda 77aa] sessione di coppia"}))
+    text, info = journal.text("2026-11-14")
+    assert "acufeni al mattino: 7" in text and "{'score'" not in text
+    assert "Il buio che guarda 18:44–19:15" in text and "&lt;b&gt;41" in text
+    assert "acufeni: None" not in text and "gola: un po' secca" in text
+    assert "hey ciao" in text and "riscritto dalla sessione" not in text and "[log]" not in text
+    assert info["own"] and len(text) < 4096
+    (logs / "2026-11-13.json").write_text("[1, 2]")                      # diario che non è un oggetto
+    assert "Diario di" in journal.text("2026-11-13")[0]
+    (logs / "2026-11-12.json").write_text(_j.dumps({"symptoms": {f"s{i}": "x" for i in range(60)}}))
+    t12 = journal.text("2026-11-12")[0]
+    assert "… e altre 54" in t12 and len(t12) < 4096
+    (logs / "2026-11-11.json").write_text(_j.dumps({"bowel": {"bristol": "3-4 formate"}}))
+    assert journal.text("2026-11-11")[1]["own"]                         # registrato coi bottoni: è suo
+
+
+def test_diario_vuoto_propone_di_scrivere(data):
+    import journal
+    text, info = journal.text("2026-11-16")
+    assert not info["own"] and "non hai ancora registrato" in text
+    assert journal.markup(info)["inline_keyboard"][0][0]["text"] == "✍️ Scrivi il diario"
+
+
+def test_nessun_nome_proprio_nei_plugin():
+    """I plugin sono pubblici: chi li usa è «la persona», il nome sta nel repo dati."""
+    from pathlib import Path
+    root = Path(tb.__file__).resolve().parents[2]
+    bad = []
+    for f in root.rglob("*"):
+        if f.suffix not in (".py", ".md", ".sh") or "docs" in f.relative_to(root).parts[:1] \
+                or "node_modules" in f.parts or f.name == "test_bot.py" \
+                or any(x.startswith(".") for x in f.relative_to(root).parts):
+            continue
+        if "Francesco" in f.read_text(encoding="utf-8", errors="ignore"):
+            bad.append(str(f.relative_to(root)))
+    assert not bad, bad

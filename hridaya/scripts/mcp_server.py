@@ -104,6 +104,21 @@ class Service:
 SERVICE = Service()
 
 
+import plugin_version  # noqa: E402
+
+STARTED_VERSION = plugin_version.running()
+
+
+def outdated() -> str | None:
+    """È installata una versione più nuova di quella con cui è partito questo server: il codice in
+    memoria è vecchio (cache: cartella sorella più alta; checkout: plugin.json cambiato sul posto)."""
+    now = plugin_version.latest()
+    if now and STARTED_VERSION and now != STARTED_VERSION:
+        return (f"questo server MCP è partito con hridaya {STARTED_VERSION}, ora c'è la {now}: tool e regole "
+                "possono essere vecchi. Riavvia la sessione Claude (la dedicata si riavvia da sola quando è libera).")
+    return None
+
+
 # --- tool ---------------------------------------------------------------------------
 
 def _schema(props: dict, required: list[str] | None = None) -> dict:
@@ -115,7 +130,7 @@ KIND = {"type": "string", "enum": ["message", "push", "review", "detector", "eve
 BUTTONS = {"type": "object", "additionalProperties": False, "required": ["options"],
            "description": "Bottoni di risposta sotto il messaggio. options: etichette (max 12, ≤40 caratteri) "
                           "o righe di etichette; multi=true: si accendono più opzioni e si conferma. "
-                          "Il tocco torna nella inbox come messaggio di Francesco con il campo `choice`.",
+                          "Il tocco torna nella inbox come messaggio della persona con il campo `choice`.",
            "properties": {"options": {"type": "array"}, "multi": {"type": "boolean"}}}
 # reazioni ammesse ai bot (sottoinsieme di quelle standard di Telegram), scelte per un feedback caldo
 # (niente 👊 né 💪: Telegram non li ammette come reazione; vanno nel testo)
@@ -128,12 +143,12 @@ PRACTICE = {"type": "string", "description": "titolo della pratica: sotto il mes
                                            "«⏹ Fine»; il bot registra la finestra e alla fine arriva l'evento "
                                            "practice_done (da leggere sulla FC al minuto). Per meditazioni e "
                                            "pratiche guidate; non insieme a buttons"}
-REPLY_TO = {"type": "string", "description": "id di un messaggio di Francesco nella inbox (non di un evento di sistema): "
+REPLY_TO = {"type": "string", "description": "id di un messaggio della persona nella inbox (non di un evento di sistema): "
                                            "di giorno parte subito, di notte passa dal cancello; il messaggio è segnato fatto"}
 
 TOOLS = [
     {"name": "telegram_send",
-     "description": "Manda un messaggio d'iniziativa a Francesco su Telegram, come Hṛdaya. Passa dal cancello: "
+     "description": "Manda un messaggio d'iniziativa alla persona su Telegram, come Hṛdaya. Passa dal cancello: "
                     "di notte (dall'ora di letto all'alzata) resta in attesa e si fonde col messaggio del mattino; "
                     "urgent=true solo per red flag clinici.",
      "inputSchema": _schema({"text": {"type": "string"}, "kind": KIND,
@@ -158,11 +173,11 @@ TOOLS = [
      "inputSchema": _schema({"player_json": {"type": "string"}, "text": {"type": "string"},
                              "in_reply_to": REPLY_TO, "dry_run": {"type": "boolean"}}, ["player_json"])},
     {"name": "telegram_inbox",
-     "description": "Messaggi in attesa nella coda Telegram (di Francesco e, kind=system, eventi per Hṛdaya: "
+     "description": "Messaggi in attesa nella coda Telegram (della persona e, kind=system, eventi per Hṛdaya: "
                     "alzata rilevata, seduta registrata, red flag).",
      "inputSchema": _schema({"include_system": {"type": "boolean"}})},
     {"name": "telegram_reply",
-     "description": "Risponde a un messaggio di Francesco della inbox e lo segna fatto. Di giorno parte subito; "
+     "description": "Risponde a un messaggio della persona della inbox e lo segna fatto. Di giorno parte subito; "
                     "nella finestra di silenzio passa dal cancello (esce dopo l'alzata), salvo urgent=true su un "
                     "messaggio con red flag. Agli eventi di sistema (kind=system) non si risponde.",
      "inputSchema": _schema({"id": {"type": "string"}, "text": {"type": "string"},
@@ -170,7 +185,7 @@ TOOLS = [
                              "done": {"type": "boolean"}, "urgent": {"type": "boolean"},
                              "buttons": BUTTONS, "practice": PRACTICE}, ["id", "text"])},
     {"name": "telegram_react",
-     "description": "Mette una reazione emoji su un messaggio di Francesco della inbox: un feedback leggero "
+     "description": "Mette una reazione emoji su un messaggio della persona della inbox: un feedback leggero "
                     "(dato registrato, seduta fatta, buona notizia), al posto di una risposta di sole parole "
                     "o prima della risposta. Non sempre: quando dice qualcosa. Di notte non parte. "
                     "done=true se la reazione basta come risposta.",
@@ -203,12 +218,27 @@ TOOLS = [
                                           "(se la persona lo chiede; default: brano)"},
                              "voice_profile": VOICE_PROFILE,
                              "in_reply_to": REPLY_TO}, ["script", "title", "in_reply_to"])},
+    {"name": "telegram_send_song",
+     "description": "Prepara e manda una CANZONE CANTATA (ACE-Step in locale, se le canzoni sono accese nella "
+                    "config: song.enabled) come brano audio. lyrics = testo da cantare con i tag di sezione "
+                    "([Intro], [Verse 1], [Chorus], [Bridge - almost whispered], [Outro]…), scritto da chi parla "
+                    "(il Kaula per le canzoni della pratica); style = una riga in inglese sul suono (voce, "
+                    "strumenti, atmosfera; niente nomi di artisti). Solo su richiesta (in_reply_to). Risponde "
+                    "subito «preparing»: la generazione richiede qualche minuto, l'invio è in background "
+                    "(errore → evento voice_failed). Di notte non parte.",
+     "inputSchema": _schema({"lyrics": {"type": "string"}, "style": {"type": "string"},
+                             "title": {"type": "string"}, "caption": {"type": "string"},
+                             "duration_s": {"type": "integer", "description": "30-480, default 240"},
+                             "bpm": {"type": "integer"}, "key": {"type": "string", "description": "es. D major"},
+                             "language": {"type": "string", "description": "lingua del canto, default it"},
+                             "performer": {"type": "string", "description": "default Kaula"},
+                             "in_reply_to": REPLY_TO}, ["lyrics", "style", "title", "in_reply_to"])},
     {"name": "hridaya_service",
      "description": "Accende/spegne il servizio nella sessione (battito che dice al bot che Hṛdaya c'è) "
                     "e riporta cosa si sta ascoltando.",
      "inputSchema": _schema({"action": {"type": "string", "enum": ["on", "off", "status"]},
                              "force": {"type": "boolean", "description": "accendi anche se il servizio batte "
-                                       "già in un'altra sessione (solo su richiesta esplicita di Francesco)"}},
+                                       "già in un'altra sessione (solo su richiesta esplicita della persona)"}},
                             ["action"])},
     {"name": "gate_status",
      "description": "Stato del cancello: silenzio, ora di letto, alzata rilevata, messaggi della sera/mattino "
@@ -217,6 +247,22 @@ TOOLS = [
     {"name": "reviews_due",
      "description": "Review dei coach dovute adesso (calendario di Hṛdaya in data/hridaya/calendar.json).",
      "inputSchema": _schema({})},
+    {"name": "log_plan",
+     "description": "Il registro delle cose da loggare (data/hridaya/log_plan.json). list = voci e cosa manca oggi; "
+                    "add = nuova voce (item: title, why, origin, when morning|evening, days, start?, fields "
+                    "[{key, ask, options, target (path a punti nel diario, due livelli almeno, es. bowel.bristol), "
+                    "skip_when?}], followup? {action council|ask|review, question, cost}); proposed=true (default) "
+                    "se la propone il consiglio o un agente: il bot chiede Sì/No all'apertura del prossimo momento "
+                    "(dopo il messaggio del mattino o della sera); false se l'ha decisa la persona. "
+                    "set = status active|paused|closed; record = scrive una risposta data a parole (id, key, "
+                    "value, date?); followup_done = follow-up di fine voce fatto. Le domande coi bottoni e i "
+                    "nudge li manda il bot da solo, dopo i messaggi del mattino e della sera.",
+     "inputSchema": _schema({"action": {"type": "string", "enum": ["list", "add", "set", "record", "followup_done"]},
+                             "item": {"type": "object"}, "proposed": {"type": "boolean"},
+                             "id": {"type": "string"}, "status": {"type": "string",
+                                                                  "enum": ["active", "paused", "closed"]},
+                             "key": {"type": "string"}, "value": {"type": "string"},
+                             "date": {"type": "string"}}, ["action"])},
     {"name": "review_done",
      "description": "Segna fatta una review del calendario.",
      "inputSchema": _schema({"job": {"type": "string"}}, ["job"])},
@@ -233,7 +279,7 @@ def _reply_target(msg_id: str) -> tuple[int, dict]:
     if not row:
         raise ToolError(f"messaggio {msg_id} non trovato nella inbox")
     if row.get("kind") == "system":
-        raise ToolError(f"{msg_id} è un evento di sistema ({row.get('event')}), non un messaggio di Francesco: "
+        raise ToolError(f"{msg_id} è un evento di sistema ({row.get('event')}), non un messaggio della persona: "
                         "non si risponde a un evento. Per un'iniziativa usa telegram_send senza in_reply_to "
                         "(passa dal cancello); poi segna l'evento fatto.")
     return int(row.get("chat_id") or cc.primary_chat_id()), row
@@ -331,6 +377,17 @@ def _reply_text(msg_id: str, text: str, parse_mode: str | None, urgent: bool, do
     return {**out, "done": done}
 
 
+def _song_line() -> str:
+    try:
+        import song
+        if not song.config():
+            return "canzoni: spente"
+        errs = song.check()
+        return "canzoni: accese (ACE-Step)" if not errs else f"canzoni: accese ma {errs[0]}"
+    except Exception as e:  # noqa: BLE001
+        return f"canzoni: config non valida ({e})"
+
+
 def _voice_line() -> str:
     try:
         import voice_note as vn
@@ -391,15 +448,73 @@ def _voice_job(name: str, args: dict) -> dict:
     return {**r, "done": bool(reply)}
 
 
+def _song_job(args: dict) -> dict:
+    import song
+    import voice_note as vn
+    cfg = song.config()
+    if not cfg:
+        raise ToolError("canzoni spente: config/hridaya.json → song (ACE-Step installato, song.enabled)")
+    try:
+        song._python(cfg)
+    except song.SongError as e:
+        raise ToolError(str(e)) from e
+    try:
+        params = song.validate(args.get("lyrics") or "", args.get("style") or "", args.get("duration_s"),
+                               args.get("bpm"), args.get("key"), args.get("language"))
+    except song.SongError as e:
+        raise ToolError(str(e)) from e
+    reply = args["in_reply_to"]
+    chat = _reply_target(reply)[0]
+    if _is_night():
+        return {"status": "silent", "note": "finestra di silenzio: niente canzoni di notte"}
+    payload = {"chat_id": chat, "title": args.get("title") or "", "params": params,
+               "performer": args.get("performer") or "Kaula", "caption": args.get("caption") or "",
+               "reply_to": reply}
+    r = vn.create_job("song", f"reply:{reply}", payload)
+    tq.mark_done(reply)
+    return {**r, "done": True}
+
+
 def _installed_plugins() -> set[str]:
     from _plugins import plugin_scripts
     return {p for p in ("coach-longevita", "dream-agent") if plugin_scripts(p)}
+
+
+def _log_plan(args: dict) -> Any:
+    import log_plan as lp
+    act = args.get("action")
+    try:
+        if act == "list":
+            st = lp.load()
+            return {"today": lp.summary(), "followups_due": lp.followups_due(st),
+                    "items": {k: {x: v.get(x) for x in ("title", "status", "when", "start", "end", "origin")}
+                              for k, v in st["items"].items()}}
+        if act == "add":
+            iid = lp.add(args.get("item"), proposed=args.get("proposed", True))
+            return {"id": iid, "status": lp.load()["items"][iid]["status"]}
+        if act == "set":
+            it = lp.set_status(args.get("id") or "", args.get("status") or "")
+            return {"id": args["id"], "status": it["status"], "start": it.get("start"), "end": it.get("end")}
+        if act == "record":
+            day = args.get("date") or lp._today()
+            new = lp.record(args.get("id") or "", args.get("key") or "", args.get("value") or "", day)
+            return {"status": "ok" if new else "already_recorded", "date": day}
+        if act == "followup_done":
+            lp.followup_done(args.get("id") or "")
+            return {"status": "ok"}
+    except lp.PlanError as e:
+        raise ToolError(str(e)) from e
+    raise ToolError("action: list | add | set | record | followup_done")
 
 
 def call_tool(name: str, args: dict) -> Any:
     if not cc.is_data_repo():
         raise ToolError(f"non sono in un repo dati ({cc.data_root()} senza data/profile.json): "
                         "apri la sessione nel repo dati o imposta WELLNESS_DATA")
+    if name == "telegram_send_song":
+        return _song_job(args)
+    if name == "log_plan":
+        return _log_plan(args)
     if name == "telegram_send":
         if args.get("in_reply_to"):
             return _reply_text(args["in_reply_to"], args["text"], args.get("parse_mode"),
@@ -501,7 +616,7 @@ def call_tool(name: str, args: dict) -> Any:
         act = args["action"]
         listening = [f"coda: {tq.inbox_path()}", "cancello: silenzio notturno, alzata, sera",
                      f"review: {', '.join(sorted(_installed_plugins())) or 'nessun coach installato'}",
-                     _voice_line()]
+                     _voice_line(), _song_line()]
         if act == "on":
             why = None if args.get("force") else session_state.guard(cc.rhythm()["session_heartbeat_max_age_s"])
             if why:
@@ -509,7 +624,13 @@ def call_tool(name: str, args: dict) -> Any:
             SERVICE.start(listening, yield_to_dedicated=not args.get("force"))
         elif act == "off":
             SERVICE.stop()
-        return {"on": SERVICE.on, "active_for_bot": session_state.is_active(), "listening": listening,
+        la, rc = session_state.listen_age_s(), cc.rhythm()
+        active = session_state.is_active(max_age_s=rc["session_heartbeat_max_age_s"],
+                                         listen_max_s=rc["session_listen_max_age_s"])
+        return {"on": SERVICE.on, "active_for_bot": active, "listening": listening,
+                "listening_age_s": None if la is None else int(la),
+                "listening_note": ("l'ascolto della coda è fermo: riarma il Monitor (skill servizio, Ascolto)"
+                                   if SERVICE.on and la is not None and la > rc["session_nudge_after_s"] else "ok"),
                 "inbox": str(tq.inbox_path()), "pending": len(tq.list_pending()),
                 "gate": push_gate.status(session_active=session_state.is_active())}
     if name == "gate_status":
@@ -552,6 +673,9 @@ def handle(req: Any) -> dict | list | None:
             p = req.get("params") or {}
             try:
                 out = call_tool(p.get("name"), p.get("arguments") or {})
+                old = outdated()
+                if old and isinstance(out, dict):
+                    out = {**out, "server_outdated": old}
                 result = {"content": [{"type": "text", "text": json.dumps(out, ensure_ascii=False, default=str)}],
                           "isError": False}
             except (ToolError, tt.TelegramError, RuntimeError, OSError, ValueError, KeyError) as e:

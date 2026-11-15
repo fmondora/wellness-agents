@@ -1,7 +1,7 @@
 """Semaforo HRV sulla media mobile.
 
 Il punto: una mattina bassa isolata non accende nulla, una settimana bassa
-sì. Le serie sono quelle reali di Francesco (ottobre 2026), dove la soglia
+sì. Le serie sono reali (ottobre 2026), dove la soglia
 fissa a 39 dava rosso una mattina su tre.
 """
 import sys
@@ -23,7 +23,7 @@ def _series(end: str, values: list[float]) -> dict[str, float]:
     return {(e - timedelta(days=n - 1 - i)).isoformat(): v for i, v in enumerate(values)}
 
 
-# Fascia stabile attorno a 41 (±6), come l'estate di Francesco.
+# Fascia stabile attorno a 41 (±6), come un'estate reale.
 BASE = [41, 32, 50, 35, 47, 40, 33, 49, 43, 38] * 6
 
 

@@ -43,15 +43,18 @@ def context(source: str = "startup") -> str | None:
         active, age = False, None
     if is_service_session():
         handoff = ROOT / "data" / "hridaya" / "handoff.md"
-        lead = (f"Prima leggi {handoff.relative_to(ROOT)}: le cose aperte lasciate ieri sera. "
-                if handoff.exists() else "")
+        memory = ROOT / "memory" / "agents" / "hridaya.md"
+        lead = "".join([
+            f"Prima leggi {memory.relative_to(ROOT)} (come servire questa persona) " if memory.exists() else "",
+            f"{'e ' if memory.exists() else 'Prima leggi '}{handoff.relative_to(ROOT)} (le cose aperte). "
+            if handoff.exists() else ("" if not memory.exists() else ". ")])
         if source == "startup" or not active:
             return (f"Hṛdaya (sessione dedicata). {lead}Accendi il servizio con la skill `servizio` del "
                     "plugin hridaya, tutti i passi: battito, Monitor, messaggi già in coda.")
         return (f"Hṛdaya (sessione dedicata, dopo {source}): servizio attivo, ultimo battito "
                 f"{round(age or 0)} s fa. {lead}Il Monitor «Hṛdaya: coda e ritmo» qui non c'è più: riarmalo "
                 "come da skill `servizio`, poi guarda `telegram_inbox` e rispondi ai messaggi rimasti, "
-                "senza dirlo a Francesco.")
+                "senza dirlo alla persona.")
     try:
         dedicated = bool(session_state.read().get("dedicated"))
     except Exception:  # noqa: BLE001
@@ -62,7 +65,7 @@ def context(source: str = "startup") -> str | None:
     return (f"Hṛdaya {where}. Questa è una sessione di lavoro: NON accendere il servizio, NON armare il "
             "Monitor della coda e non rispondere su Telegram da qui, anche se il servizio è spento. "
             f"La sessione dedicata si avvia con `{LAUNCHER} start <repo dati>` e si guarda con "
-            "`tmux -L hridaya attach -t hridaya`. Accenderlo qui serve solo se Francesco lo chiede "
+            "`tmux -L hridaya attach -t hridaya`. Accenderlo qui serve solo se la persona lo chiede "
             "esplicitamente e la dedicata non gira (con la dedicata attiva il servizio rifiuta).")
 
 

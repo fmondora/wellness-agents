@@ -3,11 +3,12 @@
 
 Fa solo trasporto e cose deterministiche:
   1. long polling (getUpdates) e menu comandi (setMyCommands)
-  2. comandi locali: /log /nota /sonno /allenamento /help
+  2. comandi locali: /diario (/journal, /log) /nota /sonno /allenamento /chiudi /help
   3. red flag clinici → escalation immediata, sempre
-  4. messaggi di Francesco → coda data/telegram/inbox.jsonl (li legge la sessione accesa)
+  4. messaggi della persona → coda data/telegram/inbox.jsonl (li legge la sessione accesa)
      sessione spenta → una riga sola «Hṛdaya non è attivo adesso…» (una volta per assenza)
-  5. bottoni di risposta (callback_query, choices.py) → la scelta va in coda come un suo messaggio
+  5. bottoni di risposta (callback_query, choices.py) → la scelta va in coda come un suo messaggio;
+     bottoni del registro (log_plan.py) e del diario (journal.py) → li gestisce il bot da solo
   5b. web_app_data del player → seduta salvata (formato del coach) + evento per la sessione
   6. outbox: risposte scritte via CLI (sent=false) → Telegram; quelle non di risposta
      passano dal cancello come push
@@ -21,7 +22,10 @@ Repo dati: cwd o WELLNESS_DATA (lo shim del repo dati lo imposta).
 from __future__ import annotations
 
 import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -137,13 +141,31 @@ def check_red_flags(text: str) -> bool:
 def format_log_summary() -> str:
     path = today_log_path()
     if not path.exists():
-        return f"Nessun diario per oggi ({today_str()})."
-    log = json.loads(path.read_text(encoding="utf-8"))
-    morning = log.get("morning") or {}
-    lines = [f"📋 Diario {today_str()}", f"HRV: {morning.get('hrv', '—')} | FC: {morning.get('heart_rate', '—')}"]
-    if log.get("notes"):
-        lines.append(f"Note:\n{str(log['notes'])[:800]}")
+        lines = [f"Nessun diario per oggi ({today_str()})."]
+    else:
+        try:
+            log = json.loads(path.read_text(encoding="utf-8"))
+        except ValueError:
+            log = {}
+        log = log if isinstance(log, dict) else {}
+        morning = log.get("morning") if isinstance(log.get("morning"), dict) else {}
+        lines = [f"📋 Diario {today_str()}", f"HRV: {morning.get('hrv', '—')} | FC: {morning.get('heart_rate', '—')}"]
+        if log.get("notes"):
+            lines.append(f"Note:\n{str(log['notes'])[-800:]}")
+    try:
+        import log_plan as lp
+        plan = lp.summary(today_str())
+    except Exception as e:  # noqa: BLE001
+        print(f"/diario, registro: {e}", file=sys.stderr)
+        plan = []
+    if plan:
+        lines.append("Da registrare:\n" + "\n".join(f"· {x}" for x in plan))
     return "\n".join(lines)
+
+
+def wp_close_text() -> str:
+    import workout_player as wp
+    return wp.CLOSE_TEXT
 
 
 def help_text() -> str:
@@ -153,7 +175,8 @@ Sono Hṛdaya, il cuore del tuo consiglio: ti ascolto, tengo il quadro della gio
 
 Comandi:
 /allenamento — riapre l'ultimo allenamento (timer)
-/log — il diario di oggi
+/chiudi — chiude l'allenamento e toglie il bottone «Avvia allenamento»
+/diario — il diario di oggi in ordine, con i bottoni per aggiornarlo (anche /journal)
 /nota testo — annota nel diario
 /sonno — com'è andata la notte
 /meditazione — una meditazione guidata da ascoltare in cuffia (es. /meditazione 30 respiro)
@@ -166,6 +189,12 @@ Di notte, dall'ora di letto all'alzata, non ti scrivo io."""
 
 # --- canale -------------------------------------------------------------------------
 
+NUDGE_TEXT = ("L'ascolto della coda è fermo: riarma subito il Monitor (skill servizio, Ascolto) "
+              "e guarda i messaggi in coda.")      # niente cifre: in un menu sceglierebbero un'opzione
+# a schermo c'è un dialog (permesso, domanda, selettore) o un turno in corso: i tasti non vanno digitati
+SCREEN_BLOCKED = ("Do you want", "Esc to cancel", "esc to interrupt", "Yes, and don't ask", "❯ 1.",
+                  "Enter to confirm", "Enter to select", "Press Enter", "(y/n)")
+NUDGE_ENTER_DELAY_S = 1.0
 TYPING_EVERY_S = 4      # Telegram tiene «sta scrivendo…» per ~5 s: si rinnova prima che sparisca
 TYPING_MAX_S = 180      # oltre, un messaggio rimasto in coda non è più «in lavorazione»
 
@@ -177,7 +206,11 @@ class Bot:
         self.call = call
         self.cfg = cc.rhythm()
         self._session_active = session_active or (
-            lambda: session_state.is_active(max_age_s=self.cfg["session_heartbeat_max_age_s"]))
+            lambda: session_state.is_active(max_age_s=self.cfg["session_heartbeat_max_age_s"],
+                                            listen_max_s=self.cfg["session_listen_max_age_s"]))
+        self._nudged_at = 0.0
+        import plugin_version
+        self._started_version = plugin_version.running()
         self.conflicts = 0
         self.ok_polls = 0
 
@@ -228,9 +261,9 @@ class Bot:
         if low.startswith("/start") or low.startswith("/help"):
             self.send(chat_id, help_text())
             return "help"
-        if low.startswith("/log"):
-            self.send(chat_id, format_log_summary())
-            return "log"
+        if re.match(r"^/(diario|journal|log)\b", low):
+            self.send_journal(chat_id)
+            return "diario"
         if low.startswith("/nota"):
             note = text[5:].strip()
             if not note:
@@ -239,6 +272,13 @@ class Bot:
             append_log_note(note)
             self.send(chat_id, f"✓ Nota salvata — diario {today_str()}")
             return "nota"
+        if low.startswith("/chiudi") or text == wp_close_text():
+            import workout_player as wp
+            try:
+                wp.close_keyboard(self.token, chat_id, call=self.call)
+            except Exception as e:  # noqa: BLE001
+                print(f"/chiudi error: {e}", file=sys.stderr)
+            return "chiudi"
         if low.startswith("/allenamento"):
             self.send_workout_button(chat_id)
             return "allenamento"
@@ -272,7 +312,7 @@ class Bot:
                                                        datetime.now(timezone.utc).isoformat()))
 
     def maybe_wake_from_message(self) -> None:
-        """Un messaggio di Francesco al mattino, dopo il pavimento, vale come alzata."""
+        """Un messaggio della persona al mattino, dopo il pavimento, vale come alzata."""
         now = now_local()
         st = push_gate.load_state()
         m = push_gate.morning_of(now, self.cfg)
@@ -312,7 +352,7 @@ class Bot:
     def _record_wake(self, m, rec: dict) -> None:
         push_gate._update_state(lambda s: s.setdefault("wake", {}).__setitem__(m.isoformat(), rec))
         if self.session_active():
-            tq.enqueue_system("wake", f"Francesco ha scritto ({rec['source']}, alzata {rec['at']}): è sveglio. "
+            tq.enqueue_system("wake", f"La persona ha scritto ({rec['source']}, alzata {rec['at']}): è sveglia. "
                                       "Tocca al messaggio del mattino (notte + scadenze 48 h).",
                               {"date": m.isoformat(), **rec}, dedup_key=f"wake-{m.isoformat()}")
 
@@ -407,6 +447,10 @@ class Bot:
             return "ignorato"
         if (cq.get("data") or "").startswith("pr:"):
             return self.handle_practice(cq, chat_id, msg)
+        if (cq.get("data") or "").startswith("lg:"):
+            return self.handle_log_tap(cq, chat_id, msg)
+        if (cq.get("data") or "").startswith("dj:"):
+            return self.handle_journal_tap(cq, chat_id, msg)
         res = choices.tap(cq.get("data") or "", tap_id=cq.get("id"))
         outcome = f"bottone-{res['action']}"
         if res["action"] == "answer":
@@ -448,6 +492,168 @@ class Bot:
             print(f"pratica, coda/diario: {e}", file=sys.stderr)
         self._ack_callback(cq, chat_id, msg, res)
         return f"pratica-{res['action']}"
+
+    def handle_log_tap(self, cq: dict, chat_id: int, msg: dict) -> str:
+        """Tocco su una domanda del registro (log_plan.py): lo registra il bot, senza la sessione,
+        e lo stesso messaggio passa alla domanda dopo."""
+        import log_plan as lp
+        try:
+            res = lp.tap(cq.get("data") or "")
+        except Exception as e:  # noqa: BLE001 — il tocco ha sempre una risposta
+            print(f"registro, tocco: {e}", file=sys.stderr)
+            res = {"action": "error", "toast": "Non sono riuscito a registrarlo, riprova"}
+        try:
+            self.call(self.token, "answerCallbackQuery", callback_query_id=cq.get("id"),
+                      text=res.get("toast") or None)
+        except Exception as e:  # noqa: BLE001
+            print(f"answerCallbackQuery: {e}", file=sys.stderr)
+        if msg.get("message_id") and res.get("text"):    # stale: solo il toast, il messaggio non si tocca
+            try:
+                self.call(self.token, "editMessageText", chat_id=chat_id, message_id=msg["message_id"],
+                          text=res["text"], parse_mode="HTML",
+                          reply_markup=res.get("markup") or {"inline_keyboard": []})
+            except Exception as e:  # noqa: BLE001 — la risposta è già nel diario
+                print(f"registro, modifica del messaggio: {e}", file=sys.stderr)
+        return f"registro-{res['action']}"
+
+    def send_journal(self, chat_id: int) -> None:
+        """/diario: il diario di oggi in ordine, con i bottoni per aggiornarlo."""
+        import journal
+        try:
+            text, info = journal.text(today_str())
+            self.send(chat_id, text, parse_mode="HTML", reply_markup=journal.markup(info))
+        except Exception as e:  # noqa: BLE001 — il comando risponde sempre qualcosa
+            print(f"/diario: {e}", file=sys.stderr)
+            self.send(chat_id, format_log_summary())
+
+    def handle_journal_tap(self, cq: dict, chat_id: int, msg: dict) -> str:
+        """«✍️ Aggiorna il diario» → in coda per la sessione (le domande le fa Hṛdaya, una alla volta);
+        «📋 Registra» → la domanda del registro, subito, dal bot."""
+        import journal
+        data = cq.get("data") or ""
+        toast = ""
+        outcome = "diario-noop"
+        if data == "dj:registra":
+            if push_gate.is_silent(now_local(), cc.rhythm(), push_gate.load_state()):
+                toast = "Di notte no: te lo chiedo domattina"
+            else:
+                toast = "" if self.send_log_question(chat_id) else "Niente da registrare adesso"
+            outcome = "diario-registra"
+        elif data == "dj:aggiorna":
+            waiting = any(r.get("text") == journal.UPDATE_TEXT and r.get("chat_id") == chat_id
+                          for r in tq.list_pending(include_system=False))
+            if waiting:                                    # secondo tocco: una richiesta sola in coda
+                toast, outcome = "Ci sto già arrivando", "diario-gia-chiesto"
+            else:
+                user = (cq.get("from") or {}).get("username", "?")
+                tq.enqueue(chat_id, journal.UPDATE_TEXT, user)
+                toast = "Arrivo con le domande" if self.session_active() else ""
+                outcome = "diario-aggiorna"
+        try:
+            self.call(self.token, "answerCallbackQuery", callback_query_id=cq.get("id"), text=toast or None)
+        except Exception as e:  # noqa: BLE001
+            print(f"answerCallbackQuery: {e}", file=sys.stderr)
+        if outcome == "diario-aggiorna" and not self.session_active():
+            self.notify_inactive(chat_id)
+        return outcome
+
+    def send_log_question(self, chat_id: int) -> bool:
+        """«📋 Registra» di /diario: se c'è qualcosa da registrare adesso, la domanda coi bottoni (di notte no)."""
+        import log_plan as lp
+        if push_gate.is_silent(now_local(), cc.rhythm(), push_gate.load_state()):
+            return False
+        m = None
+        try:
+            m = lp.ask_now(today_str(), lp.ask_scope(now_local()))
+            if not m:
+                return False
+            self.send(chat_id, m["text"], parse_mode="HTML", reply_markup=m["markup"])
+            return True
+        except Exception as e:  # noqa: BLE001
+            print(f"/diario, domanda del registro: {e}", file=sys.stderr)
+            if m and not isinstance(e, tt.PartialSendError):
+                lp.undo({"tok": m.get("tok")})
+            return False
+
+    def log_tick(self, now: datetime | None = None) -> list[str]:
+        """Registro: proposte, domande del mattino e della sera, «continuo?». Partono dopo il messaggio
+        che apre il momento, mai di notte; un messaggio non partito si ritenta al giro dopo."""
+        import log_plan as lp
+        now = now or now_local()
+        cfg, st = cc.rhythm(), push_gate.load_state()
+        chat = cc.primary_chat_id()
+        if not chat:
+            return []
+        out = []
+        for m in lp.due_messages(now, cfg, st, silent=push_gate.is_silent(now, cfg, st)):
+            try:
+                self.send(chat, m["text"], parse_mode="HTML", reply_markup=m["markup"])
+                out.append(m.get("kind") or "domanda")
+            except Exception as e:  # noqa: BLE001
+                print(f"registro, invio: {e}", file=sys.stderr)
+                if not isinstance(e, tt.PartialSendError):    # un pezzo è partito: niente doppioni
+                    lp.undo(m)
+        return out
+
+    def release_send(self, text: str) -> str:
+        """Novità di versione: di giorno un messaggio a sé (mai fuso nella sera del Kaula), di notte il
+        cancello (esce col mattino). Se l'invio fallisce, il cancello lo ritenta."""
+        now = now_local()
+        if not push_gate.is_silent(now, cc.rhythm(), push_gate.load_state()):
+            chat = cc.primary_chat_id()
+            try:
+                self.send(chat, text, parse_mode="HTML")
+                tq.record_sent(f"release-{now:%Y%m%d-%H%M%S}", chat, text, via="release")
+                return "sent"
+            except Exception as e:  # noqa: BLE001
+                print(f"novità, invio diretto: {e}", file=sys.stderr)
+        import hashlib
+        return push_gate.submit(text, source="release", kind="push", parse_mode="HTML",
+                                push_id="release-" + hashlib.sha1(text.encode()).hexdigest()[:12])
+
+    def listener_tick(self, run: Callable[..., Any] = subprocess.run) -> str | None:
+        """La sessione dedicata è viva ma non ascolta la coda (Monitor scaduto e non riarmato): le
+        scrive nel terminale di riarmarlo. Al massimo una volta ogni `session_nudge_every_s`; se non
+        basta, `service_session.sh tick` la riavvia."""
+        cfg = self.cfg
+        st = session_state.read()
+        if not st.get("dedicated") or not session_state.is_alive(max_age_s=cfg["session_heartbeat_max_age_s"]):
+            return None
+        la = session_state.listen_age_s()
+        if la is None or la <= cfg["session_nudge_after_s"]:
+            return None
+        if time.monotonic() - self._nudged_at < cfg["session_nudge_every_s"]:
+            return None
+        self._nudged_at = time.monotonic()
+        name = os.environ.get("HRIDAYA_TMUX_SESSION", "hridaya")
+        try:
+            tmux = next((c for c in (shutil.which("tmux"), "/opt/homebrew/bin/tmux", "/usr/local/bin/tmux")
+                         if c and Path(c).exists()), "tmux")       # launchd ha un PATH corto
+            screen = run([tmux, "-L", "hridaya", "capture-pane", "-p", "-t", f"={name}:"],
+                         capture_output=True, text=True, timeout=10)
+            tail = "\n".join((screen.stdout or "").splitlines()[-30:])
+            if screen.returncode != 0:
+                return f"ascolto fermo da {int(la)} s, sessione tmux non leggibile"
+            if any(x in tail for x in SCREEN_BLOCKED) or re.search(r"… \(\d", tail):
+                return f"ascolto fermo da {int(la)} s, ma la sessione è occupata o ha un dialog: non digito"
+            # testo e invio separati: scritti insieme il terminale li prende per un incollato e non invia
+            r = run([tmux, "-L", "hridaya", "send-keys", "-t", f"={name}:", "-l", NUDGE_TEXT],
+                    capture_output=True, text=True, timeout=10)
+            if r.returncode == 0:
+                time.sleep(NUDGE_ENTER_DELAY_S)
+                r = run([tmux, "-L", "hridaya", "send-keys", "-t", f"={name}:", "Enter"],
+                        capture_output=True, text=True, timeout=10)
+        except (OSError, subprocess.SubprocessError) as e:
+            return f"ascolto fermo da {int(la)} s, non riesco a svegliare la sessione: {e}"
+        if r.returncode != 0:
+            return f"ascolto fermo da {int(la)} s, tmux: {(r.stderr or '').strip()[:120]}"
+        return f"ascolto fermo da {int(la)} s: ho chiesto alla sessione di riarmarlo"
+
+    def outdated(self) -> str | None:
+        """È stata installata una versione più nuova del plugin: il bot esce e launchd lo rilancia con quella."""
+        import plugin_version
+        now = plugin_version.latest()
+        return now if now and self._started_version and now != self._started_version else None
 
     def practice_tick(self, now: datetime | None = None) -> list[str]:
         """Pratiche finite da mezz'ora: evento `practice_done` per la sessione."""
@@ -522,11 +728,18 @@ def main() -> int:
         wp.set_bot_commands(token)
     except Exception as e:  # noqa: BLE001
         print(f"setMyCommands: {e}", file=sys.stderr)
+    try:
+        import release
+        if release.announce(bot.release_send):
+            print(f"novità della versione {release.version()} annunciate")
+    except Exception as e:  # noqa: BLE001 — le novità non devono fermare il bot
+        print(f"novità: {e}", file=sys.stderr)
 
     # «sta scrivendo…» finché la sessione lavora a una risposta (il long polling blocca il ciclo)
     threading.Thread(target=bot.typing_loop, args=(threading.Event(),), daemon=True,
                      name="typing").start()
     offset = 0
+    last_version_check = time.monotonic()
     while True:
         try:
             bot.flush_outbox()
@@ -537,6 +750,23 @@ def main() -> int:
                     print(f"[{now_local().strftime('%H:%M')}] alzata: messaggio scritto prima del pavimento")
             except Exception as e:  # noqa: BLE001
                 print(f"alzata da messaggio: {e}", file=sys.stderr)
+            if time.monotonic() - last_version_check >= 60:
+                last_version_check = time.monotonic()
+                newer = bot.outdated()
+                if newer:
+                    print(f"[{now_local().strftime('%H:%M')}] installata la versione {newer}: riparto")
+                    return 0
+            try:
+                woke = bot.listener_tick()
+                if woke:
+                    print(f"[{now_local().strftime('%H:%M')}] sessione: {woke}")
+            except Exception as e:  # noqa: BLE001
+                print(f"sessione, ascolto: {e}", file=sys.stderr)
+            try:
+                for what in bot.log_tick():
+                    print(f"[{now_local().strftime('%H:%M')}] registro: {what}")
+            except Exception as e:  # noqa: BLE001
+                print(f"registro: {e}", file=sys.stderr)
             try:
                 for pid in bot.practice_tick():
                     print(f"[{now_local().strftime('%H:%M')}] pratica {pid}: lettura in coda")

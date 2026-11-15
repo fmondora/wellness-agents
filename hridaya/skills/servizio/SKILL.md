@@ -13,20 +13,29 @@ Repo dati = directory corrente (se manca `data/profile.json` → skill `setup`).
 `${CLAUDE_PLUGIN_ROOT}/scripts/service_session.sh` in tmux («hridaya», socket privato `-L hridaya`);
 launchd la controlla ogni 10' e la fa rinascere ogni notte fra le 04:00 e le 06:00 (dentro il silenzio: contesto azzerato, niente perso, lo
 stato è su file). Le sessioni di lavoro e di sviluppo nel repo dati **non** accendono il
-servizio. Se qui `HRIDAYA_SERVICE` non c'è e Francesco chiede di accendere, digli che il
+servizio. Se qui `HRIDAYA_SERVICE` non c'è e la persona chiede di accendere, dille che il
 servizio vive nella sessione dedicata (`service_session.sh start <repo>`, si guarda con
 `tmux -L hridaya attach -t hridaya`). Con la dedicata attiva `hridaya_service(on)` e il
-watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e Francesco insiste.
+watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e la persona insiste.
 
 ## Consegne fra un giorno e l'altro
 
-- **All'avvio**: se c'è `data/hridaya/handoff.md`, leggilo prima di tutto. Sono le cose
-  aperte di ieri. Non rilanciarle a Francesco: tienile come quadro e chiudile quando tornano.
+- **All'avvio**: leggi `memory/agents/hridaya.md` (come servire questa persona: preferenze,
+  decisioni sul canale) e, se c'è, `data/hridaya/handoff.md` (le cose aperte di ieri). Non
+  rilanciarle alla persona: tienile come quadro e chiudile quando tornano.
 - **Dopo il messaggio della sera** (o comunque prima dell'ora di letto): riscrivi
   `data/hridaya/handoff.md`, al massimo 15 righe in prosa: domande in attesa di risposta
   (scelte coi bottoni ancora aperte, cosa ha chiesto chi), decisioni prese oggi che domani
   contano, vincoli di domani (prelievo, viaggio, palestra), cose promesse. Niente numeri
   del corpo: quelli si rileggono dai file. Sovrascrivi, non accodare.
+- **Nello stesso momento, la memoria**: le entry di oggi in `memory/agents/hridaya.md` secondo
+  AGENT.md, «Come impari» (al massimo tre, nessuna se non è successo niente di quel tipo). Le
+  consegne scadono domani; la memoria resta.
+- **Anche di giorno**, dopo una decisione che conta (un'osservazione attivata, un consiglio
+  proposto in attesa del sì, una cosa promessa): una riga in `handoff.md`. La sessione può
+  ripartire da sola (versione nuova, ascolto fermo) e quella nuova sa solo ciò che è scritto.
+- **Se nel terminale arriva «L'ascolto della coda è fermo…»**: l'ha scritto il bot, il Monitor è
+  scaduto e non è stato riarmato. Riarmalo subito (punto 2, «Ascolto») e guarda la coda.
 
 ## Accendere
 
@@ -66,15 +75,23 @@ watcher rifiutano; accendilo qui (`force`) solo se la dedicata non gira e France
      consegna l'esito firmato con `telegram_send(kind="review")`, poi `review_done(job)`.
      Se la review chiede una conferma (goal da tenere, target, ore di sonno), mettila nei
      bottoni (`buttons`, `multi` per più scelte): la risposta torna come `MSG` con `choice`.
+   - `FOLLOWUP <voce>` → una voce del registro è finita e ha un follow-up (AGENT.md P13):
+     `log_plan(action="list")`, proponi il follow-up con `telegram_send(buttons=…)` e il costo
+     in dispatch; col Sì lancialo con i giorni del diario nel brief; poi
+     `log_plan(action="followup_done", id=…)`, anche col No.
+   - Al `SERA`: `log_plan(action="list")` → se una voce di oggi è ancora vuota, al massimo
+     una riga nel messaggio della sera (P12). Le domande coi bottoni le manda il bot.
 3. **Messaggi già in coda** — se `telegram_inbox` ne ha, processali (skill `telegram`).
 4. **Di' cosa stai ascoltando**, in tre righe: coda Telegram (quanti in attesa), sera alle
    `evening_message` con ora di letto `bedtime`, alzata (stato del cancello: silenzio sì/no,
-   alzata vista alle…), review dovute. E ricorda: la sessione va tenuta aperta sul Mac.
+   alzata vista alle…), review dovute, voci attive del registro. E ricorda: la sessione va tenuta aperta sul Mac.
 
 ## Stato / spegnere
 
 - «sei in ascolto?» → `hridaya_service(action="status")` + `gate_status`, in prosa.
-- «spegni» → ferma il Monitor (TaskStop) e `hridaya_service(action="off")`: da lì il bot
+- «spegni» → ferma il Monitor (TaskStop) e `hridaya_service(action="off")`. Nella sessione dedicata il
+  custode la riaccende entro mezz'ora: per fermarla davvero `service_session.sh stop` e il job launchd
+  della sessione. Da lì il bot
   risponde «non attivo» e sera/mattino vanno in automatico.
 
 ## Regole

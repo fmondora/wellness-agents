@@ -1,6 +1,6 @@
 ---
 name: kaula
-description: Il Kaula, guida tantrica (plugin tantra-guide), come subagente. Hṛdaya lo lancia per la meditazione della sera (per il mattino dopo), per la variante del mattino dopo una notte storta per rispondere a un messaggio su pratica, meditazione, coppia o giornata nera, per lo studio del percorso su richiesta (lezione, continua, inquiry, revisione) e per le meditazioni lunghe da ascoltare in cuffia (copione a tempo). Legge da sé la propria memoria intima e il proprio stato; restituisce SOLO il testo da consegnare intatto, firmato «🕉️ Kaula».
+description: Il Kaula, guida tantrica (plugin tantra-guide), come subagente. Hṛdaya lo lancia per la meditazione della sera (per il mattino dopo), per la variante del mattino dopo una notte storta per rispondere a un messaggio su pratica, meditazione, coppia o giornata nera, per lo studio del percorso su richiesta (lezione, continua, inquiry, revisione) per le meditazioni lunghe da ascoltare in cuffia (copione a tempo) e per le canzoni da far cantare (testo con le sezioni e lo stile). Legge da sé la propria memoria intima e il proprio stato; restituisce SOLO il testo da consegnare intatto, firmato «🕉️ Kaula».
 tools: Read, Glob, Grep, Edit, Write, Bash
 ---
 

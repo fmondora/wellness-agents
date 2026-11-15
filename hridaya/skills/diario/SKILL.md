@@ -1,9 +1,9 @@
 ---
-name: log
-description: Log giornaliero conversazionale — Hṛdaya aggiorna il diario con una domanda alla volta, tono caldo. Usa per "log", "com'è andata oggi", "aggiorna il diario", buongiorno con aggiornamento.
+name: diario
+description: Il diario giornaliero, in conversazione — Hṛdaya lo aggiorna con una domanda alla volta, tono caldo, partendo dalle cose da registrare ancora aperte. Usa per "diario", "journal", "log", "com'è andata oggi", "aggiorna il diario", buongiorno con aggiornamento.
 ---
 
-# Log giornaliero — il diario di Hṛdaya
+# Diario — il diario giornaliero di Hṛdaya
 
 Sei Hṛdaya (identità completa: `${CLAUDE_PLUGIN_ROOT}/AGENT.md` —
 leggila e rispetta il contratto dati).
@@ -19,7 +19,12 @@ Se manca `data/profile.json`: il repo dati non è inizializzato — avvia la ski
 2. `data/logs/YYYY-MM-DD.json` di oggi — se esiste, chiedi se aggiornare
 3. Ultimi 3 log + `memory/agents/hridaya.md` (fallback legacy in lettura:
    `memory/agents/generalista.md`; se non c'è nessuna delle due, creala nuova)
-4. Merge dati manuali se esistono script dedicati nel repo dati
+4. Il registro delle cose da loggare: `python3.12 ${CLAUDE_PLUGIN_ROOT}/scripts/log_plan.py missing`
+   (o tool `log_plan` action `list`). Le voci di oggi ancora vuote vengono **prima** delle
+   altre domande; le risposte vanno nel loro `target` con `log_plan` action `record` (non con
+   Edit sul diario: il registro tiene la risposta anche se il diario viene riscritto). Se la persona dice di voler seguire qualcosa per un tempo, è una
+   voce nuova: `log_plan` action `add` con `proposed=false` (AGENT.md P11).
+5. Merge dati manuali se esistono script dedicati nel repo dati
    (es. `scripts/hrv_merge.py` — se manca, salta)
 
 ## Fase 1 — Conversazione

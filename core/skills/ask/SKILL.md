@@ -61,6 +61,30 @@ Italiano, caldo, diretto: lettura principale (2-4 righe), cosa emerge
 (1-2 punti), **un passo possibile** concreto. Target 250-400 parole.
 Mai elenchi infiniti, mai JSON a schermo.
 
+## Fase 6b — Osservazione da seguire (se il passo la chiede)
+
+Se il passo possibile chiede di osservare o registrare qualcosa per più giorni (un diario, un
+sintomo, l'aderenza a un cambiamento) e il plugin `hridaya` è installato, scrivi la proposta
+nel suo registro, così Hṛdaya la chiede con i bottoni e alla fine propone di rileggerla: tool
+`log_plan` del canale di Hṛdaya (`mcp__plugin_hridaya_telegram__log_plan`, action `add`, `item`
+= la spec). Senza il tool, la CLI dell'ultima versione installata:
+
+```bash
+H=$(ls -d ~/.claude/plugins/cache/wellness-agents/hridaya/*/ | sort -V | tail -1)
+python3.12 "${H}scripts/log_plan.py" add <spec.json>
+```
+
+Spec: `title`, `why` (una riga), `origin` («consiglio del GG/MM»),
+`when` (`morning`|`evening`), `days`, `start` facoltativo, `fields` — 2-4 domande, ciascuna
+`{key, ask, options (etichette brevi, descrittive, mai voti, con un'icona davanti quando semplifica la
+scelta: «🪨 1-2 dure», «🍌 3-4 formate», «🍃 Poca»), target (path a punti nel diario,
+almeno due livelli, sullo schema che i diari usano già: guarda gli ultimi `data/logs/` — es.
+`bowel.bristol`, `symptoms.<sintomo>.<campo>`), skip_when?}` — e `followup` `{action: "ask", question, cost}`.
+Default: proposta (il Sì lo dà la persona). Nella risposta finale una riga: «Te lo chiederà
+Hṛdaya, se dici di sì». Senza `hridaya` installato: salta.
+
+---
+
 ## Fase 7 — Propagazione (se serve)
 
 Scoperte significative → skill `propagate` del core in background,

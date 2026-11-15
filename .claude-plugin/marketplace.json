@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Wellness Council — agenti medici osservazionali, coaching e tradizioni, installabili singolarmente. Ogni persona compone il proprio consiglio (config/council.json nel proprio repo dati).",
-    "version": "0.17.0"
+    "version": "0.21.0"
   },
   "plugins": [
     {
@@ -29,7 +29,7 @@
     {
       "name": "hridaya",
       "source": "./hridaya",
-      "description": "Hṛdaya, il cuore del consiglio — voce unica e coordinatore: diario (/log), quadro della giornata con le scadenze cliniche, convocazione degli specialisti con i vincoli, canale Telegram (bot, cancello dei push con silenzio notturno fino all'alzata, server MCP), /servizio per accendere l'ascolto nella sessione, /setup con bootstrap Telegram. Non decide al posto degli specialisti e non diagnostica.",
+      "description": "Hṛdaya, il cuore del consiglio — voce unica e coordinatore: diario (/diario, in sessione e su Telegram) e registro delle cose da seguire per giorni, quadro della giornata con le scadenze cliniche, convocazione degli specialisti con i vincoli, canale Telegram (bot, cancello dei push con silenzio notturno fino all'alzata, server MCP), /servizio per accendere l'ascolto nella sessione, /setup con bootstrap Telegram. Non decide al posto degli specialisti e non diagnostica.",
       "category": "frontline"
     },
     {

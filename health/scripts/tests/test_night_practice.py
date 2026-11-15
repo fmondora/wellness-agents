@@ -26,7 +26,7 @@ def _day(hr_rows, step_rows=None):
     }
 
 
-# Notte reale del 2026-10-03: Francesco si sveglia verso le 4, invece di
+# Notte reale del 2026-10-03: la persona si sveglia verso le 4, invece di
 # guardare il telefono si siede sul cuscino e medita.
 NOTTE_3_OTTOBRE = _day(
     [("03:00", 52.3), ("03:15", 49.7), ("03:30", 51.1), ("03:45", 49.5),

@@ -228,7 +228,7 @@ def test_json_non_oggetto_e_batch_non_uccidono_il_server(data, tmp_path):
     assert out[4]["id"] == 8                                  # il server è ancora vivo
 
 
-def test_reazione_sul_messaggio_di_francesco(data, tmp_path):
+def test_reazione_sul_messaggio_della_persona(data, tmp_path):
     mid = tq.enqueue(42, "fatto il cammino, 40'", tg_message_id=777)
     old = tq.enqueue(42, "senza id telegram")
     log = tmp_path / "log.jsonl"

@@ -2,8 +2,8 @@
 """Il cancello unico dei push di Hṛdaya.
 
 Ogni messaggio d'iniziativa (detector, review dei coach, promemoria, messaggio della
-sera, messaggio dopo l'alzata) passa da qui. Le **risposte** a un messaggio di
-Francesco non passano dal cancello: lui ha scritto, lui è sveglio.
+sera, messaggio dopo l'alzata) passa da qui. Le **risposte** a un messaggio della
+persona non passano dal cancello: ha scritto, quindi è sveglia.
 
 Regole:
 1. **Silenzio** dall'ora di letto (config, `channel_config.rhythm()["bedtime"]`) fino

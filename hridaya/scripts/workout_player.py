@@ -30,6 +30,7 @@ ROOT = Path(os.environ.get("WELLNESS_DATA") or Path.cwd())
 DAILY = ROOT / "data" / "coach-longevita" / "daily"
 TZ = ZoneInfo(os.environ.get("WELLNESS_TZ", "Europe/Rome"))
 BUTTON_TEXT = "▶️ Avvia allenamento"
+CLOSE_TEXT = "⏹ Chiudi allenamento"     # bottone di testo accanto: toglie la barra (anche /chiudi)
 
 EVENTS = ["start", "step", "pause", "resume", "skip", "done", "round", "stop", "end"]
 KINDS = {"p": "prep", "w": "work", "r": "rest"}
@@ -102,8 +103,15 @@ def build_url(base: str, w: dict) -> str:
 
 
 def keyboard(url: str) -> dict:
-    return {"keyboard": [[{"text": BUTTON_TEXT, "web_app": {"url": url}}]],
+    return {"keyboard": [[{"text": BUTTON_TEXT, "web_app": {"url": url}}], [{"text": CLOSE_TEXT}]],
             "resize_keyboard": True, "one_time_keyboard": False}
+
+
+def close_keyboard(token: str, chat_id: int | str, call: Callable[..., dict] = tg_call) -> dict:
+    """Toglie la barra «Avvia allenamento» (seduta lasciata a metà o non fatta). Si riapre con /allenamento."""
+    return call(token, "sendMessage", chat_id=chat_id,
+                text="⏹ Allenamento chiuso: il bottone non c'è più. Per riaprirlo, /allenamento.",
+                reply_markup={"remove_keyboard": True})
 
 
 def send_player_button(token: str, chat_id: int | str, w: dict, base_url: str,
@@ -285,7 +293,8 @@ def latest_player(daily: Path = DAILY, today: str | None = None) -> Path | None:
 
 BOT_COMMANDS = [
     {"command": "allenamento", "description": "Riapri l'ultimo allenamento"},
-    {"command": "log", "description": "Riepilogo del diario di oggi"},
+    {"command": "chiudi", "description": "Chiudi l'allenamento: toglie il bottone «Avvia allenamento»"},
+    {"command": "diario", "description": "Il diario di oggi: com'è andata, cosa manca, aggiornalo"},
     {"command": "nota", "description": "Annota nel diario: /nota testo"},
     {"command": "sonno", "description": "Analisi della notte"},
     {"command": "meditazione", "description": "Meditazione guidata da ascoltare in cuffia (es. /meditazione 30)"},

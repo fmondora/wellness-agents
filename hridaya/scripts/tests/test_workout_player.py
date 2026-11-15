@@ -213,4 +213,19 @@ class LatestPlayerTest(unittest.TestCase):
         self.assertEqual(kw["scope"], {"type": "all_private_chats"})
         cmds = [c["command"] for c in kw["commands"]]
         self.assertEqual(cmds[0], "allenamento")
-        self.assertTrue({"log", "nota", "sonno", "help"} <= set(cmds))
+        self.assertTrue({"diario", "chiudi", "nota", "sonno", "help"} <= set(cmds))
+
+
+def test_chiudi_toglie_la_barra(data, fake_call):
+    import telegram_bot as tb
+    import workout_player as wp
+    kb = wp.keyboard("https://x/#w=1")
+    assert kb["keyboard"][1][0]["text"] == wp.CLOSE_TEXT
+    assert any(c["command"] == "chiudi" for c in wp.BOT_COMMANDS)
+    bot = tb.Bot("123:T", call=fake_call, session_active=lambda: True)
+    for text in ("/chiudi", wp.CLOSE_TEXT):
+        assert bot.handle_message(42, text, "f") == "chiudi"
+    sent = [p for m, p in fake_call.calls if m == "sendMessage"]
+    assert len(sent) == 2 and all(p["reply_markup"] == {"remove_keyboard": True} for p in sent)
+    import telegram_queue as tq
+    assert not tq.list_pending()                     # non va in coda alla sessione

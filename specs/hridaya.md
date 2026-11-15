@@ -36,11 +36,16 @@ servizio), `memory/agents/hridaya.md`. Non legge `memory/agents/tantra-guide.md`
 
 ## Il canale
 
-- Bot launchd (long polling) → coda; comandi `/allenamento /log /nota /sonno /help`;
-  red flag; `web_app_data`; 409 ripetuti → un avviso; sessione spenta → una riga.
-- Server MCP stdio (`.mcp.json`): `telegram_send`, `telegram_send_card`,
-  `telegram_send_file`, `telegram_send_player`, `telegram_inbox`, `telegram_reply`,
+- Bot launchd (long polling) → coda; comandi locali `/allenamento /chiudi /diario /nota /sonno /help`
+  (`/meditazione` e `/studio` vanno alla sessione); red flag; `web_app_data`; bottoni di risposta,
+  di pratica, del registro e del diario; novità di versione all'avvio (`NOVITA.md`); 409 ripetuti →
+  un avviso; sessione spenta → una riga.
+- Server MCP stdio (`.mcp.json`): `telegram_send`, `telegram_send_card`, `telegram_send_file`,
+  `telegram_send_player`, `telegram_inbox`, `telegram_reply`, `telegram_react`,
+  `telegram_send_voice`, `telegram_send_meditation`, `telegram_send_song`, `log_plan`,
   `hridaya_service`, `gate_status`, `reviews_due`, `review_done`.
+- Registro delle cose da loggare (`log_plan.py`, `data/hridaya/log_plan.json`): voci con domande a
+  bottoni, durata, momento e follow-up; il bot chiede dopo il messaggio del mattino o della sera.
 - **Risposta = subito, iniziativa = cancello.** Silenzio dall'ora di letto
   all'alzata (`wake_detect.py`: mai prima della fine del sonno; fallback a orario con
   rinvio se dorme ancora); fusione; red flag subito; sera e mattino una volta al giorno,
@@ -72,7 +77,7 @@ Da `generalista`: rinomina; pipeline dati → `health`; canale dal repo dati →
 [x] 3  Tabella dati + "numeri dai dati"
 [x] 4  P1-P10
 [x] 5  A1-A8 + "rigenera" + self-check
-[x] 6  run_type (log, telegram, servizio, setup)
+[x] 6  run_type (diario, telegram, servizio, setup)
 [x] 7  Come impara (soglia 2, cap 1/sessione, memory/agents/hridaya.md, legacy generalista)
 [x] 8  Fallback dichiarato (CLI, plugin assenti, dati mancanti)
 [x] 9  Stato su file con schema (docstring degli script), prosa alla persona

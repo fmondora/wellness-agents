@@ -140,7 +140,7 @@ def _run(run: Runner, cmd: list[str], what: str, timeout: float, **kw) -> subpro
     except OSError as e:
         raise VoiceError(f"{what}: {e}")
     if r.returncode != 0:
-        raise VoiceError(f"{what}: {(r.stderr or '').strip()[-400:]}")
+        raise VoiceError(f"{what}: {(r.stderr or '').strip()[-400:] or f'uscito con codice {r.returncode}'}")
     return r
 
 
@@ -274,7 +274,7 @@ def slug(s: str, default: str = "vocale") -> str:
 
 
 def export_dir(kind: str, root: Path | None = None) -> Path:
-    sub = "meditazioni" if kind == "meditation" else "voce"
+    sub = {"meditation": "meditazioni", "song": "canzoni"}.get(kind, "voce")
     return (root or cc.data_root()).resolve() / "data" / "exports" / sub
 
 
@@ -328,6 +328,20 @@ def _alive(pid: Any) -> bool:
         return False
 
 
+def synth_busy(root: Path | None = None) -> bool:
+    """Un altro lavoro tiene il modello (vocale, meditazione o canzone): il nuovo aspetterà."""
+    p = jobs_dir(root) / ".synth.lock"
+    if not p.exists():
+        return False
+    with open(p, "a") as f:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(f, fcntl.LOCK_UN)
+            return False
+        except BlockingIOError:
+            return True
+
+
 def create_job(kind: str, key: str, payload: dict, spawn: Callable[..., Any] = subprocess.Popen,
                root: Path | None = None) -> dict:
     """Registra e lancia un lavoro. `key` decide i doppioni: già spedito → duplicate; in corso (processo
@@ -352,7 +366,10 @@ def create_job(kind: str, key: str, payload: dict, spawn: Callable[..., Any] = s
                   cwd=str(base), env={**os.environ, "WELLNESS_DATA": str(base)})
     if hasattr(p, "wait"):                                  # raccolto quando finisce: niente zombie
         threading.Thread(target=p.wait, daemon=True).start()
-    return {"status": "preparing", "job": jid}
+    out = {"status": "preparing", "job": jid}
+    if synth_busy(root):
+        out["queued_behind"] = "un altro vocale, meditazione o canzone in preparazione: questo arriva dopo"
+    return out
 
 
 def _multipart(token: str, method: str, fields: dict, files: dict) -> dict:
@@ -431,13 +448,20 @@ def run_job(jid: str, run: Runner = subprocess.run) -> dict:
                 time.sleep(5)
         job.update(status="running", updated_ts=time.time())
         write_job(job)
-        cfg = config()
-        if not cfg:
-            raise VoiceError("vocali spenti")
-        cfg = with_profile(cfg, job.get("voice_profile"))
+        if job["kind"] == "song":                          # ACE-Step: non dipende dai vocali
+            import song
+            cfg = song.config()
+            if not cfg:
+                raise VoiceError("canzoni spente")
+        else:
+            cfg = config()
+            if not cfg:
+                raise VoiceError("vocali spenti")
+            cfg = with_profile(cfg, job.get("voice_profile"))
         stamp = datetime.now(cc.tz()).strftime("%Y-%m-%d-%H%M%S")
         out_d = export_dir(job["kind"])
-        prune(out_d)
+        if job["kind"] != "song":                          # le canzoni non si rifanno uguali: restano
+            prune(out_d)
         fields: dict[str, Any] = {"chat_id": job["chat_id"]}
         if job.get("practice"):                            # «▶️ Inizia» / «⏹ Fine» sotto la pratica
             import practice
@@ -447,10 +471,19 @@ def run_job(jid: str, run: Runner = subprocess.run) -> dict:
         if job.get("caption"):
             fields.update(caption=job["caption"][:1024], parse_mode="HTML")
         def send(method: str, files: dict) -> None:
+            lock.close()                                   # il file è pronto: la memoria è libera per altri
             _wait_day(job)
             _send(method, fields, files)
 
-        if job["kind"] == "meditation":
+        if job["kind"] == "song":
+            import song
+            out = out_d / f"{stamp}-{slug(job.get('title') or '', 'canzone')}.m4a"
+            res = song.build(job["params"], out, cfg, run=run, seed=int(job.get("seed", -1)))
+            job["seed_used"] = res.get("seed")
+            fields.update(duration=int(round(res["duration"])), title=job.get("title") or "Canzone",
+                          performer=job.get("performer") or "Hṛdaya")
+            send("sendAudio", {"audio": Path(res["path"])})
+        elif job["kind"] == "meditation":
             import meditation
             ext = ".ogg" if job.get("as_voice") else ".m4a"
             out = out_d / f"{stamp}-{slug(job.get('title') or '', 'meditazione')}{ext}"
@@ -476,7 +509,7 @@ def run_job(jid: str, run: Runner = subprocess.run) -> dict:
     except Exception as e:  # noqa: BLE001 — qualunque errore va detto alla sessione
         job.update(status="failed", error=str(e)[:500], updated_ts=time.time())
         write_job(job)
-        what = "la meditazione" if job["kind"] == "meditation" else "il vocale"
+        what = {"meditation": "la meditazione", "song": "la canzone"}.get(job["kind"], "il vocale")
         why = re.sub(r"(/[^\s:'\"]+)+", "…", str(e))[:200]       # niente percorsi nella coda
         tq.enqueue_system("voice_failed", f"Non sono riuscito a mandare {what} «{job.get('title') or ''}»: {why}",
                           {"job": jid}, dedup_key=f"voice_failed:{jid}:{job.get('created_at')}")

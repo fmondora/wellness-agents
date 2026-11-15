@@ -2,14 +2,15 @@
 """Il servizio di Hṛdaya nella sessione: uno stream di eventi per il tool Monitor.
 
 Una riga su stdout = una notifica alla sessione. Emette:
-  MSG <id> <testo>        nuovo messaggio di Francesco in coda
+  MSG <id> <testo>        nuovo messaggio della persona in coda
   SYS <evento> <id> <testo>  evento di sistema in coda (wake, workout_session, red_flag)
   SERA <data>             è l'ora del messaggio della sera (config evening_message)
   MATTINO <data>          alzata registrata e messaggio del mattino non ancora partito
   REVIEW <job>            review di un coach dovuta (calendario di Hṛdaya)
+  FOLLOWUP <voce>         una voce del registro (log_plan.py) è finita e ha un follow-up da proporre
 Ogni cue di programmazione esce una volta al giorno (stato in data/hridaya/service.json).
-Batte anche il battito della sessione (`session_state.beat`) ogni 30 s, così il bot sa
-che Hṛdaya c'è anche se il server MCP non è collegato.
+Batte ogni 30 s il battito dell'ascolto (`session_state.beat(listener=True)`): è il solo segnale che
+la coda è ascoltata davvero. Se si ferma mentre la sessione è viva, il bot la sveglia.
 
     python3.12 service_watch.py [--max-minutes 29]
 
@@ -19,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -31,7 +33,7 @@ import push_gate  # noqa: E402
 import session_state  # noqa: E402
 import telegram_queue as tq  # noqa: E402
 
-LISTENING = ["coda Telegram", "sera", "alzata", "review dei coach"]
+LISTENING = ["coda Telegram", "sera", "alzata", "review dei coach", "registro"]
 
 
 def cue_path() -> Path:
@@ -72,6 +74,14 @@ def scheduled_cues(now: datetime, cues: dict, plugins: set[str] | None = None) -
         if done.get(job["id"]) != today:
             done[job["id"]] = today
             out.append(f"REVIEW {job['id']}")
+    import log_plan as lp
+    fu = cues.setdefault("followup", {})
+    if not push_gate.is_silent(now, cfg, st):
+        for iid in lp.followups_due():
+            if fu.get(iid) != today:      # una volta al giorno, al massimo due giorni (lp.FOLLOWUP_MAX_CUES)
+                fu[iid] = today
+                lp.followup_cued(iid, today)
+                out.append(f"FOLLOWUP {iid}")
     return out
 
 
@@ -108,6 +118,10 @@ def main() -> int:
     if why:
         print(f"ERRORE: {why}. Non riarmare il Monitor.", flush=True)
         return 3
+    other = None if a.force else session_state.other_listener()
+    if other:
+        print(f"ERRORE: un altro ascoltatore è già attivo (pid {other}). Non riarmare il Monitor.", flush=True)
+        return 3
     try:
         from _plugins import plugin_scripts
         plugins = {p for p in ("coach-longevita", "dream-agent") if plugin_scripts(p)}
@@ -131,10 +145,15 @@ def main() -> int:
         for line in lines:
             print(line, flush=True)
         if time.monotonic() - last_beat >= 30:
+            if os.getppid() == 1:            # la sessione che mi ha lanciato non c'è più: non batto per lei
+                return 0
             if not a.force and session_state.dedicated_elsewhere(cc.rhythm()["session_heartbeat_max_age_s"]):
                 print("ERRORE: è subentrata la sessione dedicata di Hṛdaya. Non riarmare il Monitor.", flush=True)
                 return 3
-            session_state.beat(LISTENING)
+            try:
+                session_state.beat(LISTENING, listener=True)
+            except OSError as e:             # un battito perso non deve far morire l'ascolto
+                print(f"battito: {e}", file=sys.stderr, flush=True)
             last_beat = time.monotonic()
         time.sleep(a.interval)
     return 0

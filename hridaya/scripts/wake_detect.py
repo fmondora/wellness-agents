@@ -2,7 +2,7 @@
 """Alzata rilevata sui dati al minuto (FC + passi): dove finisce il silenzio della notte.
 
 Il vincolo che conta (anti-obiettivo del design): **mai un invio prima della fine
-del sonno.** Ai risvegli notturni Francesco medita sul cuscino o va in bagno: pochi
+del sonno.** Ai risvegli notturni la persona medita sul cuscino o va in bagno: pochi
 passi, FC che sale e poi riscende. Questo non è un'alzata.
 
 Due modi, dal più affidabile:

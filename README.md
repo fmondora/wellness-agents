@@ -92,6 +92,8 @@ Sviluppo dal checkout locale (com'è durante la migrazione a Hṛdaya):
 disinstallare nulla. Gli shim del repo dati leggono la **cache** (`~/.claude/plugins/cache/wellness-agents/`):
 dopo una modifica a uno script si alza la versione in `plugin.json` e si lancia `claude plugin update`,
 altrimenti la cache resta quella vecchia.
+Per hridaya, ogni versione nuova ha la sua sezione in `hridaya/NOVITA.md`, scritta per la persona
+(un test lo controlla): al riavvio il bot la manda una volta sul canale, dal cancello.
 
 ---
 
@@ -100,7 +102,7 @@ altrimenti la cache resta quella vecchia.
 | Plugin | Categoria | Cosa fa |
 |---|---|---|
 | `wellness-core` | core | Convenzioni repo dati, fondamento ontologico, propagation agent, /council /ask /propagate — **obbligatorio** |
-| `hridaya` | frontline | Hṛdaya, il cuore: voce unica e coordinatore (/log, /telegram, /servizio, /setup), quadro della giornata con le scadenze cliniche, convocazione degli specialisti; canale Telegram (bot, cancello dei push col silenzio notturno fino all'alzata, server MCP) |
+| `hridaya` | frontline | Hṛdaya, il cuore: voce unica e coordinatore (/diario, /telegram, /servizio, /setup), quadro della giornata con le scadenze cliniche, convocazione degli specialisti; registro delle cose da seguire per giorni (domande a bottoni, follow-up); canale Telegram (bot, cancello dei push col silenzio notturno fino all'alzata, server MCP, `/diario`, vocali, meditazioni e canzoni generate in locale, novità di versione) |
 | `coach-longevita` | coaching | Training per durare, non per performare: daily/week plan, lift book, debrief obbligatorio, uno skill ginnico alla volta, recovery termico; workout player (Telegram Mini App) |
 | `dream-agent` | coaching | DreamAgent: il sonno — ora di letto a fine ciclo, piano settimanale, review settimanale e mensile |
 | `health` | dominio | Corpo fisico: sintomi, HRV, red flag con escalation — mai diagnosi; /sonno; pipeline dati del corpo (sync wearable, insights, trends, FC al minuto, webhook) |

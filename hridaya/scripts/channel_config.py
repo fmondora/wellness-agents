@@ -31,6 +31,9 @@ DEFAULTS: dict = {
     "wake_grace_min": 15,                # alzata vista, sessione attiva: attesa del suo messaggio
     "merge_window_s": 60,                # push arrivati entro questa finestra escono in un messaggio
     "session_heartbeat_max_age_s": 150,  # oltre, la sessione è considerata spenta
+    "session_listen_max_age_s": 1500,    # viva ma con l'ascolto fermo da tanto: non risponde lei (25': turni lunghi)
+    "session_nudge_after_s": 150,        # ascolto fermo da tanto → il bot sveglia la sessione dedicata
+    "session_nudge_every_s": 300,
     "wake": {
         "earliest": "05:00",       # pavimento: mai un'alzata prima di quest'ora
         "early_message_min": 60,   # un messaggio scritto in quest'ultima ora prima del pavimento (con

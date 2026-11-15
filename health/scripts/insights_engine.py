@@ -429,7 +429,7 @@ def detect_skin_temp(cfg: dict, date_str: str) -> list[dict]:
 def detect_night_practice(cfg: dict, date_str: str) -> tuple[list[dict], int]:
     """Veglia abitata: il risveglio notturno che è diventato pratica.
 
-    Il detector non afferma che Francesco ha meditato — afferma che la notte ne
+    Il detector non afferma che la persona ha meditato — afferma che la notte ne
     porta la firma, e glielo chiede. La risposta va nel log; il punteggio del
     sonno resta doppio (vedi sleep_analysis), perché qui si inferisce, non si sa.
 
@@ -672,7 +672,7 @@ def fill_goals_tracking(date_str: str) -> int:
 
     Merge non distruttivo: non tocca entry manuali né entry auto già presenti.
     Se il log non esiste ne crea uno minimo (solo date + goals_tracking):
-    il /log conversazionale ci si fonde sopra senza conflitti.
+    il diario conversazionale (skill `diario` di Hṛdaya) ci si fonde sopra senza conflitti.
     Ritorna il numero di entry aggiunte.
     """
     goals_file = PROJECT_ROOT / "data" / "active-goals.json"

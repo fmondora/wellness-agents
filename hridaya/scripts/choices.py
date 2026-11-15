@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.12
 """Bottoni di risposta sotto un messaggio di Hṛdaya (inline keyboard di Telegram).
 
-Hṛdaya propone le opzioni; Francesco risponde con un tocco; la scelta torna nella coda
+Hṛdaya propone le opzioni; la persona risponde con un tocco; la scelta torna nella coda
 come un messaggio suo (con il campo `choice`), e la sessione la smista come le altre.
 
   scelta singola  un tocco = risposta; la tastiera diventa una riga «✓ <scelta>»
@@ -185,7 +185,7 @@ def tap(data: str, tap_id: str | None = None) -> dict:
 
 
 def reopen(cid: str) -> None:
-    """La risposta non è entrata in coda: la domanda torna aperta (lui può ritoccare)."""
+    """La risposta non è entrata in coda: la domanda torna aperta (si può ritoccare)."""
     with tq.locked():
         st = _load()
         c = st.get(cid)
@@ -196,5 +196,5 @@ def reopen(cid: str) -> None:
 
 
 def answer_text(chosen: list[str]) -> str:
-    """Il testo del messaggio in coda: come se l'avesse scritto lui."""
+    """Il testo del messaggio in coda: come se l'avesse scritto la persona."""
     return ", ".join(chosen)

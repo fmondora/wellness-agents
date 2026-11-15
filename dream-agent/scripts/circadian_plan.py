@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.12
 """Piano circadiano: ora di letto consigliata (sera) + ora di sveglia ciclo-allineata.
 
-Il problema di Francesco: vuole svegliarsi ~06:00, ma il ritmo dipende da quando
+Il problema tipico: la persona vuole svegliarsi ~06:00, ma il ritmo dipende da quando
 si addormenta. La leva non è la sveglia — è l'ora di letto. I cicli durano ~90 min;
 ci si sveglia freschi se il target cade a FINE ciclo, non nel mezzo.
 

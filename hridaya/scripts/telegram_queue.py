@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.12
 """Coda file del canale di Hṛdaya (data/telegram/ nel repo dati).
 
-  inbox.jsonl   messaggi di Francesco (status pending → done) e, con "kind": "system",
+  inbox.jsonl   messaggi della persona (status pending → done) e, con "kind": "system",
                 eventi per la sessione accesa (alzata rilevata, seduta registrata…)
   outbox.jsonl  risposte: righe sent=false le spedisce il bot; le righe sent=true sono
                 lo storico di ciò che la sessione ha spedito direttamente (tool MCP)
@@ -108,7 +108,7 @@ def enqueue(chat_id: int, text: str, username: str = "",
 
 def enqueue_system(event: str, text: str, data: dict | None = None,
                    dedup_key: str | None = None) -> str | None:
-    """Evento per la sessione accesa (non un messaggio di Francesco). Idempotente su dedup_key."""
+    """Evento per la sessione accesa (non un messaggio della persona). Idempotente su dedup_key."""
     if dedup_key and any(r.get("dedup_key") == dedup_key for r in read_jsonl(inbox_path())):
         return None
     msg_id = f"sys-{uuid.uuid4().hex[:12]}"

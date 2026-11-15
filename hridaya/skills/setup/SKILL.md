@@ -57,8 +57,8 @@ faccio diagnosi. Mi servono poche cose — rispondi a quello che vuoi.»
 
 ## Fase 4 — Congedo (se non segue Telegram)
 
-5-6 righe: chi c'è al tavolo, cosa terrai d'occhio, come si usa (`/log`, `/council`,
-parlami e basta). Un'azione suggerita: il primo `/log`.
+5-6 righe: chi c'è al tavolo, cosa terrai d'occhio, come si usa (`/diario`, `/council`,
+parlami e basta). Un'azione suggerita: il primo `/diario`.
 
 ## Fase 5 — Bootstrap del canale Telegram (una domanda alla volta)
 
@@ -91,7 +91,7 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
    e `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<label>.plist`.
    Controlla `data/telegram/bot.log` (riga «bot Telegram avviato»).
 6. **Menu comandi** — `python3.12 $S/telegram_setup.py commands`
-   (/allenamento /log /nota /sonno /help).
+   (/allenamento /chiudi /diario /nota /sonno /meditazione /studio /help).
 7. **Opzionale, se c'è `coach-longevita`** — pubblicazione del player
    (`apps/workout-player/deploy.sh` del plugin coach, serve wrangler e un progetto
    Pages), `WORKOUT_PLAYER_URL` nel `.env`, poi una demo: tool `telegram_send_player`
@@ -120,8 +120,12 @@ quel token (un secondo lettore — es. un altro agente — ruba i messaggi: 409 
    - **Meditazioni in cuffia** (facoltativo): cartelle con musica di sottofondo che la persona
      può usare (licenze sue) in `voice.music_dirs`, preferita in `voice.meditation_music`; senza
      musica c'è sempre il bordone sintetico (`drone`).
-   - Proponi di aggiungere `data/exports/voce/`, `data/exports/meditazioni/` e
-     `data/hridaya/voice_jobs/` al `.gitignore` del repo dati: sono file pesanti e rigenerabili.
+   - Proponi di aggiungere `data/exports/voce/`, `data/exports/meditazioni/`, `data/exports/canzoni/` e
+     `data/hridaya/voice_jobs/` al `.gitignore` del repo dati: sono file pesanti. Vocali e meditazioni si
+     rigenerano e dopo 30 giorni si potano; le canzoni restano (non escono mai uguali due volte: il
+     `.json` accanto al brano tiene testo, stile e seed per rifarle).
+   - Canzoni cantate (facoltative): se sul Mac c'è ACE-Step 1.5 con il suo ambiente (`uv sync`), la voce
+     `song` in `config/hridaya.json` (`enabled`, `acestep_dir`, `hf_home`), poi `song.py check`.
 9. **Spiega il servizio**: «Ti rispondo quando la sessione Claude è accesa sul Mac
    nel repo dati e hai detto `/servizio` (o "accendi il servizio"): tienila aperta.
    Se è chiusa il bot ti dice che non ci sono e accoda; sera e mattino arrivano lo

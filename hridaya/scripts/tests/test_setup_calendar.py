@@ -142,13 +142,13 @@ def test_servizio_cue_una_volta_al_giorno(data):
 def test_setup_riusa_il_job_del_bot_esistente(tmp_path):
     agents = tmp_path / "LaunchAgents"
     agents.mkdir()
-    (agents / "com.francesco.lucia.telegram.plist").write_bytes(plistlib.dumps(
-        {"Label": "com.francesco.lucia.telegram", "ProgramArguments": ["/py", "/x/scripts/telegram_bot.py"]}))
+    (agents / "com.esempio.wellness.telegram.plist").write_bytes(plistlib.dumps(
+        {"Label": "com.esempio.wellness.telegram", "ProgramArguments": ["/py", "/x/scripts/telegram_bot.py"]}))
     (agents / "altro.plist").write_bytes(plistlib.dumps({"Label": "altro", "ProgramArguments": ["/bin/true"]}))
     jobs = ts.existing_bot_jobs(agents)
-    assert [j["label"] for j in jobs] == ["com.francesco.lucia.telegram"]
-    assert ts.choose_label(None, jobs) == "com.francesco.lucia.telegram"
-    assert ts.choose_label("com.francesco.lucia.telegram", jobs) == "com.francesco.lucia.telegram"
+    assert [j["label"] for j in jobs] == ["com.esempio.wellness.telegram"]
+    assert ts.choose_label(None, jobs) == "com.esempio.wellness.telegram"
+    assert ts.choose_label("com.esempio.wellness.telegram", jobs) == "com.esempio.wellness.telegram"
     import pytest
     with pytest.raises(SystemExit):
         ts.choose_label("com.wellness.hridaya.telegram", jobs)

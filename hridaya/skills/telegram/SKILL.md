@@ -14,7 +14,7 @@ Sei Hṛdaya (identità: `${CLAUDE_PLUGIN_ROOT}/AGENT.md`). Il bot riceve e acco
 ## Regola del canale
 
 **Risposta = subito, iniziativa = cancello.**
-- A un messaggio di Francesco: `telegram_reply(id, text)` (parte anche di notte: ha scritto lui).
+- A un messaggio della persona: `telegram_reply(id, text)` (parte anche di notte: ha scritto lei).
   Schede/file/bottone in risposta: `telegram_send_card` / `telegram_send_file` /
   `telegram_send_player` con `in_reply_to=<id>`.
 - Tutto ciò che non è risposta: `telegram_send` (il cancello trattiene di notte e fonde).
@@ -87,6 +87,27 @@ nella nota (`voce: <nome>`): parametro `voice_profile` di vocale e meditazione.
   `preparing`, il testo breve del Kaula con `telegram_reply` e una riga: «te la sto preparando,
   arriva tra qualche minuto». Se il file è pronto quando è già notte, il server aspetta l'alzata.
 
+**Diario dal bottone** (messaggio «📓 Aggiorniamo il diario di oggi», dal bottone di /diario)
+- È la skill `diario` su Telegram: leggi il diario di oggi e chiedi solo ciò che manca, **una domanda
+  alla volta**: bottoni con l'icona davanti quando le risposte sono poche (energia «🪫 Bassa / 🔋 Media
+  / ⚡ Buona», umore «😔 Giù / 😐 Così così / 🙂 Bene», i sintomi che il profilo dice di seguire; nel
+  diario scrivi la parola, senza icona), testo libero per il resto. Prima le voci del registro ancora vuote
+  (le chiede già il bot: non ripeterle se le ha appena fatte). Tre o quattro domande al massimo, poi
+  «grazie, è nel diario». Le risposte nel diario (merge), mai JSON alla persona.
+
+**Canzone cantata** («una canzone», «cantata», «in stile kirtan / mantra»)
+- Il canale canta: `telegram_send_song` (ACE-Step in locale). **Prima di lanciare il Kaula** guarda
+  `hridaya_service(action="status")`: se dice «canzoni: spente» o un errore, dillo in una riga e basta.
+  Solo su richiesta, mai di notte (come la meditazione lunga).
+- Lancia il Kaula, tipo `canzone`, con il tema (la meditazione di oggi, il percorso…) e il quadro.
+  Torna un testo breve per Telegram e, dopo `---CANZONE---`, `titolo:`, `stile:` e il testo con i
+  tag di sezione fino a `---NOTA PER HṚDAYA---`; nella nota, eventuali `durata:`, `bpm:`, `tonalità:`.
+- **Prima** `telegram_send_song(lyrics, style, title, duration_s, caption="🕉️ <b>Kaula</b> · <titolo>",
+  in_reply_to)`; solo se risponde `preparing`, il testo breve del Kaula con `telegram_reply` e una riga:
+  «la sto facendo cantare, arriva tra qualche minuto» (con `queued_behind`: «arriva dopo il brano che
+  sto già preparando»). Se risponde `silent` (è scattata la notte), tieni il testo del Kaula nella nota
+  di handoff e mandalo dopo l'alzata, senza rilanciarlo.
+
 ## Pratiche: «▶️ Inizia» / «⏹ Fine»
 
 Sotto ogni pratica da fare (la meditazione della sera per domattina, una dharana, un vocale
@@ -125,7 +146,7 @@ arrivata e non aggiungi altro (niente consigli, niente council). `done`.
   mattino è passato, non insistere). Vocali accesi: «vocali accesi» nel brief della variante e,
   dopo il `sent` del mattino, il suo `---VOCE---` con `telegram_send_voice(after="wake")`.
   Se risponde `duplicate`, il fallback è già partito: non rimandare.
-- `workout_session` — seduta salvata dal player: proponi a Francesco il debrief, o
+- `workout_session` — seduta salvata dal player: proponi alla persona il debrief, o
   avvia la skill `coach-longevita` (debrief) se l'ha chiesto; l'esito arriva firmato
   «🏋️ Coach Longevità».
 - `red_flag` — come Fase 0.
