@@ -559,15 +559,21 @@
   }
 
   // --- illustrazione: frame 1/2 alternati ogni secondo; se non c'è, niente riquadro ---
-  const badImg = new Set();
-  let figSrc = '';
-  $('figImg').onerror = () => { badImg.add(figSrc); figSrc = ''; };
+  // le figure del vocabolario CrossFit sono .webp (esercizio_img.py): se la .svg non c'è si prova la .webp
+  const badImg = new Set(), altImg = new Map();
+  let figSrc = '', figKey = '';
+  $('figImg').onerror = () => {
+    if (figKey.endsWith('.svg') && !altImg.has(figKey)) altImg.set(figKey, figKey.slice(0, -4) + '.webp');
+    else badImg.add(figKey);
+    figSrc = '';
+  };
   function showFig(slug, now) {
     const frames = E.imgFrames(slug).filter((u) => !badImg.has(u));
     const fig = $('fig');
     if (!frames.length) { fig.classList.remove('on'); document.body.classList.remove('has-fig'); figSrc = ''; return; }
-    const src = frames[Math.floor(now / 1000) % frames.length];
-    if (src !== figSrc) { figSrc = src; $('figImg').src = src; }
+    const key = frames[Math.floor(now / 1000) % frames.length];
+    const src = altImg.get(key) || key;
+    if (src !== figSrc) { figKey = key; figSrc = src; $('figImg').src = src; }
     fig.classList.add('on'); document.body.classList.add('has-fig');
   }
 

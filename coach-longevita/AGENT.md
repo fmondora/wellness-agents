@@ -265,11 +265,21 @@ Regole:
 PATTERN DI MOVIMENTO
 ════════════════════════════════════
 Programma PATTERN, poi la variante legale per luogo + preferenze.
-Famiglie: squat, hinge, push, pull, carry, engine, ground, skill.
+Famiglie: squat, hinge, olympic (clean, snatch, jerk, swing e snatch col kettlebell), push, pull,
+gymnastics (sbarra, anelli, verticale, corda, core appeso), carry, engine, ground, skill.
 Max un pezzo per famiglia per seduta.
 4–7 esercizi a casa, 3–5 fuori.
 
-home_box: squat/goblet/split, RDL/hinge, panca/push-up, row/pull-up, farmer, remo/cammino.
+VOCABOLARIO: tutto il CrossFit e il funzionale. `knowledge/exercise-catalog.json` ha il catalogo
+da sala (bryllim) più le voci `source: crossfit` (sollevamento olimpico col bilanciere, manubri e
+kettlebell, ginnastica, pliometria, monostrutturali, con le due pose in `frames` e il link `video`
+di crossfit.com quando c'è). Scegli dal pattern e dal box, mai da cosa ha la figura: un esercizio
+giusto senza figura si prescrive lo stesso, la figura si genera dopo (`scripts/esercizio_img.py
+<slug>`, Nano Banana Pro) e nella risposta lo dici in una riga.
+
+home_box: back/front squat, thruster, wall ball, lunge col bilanciere; deadlift, clean, snatch, swing
+e snatch col kettlebell; press, push press, jerk, HSPU e progressioni; pull-up, toes-to-bar, ring row,
+corda; farmer, front rack, overhead carry; row, bike, double under, burpee, box jump.
 mountain: air squat/step-up basso, hinge a corpo, push-up, row zaino, carry zaino, cammino.
 vacation: split su sedia, hinge a corpo, push-up, towel/band row, valigia, cammino.
 
@@ -427,6 +437,12 @@ P18. Dopo hike: hot tub/sauna corta > seconda seduta.
 P19. Ogni 28 giorni max 3 goal, di cui max 1 skill alto.
 P20. Ogni skill ha baseline, target_28d, abort_if, budget minuti.
 P21. Skill dentro il cap, a fresco, attrezzo reale.
+P22. La varietà si vede. In 7 giorni nessun esercizio più di 2 volte, tranne le àncore di carico
+     (squat e hinge del ciclo) e la progressione skill in corso. Ogni settimana verde almeno una
+     seduta con un movimento olympic (all'inizio dal hang, leggero, EMOM a poche ripetizioni: sforzi
+     brevi con recupero, non metcon) e una con la ginnastica. Il riscaldamento prepara il movimento
+     del giorno (bilanciere scarico o PVC nei giorni di clean e snatch, kettlebell nei giorni di
+     swing, sbarra nei giorni di pull) e il defaticamento ruota: mai la stessa sequenza fissa.
 
 ════════════════════════════════════
 ANTI-PATTERN (se lo fai, la risposta è sbagliata: rigenera)
@@ -462,6 +478,8 @@ A28. Skill a fine WOD, kipping a fatica.
 A29. Skill in mountain/vacation senza attrezzo sicuro.
 A30. Saltare forza o Z2 per inseguire lo skill.
 A31. Obiettivi mensili su esami del sangue.
+A32. Riscaldamento e defaticamento fotocopia, seduta dopo seduta.
+A33. Scartare un esercizio giusto perché non ha la figura, o pescare solo dal catalogo da sala.
 
 ════════════════════════════════════
 STILE
@@ -484,8 +502,8 @@ FORMATO UTENTE (daily_plan) — schematico, leggibile in palestra:
    | # | Esercizio | Schema | Carico | Recupero | Se fa male → |
    con l'esercizio linkato alla libreria illustrata
    (`${CLAUDE_PLUGIN_ROOT}/knowledge/exercise-library.md` + `exercise-catalog.json` + `crossfit-movements.md`,
-   pagina `https://bryllim.github.io/workout-guide/exercises/<slug>/`).
-   Mai inventare slug: se manca, niente link.
+   pagina `https://bryllim.github.io/workout-guide/exercises/<slug>/`, o il campo `video` delle voci
+   CrossFit). Mai inventare slug: se manca, niente link.
    Il catalogo illustra, NON decide: prima scegli l'esercizio giusto
    (pattern, luogo, storia — incluso il vocabolario CrossFit assente
    dal catalogo), poi aggiungi il link se esiste.

@@ -2,7 +2,7 @@
  "_source": "https://github.com/bryllim/workout-guide (code MIT, illustrazioni CC BY-SA 4.0, autore Bryl Lim)",
  "_page_url": "https://bryllim.github.io/workout-guide/exercises/{slug}/",
  "_svg_url": "https://raw.githubusercontent.com/bryllim/workout-guide/aac599224bb9780305239607ef98540b7e0ce389/packages/workout-guide/assets/{slug}/frame-1.svg",
- "_count": 302,
+ "_count": 431,
  "exercises": [
   {
    "slug": "bench-press",
@@ -14,7 +14,8 @@
     "Triceps",
     "Shoulders"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-bench-press"
   },
   {
    "slug": "incline-bench-press",
@@ -108,7 +109,8 @@
     "Triceps",
     "Core"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-push-up"
   },
   {
    "slug": "weighted-push-up",
@@ -244,7 +246,8 @@
     "Back",
     "Grip"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-deadlift"
   },
   {
    "slug": "romanian-deadlift",
@@ -451,7 +454,8 @@
     "Core",
     "Glutes"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-front-squat"
   },
   {
    "slug": "hack-squat",
@@ -498,7 +502,8 @@
     "Glutes",
     "Hamstrings"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-walking-lunge"
   },
   {
    "slug": "step-up",
@@ -574,7 +579,8 @@
     "Glutes",
     "Lower Back"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-good-morning"
   },
   {
    "slug": "standing-calf-raise",
@@ -713,7 +719,8 @@
     "Chest",
     "Shoulders"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-dip"
   },
   {
    "slug": "assisted-dip",
@@ -950,7 +957,8 @@
     "Triceps",
     "Quads"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-push-press"
   },
   {
    "slug": "machine-lateral-raise",
@@ -1180,7 +1188,8 @@
     "Glutes",
     "Quads"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-sumo-deadlift"
   },
   {
    "slug": "trap-bar-deadlift",
@@ -1587,7 +1596,8 @@
     "Core",
     "Cardio"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-kettlebell-swing"
   },
   {
    "slug": "glute-focused-back-extension",
@@ -1818,7 +1828,8 @@
     "Upper Back",
     "Core"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-farmer-carry"
   },
   {
    "slug": "crunch",
@@ -2293,7 +2304,8 @@
     "Chest",
     "Triceps"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-wall-walk"
   },
   {
    "slug": "wall-handstand-push-up",
@@ -2498,7 +2510,8 @@
     "Core",
     "Forearms"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-l-pull-up"
   },
   {
    "slug": "towel-pull-up",
@@ -2524,7 +2537,8 @@
     "Hamstrings",
     "Core"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-air-squat"
   },
   {
    "slug": "pistol-squat",
@@ -2537,7 +2551,8 @@
     "Hamstrings",
     "Core"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-single-leg-squat"
   },
   {
    "slug": "assisted-pistol-squat",
@@ -3260,7 +3275,8 @@
     "Core",
     "Cardio"
    ],
-   "stretch": false
+   "stretch": false,
+   "video": "https://www.crossfit.com/essentials/the-burpee-2"
   },
   {
    "slug": "half-burpee",
@@ -3548,6 +3564,2275 @@
     "Mobility"
    ],
    "stretch": true
+  },
+  {
+   "slug": "clean",
+   "name": "Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing over a barbell on the floor, hips back, back flat, arms straight, hook grip just outside the legs",
+    "deep front squat at the bottom of the catch, barbell in front rack on the shoulders, elbows high"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-clean"
+  },
+  {
+   "slug": "power-clean",
+   "name": "Power Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Hamstrings",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, deadlift setup with flat back and shoulders over the bar",
+    "catching the barbell in the front rack in a partial quarter squat, elbows high"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-power-clean"
+  },
+  {
+   "slug": "hang-clean",
+   "name": "Hang Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall holding the barbell at mid-thigh, slight hip hinge, arms straight",
+    "deep front squat catch with the barbell racked on the shoulders, elbows high"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hang-squat-clean"
+  },
+  {
+   "slug": "hang-power-clean",
+   "name": "Hang Power Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Hamstrings",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell held at mid-thigh in the hang, hips slightly back, arms long",
+    "barbell caught in the front rack in a quarter squat, elbows forward"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hang-power-clean"
+  },
+  {
+   "slug": "squat-clean",
+   "name": "Squat Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, deadlift setup, back flat",
+    "bottom of a front squat with the barbell racked, chest up"
+   ]
+  },
+  {
+   "slug": "split-clean",
+   "name": "Split Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, deadlift setup",
+    "barbell racked on the shoulders, landed in a lunge split stance, front knee over ankle"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-split-clean"
+  },
+  {
+   "slug": "muscle-clean",
+   "name": "Muscle Clean",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Back",
+    "Traps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall holding the barbell at the hips, arms straight",
+    "barbell turned over into the front rack with straight legs, no dip, elbows high"
+   ]
+  },
+  {
+   "slug": "clean-pull",
+   "name": "Clean Pull",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Hamstrings",
+   "secondary": [
+    "Glutes",
+    "Traps",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, deadlift setup, back flat",
+    "fully extended on the toes, hips open, shoulders shrugged, barbell at upper thigh, arms straight"
+   ]
+  },
+  {
+   "slug": "clean-and-jerk",
+   "name": "Clean and Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell racked on the shoulders after the clean, standing tall",
+    "barbell locked out overhead in a split jerk stance"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-clean-2"
+  },
+  {
+   "slug": "clean-and-push-jerk",
+   "name": "Clean and Push Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell racked on the shoulders, feet hip width",
+    "barbell locked overhead with knees bent in a quarter squat catch"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-squat-clean-and-push-jerk"
+  },
+  {
+   "slug": "power-clean-and-split-jerk",
+   "name": "Power Clean and Split Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell at mid-shin rising from the floor, flat back",
+    "barbell locked overhead in a split stance"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-power-clean-split-jerk"
+  },
+  {
+   "slug": "hang-clean-and-push-jerk",
+   "name": "Hang Clean and Push Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell held at mid-thigh in the hang",
+    "barbell locked overhead after the push jerk, knees slightly bent"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hang-clean-and-push-jerk"
+  },
+  {
+   "slug": "snatch",
+   "name": "Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor with a very wide snatch grip, hips low, back flat",
+    "deep overhead squat catch with the barbell locked out overhead on a wide grip"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-snatch"
+  },
+  {
+   "slug": "power-snatch",
+   "name": "Power Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Traps",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, wide snatch grip, flat back",
+    "barbell locked overhead on a wide grip, caught in a quarter squat"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-power-snatch"
+  },
+  {
+   "slug": "hang-snatch",
+   "name": "Hang Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell at mid-thigh with a wide snatch grip",
+    "deep overhead squat with the barbell locked overhead"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hang-snatch"
+  },
+  {
+   "slug": "hang-power-snatch",
+   "name": "Hang Power Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Traps",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell at mid-thigh in the hang, wide grip",
+    "barbell locked overhead in a quarter squat, wide grip"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hang-power-snatch"
+  },
+  {
+   "slug": "split-snatch",
+   "name": "Split Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, wide grip",
+    "barbell locked overhead on a wide grip in a lunge split stance"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-split-snatch"
+  },
+  {
+   "slug": "muscle-snatch",
+   "name": "Muscle Snatch",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Traps",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall, barbell at the hips on a wide grip",
+    "barbell pressed out overhead on a wide grip with straight legs"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-muscle-snatch"
+  },
+  {
+   "slug": "snatch-balance",
+   "name": "Snatch Balance",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Quads",
+   "secondary": [
+    "Shoulders",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell resting on the upper back behind the neck, wide grip, standing tall",
+    "deep overhead squat with the barbell locked overhead on a wide grip"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-snatch-balance"
+  },
+  {
+   "slug": "overhead-squat",
+   "name": "Overhead Squat",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Quads",
+   "secondary": [
+    "Shoulders",
+    "Core",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with the barbell locked out overhead on a wide grip",
+    "bottom of a deep squat, barbell still locked overhead, arms straight"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-overhead-squat"
+  },
+  {
+   "slug": "sots-press",
+   "name": "Sots Press",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Core",
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "sitting at the bottom of a deep squat with the barbell on the upper back",
+    "still at the bottom of the squat, barbell pressed overhead on a wide grip"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-sots-press"
+  },
+  {
+   "slug": "snatch-grip-deadlift",
+   "name": "Snatch Grip Deadlift",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Hamstrings",
+   "secondary": [
+    "Back",
+    "Glutes",
+    "Traps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor with a wide snatch grip, hips low, back flat",
+    "standing tall holding the barbell at the hips on a wide grip"
+   ]
+  },
+  {
+   "slug": "push-jerk",
+   "name": "Push Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Quads",
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell in the front rack, knees slightly bent in the dip",
+    "barbell locked overhead, caught with knees bent in a quarter squat"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-push-jerk"
+  },
+  {
+   "slug": "split-jerk",
+   "name": "Split Jerk",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Quads",
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell in the front rack, standing tall",
+    "barbell locked overhead in a split stance, front shin vertical"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-split-jerk"
+  },
+  {
+   "slug": "shoulder-press",
+   "name": "Shoulder Press",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell in the front rack, standing tall, elbows slightly forward",
+    "barbell pressed overhead with straight arms, legs straight"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-shoulder-press"
+  },
+  {
+   "slug": "thruster",
+   "name": "Thruster",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "bottom of a front squat with the barbell in the front rack",
+    "standing tall with the barbell pressed overhead"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-thruster"
+  },
+  {
+   "slug": "cluster",
+   "name": "Cluster",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "barbell on the floor, deadlift setup",
+    "standing tall with the barbell overhead after a squat clean into thruster"
+   ]
+  },
+  {
+   "slug": "back-squat",
+   "name": "Back Squat",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Hamstrings",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with the barbell on the upper back",
+    "bottom of the squat, hips below knees, chest up, barbell on the back"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-back-squat"
+  },
+  {
+   "slug": "zercher-squat",
+   "name": "Zercher Squat",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Core",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall holding the barbell in the crook of the elbows",
+    "bottom of the squat with the barbell cradled in the elbows"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-zercher-squat"
+  },
+  {
+   "slug": "sumo-deadlift-high-pull",
+   "name": "Sumo Deadlift High Pull",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Traps",
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "wide sumo stance, narrow grip on the barbell at the floor, flat back",
+    "standing tall, barbell pulled to the chin, elbows high above the hands"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-sumo-deadlift-high-pull"
+  },
+  {
+   "slug": "barbell-front-rack-lunge",
+   "name": "Barbell Front Rack Lunge",
+   "type": "weight_reps",
+   "equipment": "Barbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with the barbell in the front rack",
+    "deep lunge, back knee near the floor, barbell racked on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/barbell-front-rack-lunge"
+  },
+  {
+   "slug": "overhead-walking-lunge",
+   "name": "Overhead Walking Lunge",
+   "type": "weight_reps",
+   "equipment": "Plate",
+   "primary": "Quads",
+   "secondary": [
+    "Shoulders",
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall holding a weight plate locked out overhead",
+    "deep lunge step forward, plate still locked overhead"
+   ]
+  },
+  {
+   "slug": "pull-over",
+   "name": "Pull Over",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Back",
+   "secondary": [
+    "Chest",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying on a bench holding a dumbbell with both hands above the chest",
+    "arms reaching back behind the head with the dumbbell, ribs down"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-pull-over"
+  },
+  {
+   "slug": "dumbbell-power-snatch",
+   "name": "Dumbbell Power Snatch",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Glutes",
+    "Hamstrings"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "squatting with one dumbbell on the floor between the feet, one hand, flat back",
+    "standing in a quarter squat with the dumbbell locked overhead in one hand"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-power-snatch"
+  },
+  {
+   "slug": "dumbbell-squat-snatch",
+   "name": "Dumbbell Squat Snatch",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one dumbbell on the floor between the feet, one hand, flat back",
+    "deep squat with the dumbbell locked overhead in one hand"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-snatch"
+  },
+  {
+   "slug": "dumbbell-hang-snatch",
+   "name": "Dumbbell Hang Snatch",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "holding one dumbbell at the knee in one hand, hips back",
+    "standing tall with the dumbbell locked overhead"
+   ]
+  },
+  {
+   "slug": "dumbbell-power-clean",
+   "name": "Dumbbell Power Clean",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two dumbbells at the sides of the feet, hips back, flat back",
+    "quarter squat with both dumbbells resting on the shoulders, elbows forward"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-power-clean"
+  },
+  {
+   "slug": "dumbbell-clean",
+   "name": "Dumbbell Clean",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two dumbbells at the sides of the feet, hips back",
+    "deep squat with both dumbbells resting on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-clean"
+  },
+  {
+   "slug": "dumbbell-hang-clean",
+   "name": "Dumbbell Hang Clean",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing holding two dumbbells at the knees, hips back",
+    "squat catch with both dumbbells on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-hang-clean"
+  },
+  {
+   "slug": "dumbbell-hang-power-clean",
+   "name": "Dumbbell Hang Power Clean",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "holding two dumbbells at mid-thigh, slight hinge",
+    "quarter squat with both dumbbells on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-hang-power-clean"
+  },
+  {
+   "slug": "dumbbell-clean-and-jerk",
+   "name": "Dumbbell Clean and Jerk",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one dumbbell resting on one shoulder after the clean",
+    "dumbbell locked overhead in one hand, knees slightly bent"
+   ]
+  },
+  {
+   "slug": "dumbbell-push-press",
+   "name": "Dumbbell Push Press",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps",
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two dumbbells on the shoulders, knees slightly bent in the dip",
+    "both dumbbells pressed overhead, legs straight"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-push-press"
+  },
+  {
+   "slug": "dumbbell-push-jerk",
+   "name": "Dumbbell Push Jerk",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps",
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two dumbbells on the shoulders, small dip",
+    "both dumbbells locked overhead, caught in a quarter squat"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-push-jerk"
+  },
+  {
+   "slug": "dumbbell-thruster",
+   "name": "Dumbbell Thruster",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "bottom of a squat with two dumbbells on the shoulders",
+    "standing tall with both dumbbells pressed overhead"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-thruster"
+  },
+  {
+   "slug": "dumbbell-front-squat",
+   "name": "Dumbbell Front Squat",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing with two dumbbells resting on the shoulders",
+    "bottom of a squat with the dumbbells on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-front-squat"
+  },
+  {
+   "slug": "dumbbell-overhead-squat",
+   "name": "Dumbbell Overhead Squat",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Quads",
+   "secondary": [
+    "Shoulders",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with one dumbbell locked overhead in one hand",
+    "deep squat with the dumbbell still locked overhead"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-overhead-squat"
+  },
+  {
+   "slug": "dumbbell-front-rack-lunge",
+   "name": "Dumbbell Front Rack Lunge",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing with two dumbbells on the shoulders",
+    "deep lunge with the dumbbells on the shoulders"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-front-rack-lunge"
+  },
+  {
+   "slug": "dumbbell-overhead-walking-lunge",
+   "name": "Dumbbell Overhead Walking Lunge",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Quads",
+   "secondary": [
+    "Shoulders",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with one dumbbell locked overhead",
+    "deep lunge step forward, dumbbell still overhead"
+   ],
+   "video": "https://www.crossfit.com/essentials/dumbbell-overhead-walking-lunge"
+  },
+  {
+   "slug": "dumbbell-deadlift",
+   "name": "Dumbbell Deadlift",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Hamstrings",
+   "secondary": [
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two dumbbells at the sides of the feet, hips back, flat back",
+    "standing tall with the dumbbells at the sides"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-deadlift"
+  },
+  {
+   "slug": "dumbbell-box-step-over",
+   "name": "Dumbbell Box Step-Over",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing next to a plyo box holding two dumbbells at the sides",
+    "standing on top of the box with the dumbbells, about to step down the other side"
+   ]
+  },
+  {
+   "slug": "dumbbell-turkish-get-up",
+   "name": "Dumbbell Turkish Get-Up",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Core",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying on the back with one dumbbell pressed straight up, same-side knee bent",
+    "standing tall with the dumbbell still locked overhead, eyes on the weight"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-dumbbell-turkish-get-up"
+  },
+  {
+   "slug": "devil-press",
+   "name": "Devil Press",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Chest",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "chest on the floor at the bottom of a burpee with hands on two dumbbells",
+    "standing tall with both dumbbells swung overhead in one motion"
+   ]
+  },
+  {
+   "slug": "man-maker",
+   "name": "Man Maker",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Chest",
+    "Back",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "plank position with hands on two dumbbells",
+    "standing tall with both dumbbells pressed overhead"
+   ]
+  },
+  {
+   "slug": "renegade-row",
+   "name": "Renegade Row",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Back",
+   "secondary": [
+    "Core",
+    "Chest"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "high plank with hands on two dumbbells, feet wide",
+    "still in plank, one dumbbell rowed to the hip, body square"
+   ]
+  },
+  {
+   "slug": "dumbbell-snatch-alternating",
+   "name": "Alternating Dumbbell Snatch",
+   "type": "weight_reps",
+   "equipment": "Dumbbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one dumbbell on the floor between the feet, right hand, hips back",
+    "dumbbell locked overhead, ready to switch hands on the way down"
+   ]
+  },
+  {
+   "slug": "american-kettlebell-swing",
+   "name": "American Kettlebell Swing",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Glutes",
+   "secondary": [
+    "Hamstrings",
+    "Shoulders",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "kettlebell hiked back between the legs, hips back, flat back",
+    "kettlebell swung all the way overhead, arms straight, hips fully open"
+   ]
+  },
+  {
+   "slug": "russian-kettlebell-swing",
+   "name": "Russian Kettlebell Swing",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Glutes",
+   "secondary": [
+    "Hamstrings",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "kettlebell hiked back between the legs, hips back",
+    "kettlebell floating at chest height, arms straight, standing tall, glutes squeezed"
+   ]
+  },
+  {
+   "slug": "single-arm-kettlebell-swing",
+   "name": "Single-Arm Kettlebell Swing",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Glutes",
+   "secondary": [
+    "Hamstrings",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one hand on the kettlebell hiked between the legs",
+    "kettlebell at chest height in one hand, standing tall"
+   ]
+  },
+  {
+   "slug": "kettlebell-snatch",
+   "name": "Kettlebell Snatch",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one kettlebell hiked back between the legs in one hand",
+    "kettlebell locked overhead resting on the back of the forearm"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kettlebell-snatch"
+  },
+  {
+   "slug": "kettlebell-clean",
+   "name": "Kettlebell Clean",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one kettlebell hiked back between the legs",
+    "kettlebell in the rack position against the chest, elbow tucked"
+   ]
+  },
+  {
+   "slug": "double-kettlebell-clean",
+   "name": "Double Kettlebell Clean",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "two kettlebells hiked back between the legs",
+    "both kettlebells in the front rack against the chest"
+   ]
+  },
+  {
+   "slug": "kettlebell-clean-and-press",
+   "name": "Kettlebell Clean and Press",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "kettlebell in the rack position at the chest",
+    "kettlebell pressed overhead with a straight arm"
+   ]
+  },
+  {
+   "slug": "kettlebell-goblet-squat",
+   "name": "Kettlebell Goblet Squat",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing holding a kettlebell by the horns at the chest",
+    "bottom of the squat, elbows inside the knees, kettlebell at the chest"
+   ]
+  },
+  {
+   "slug": "kettlebell-thruster",
+   "name": "Kettlebell Thruster",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "bottom of a squat with two kettlebells in the front rack",
+    "standing tall with both kettlebells pressed overhead"
+   ]
+  },
+  {
+   "slug": "kettlebell-turkish-get-up",
+   "name": "Kettlebell Turkish Get-Up",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Core",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying on the back with one kettlebell pressed straight up",
+    "standing tall with the kettlebell locked overhead"
+   ]
+  },
+  {
+   "slug": "kettlebell-windmill",
+   "name": "Kettlebell Windmill",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Core",
+   "secondary": [
+    "Shoulders",
+    "Hamstrings"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing with one kettlebell locked overhead, feet angled",
+    "hips pushed out, torso hinged sideways, free hand touching the floor, kettlebell still overhead"
+   ]
+  },
+  {
+   "slug": "kettlebell-front-rack-carry",
+   "name": "Kettlebell Front Rack Carry",
+   "type": "distance_duration",
+   "equipment": "Kettlebell",
+   "primary": "Core",
+   "secondary": [
+    "Shoulders",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with two kettlebells in the front rack",
+    "walking forward with the kettlebells racked, mid-stride"
+   ]
+  },
+  {
+   "slug": "kettlebell-overhead-carry",
+   "name": "Kettlebell Overhead Carry",
+   "type": "distance_duration",
+   "equipment": "Kettlebell",
+   "primary": "Shoulders",
+   "secondary": [
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing with one kettlebell locked overhead",
+    "walking forward mid-stride with the kettlebell overhead"
+   ]
+  },
+  {
+   "slug": "kettlebell-suitcase-carry",
+   "name": "Suitcase Carry",
+   "type": "distance_duration",
+   "equipment": "Kettlebell",
+   "primary": "Core",
+   "secondary": [
+    "Grip",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall with one heavy kettlebell at one side",
+    "walking forward mid-stride, shoulders level, kettlebell at the side"
+   ]
+  },
+  {
+   "slug": "kettlebell-high-pull",
+   "name": "Kettlebell High Pull",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Traps",
+   "secondary": [
+    "Shoulders",
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "kettlebell hiked between the legs, hips back",
+    "kettlebell pulled to chest height, elbow high and back"
+   ]
+  },
+  {
+   "slug": "kettlebell-deadlift",
+   "name": "Kettlebell Deadlift",
+   "type": "weight_reps",
+   "equipment": "Kettlebell",
+   "primary": "Hamstrings",
+   "secondary": [
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one kettlebell on the floor between the feet, hips back, flat back",
+    "standing tall holding the kettlebell at the hips"
+   ]
+  },
+  {
+   "slug": "strict-pull-up",
+   "name": "Strict Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Biceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar with straight arms, body still",
+    "chin above the bar, legs still, no swing"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-pull-up"
+  },
+  {
+   "slug": "kipping-pull-up",
+   "name": "Kipping Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Core",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging in the arch position, chest through, legs behind",
+    "chin over the bar after the kip, hips extended"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-pull-up"
+  },
+  {
+   "slug": "butterfly-pull-up",
+   "name": "Butterfly Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Core",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging and swinging in a circular path under the bar",
+    "chin over the bar at the top of the circle"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-butterfly-pull-up"
+  },
+  {
+   "slug": "strict-chest-to-bar-pull-up",
+   "name": "Strict Chest-to-Bar Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Biceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar, straight arms",
+    "chest touching the bar, elbows pulled down and back"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-chest-to-bar-pull-up"
+  },
+  {
+   "slug": "kipping-chest-to-bar-pull-up",
+   "name": "Kipping Chest-to-Bar Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging in the arch position",
+    "chest touching the bar after the kip"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-chest-to-bar-pull-up"
+  },
+  {
+   "slug": "jumping-pull-up",
+   "name": "Jumping Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Back",
+   "secondary": [
+    "Legs"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing on a box under the bar, arms reaching up holding the bar",
+    "chin over the bar, feet just off the box"
+   ]
+  },
+  {
+   "slug": "banded-pull-up",
+   "name": "Banded Pull-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Resistance Band",
+   "primary": "Back",
+   "secondary": [
+    "Biceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar with one knee in a resistance band looped on the bar",
+    "chin above the bar with the band assisting"
+   ]
+  },
+  {
+   "slug": "ring-row",
+   "name": "Ring Row",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Back",
+   "secondary": [
+    "Biceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "leaning back holding gymnastics rings with straight arms, body straight, heels on the floor",
+    "chest pulled to the rings, body still straight like a plank"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-ring-row"
+  },
+  {
+   "slug": "kipping-toes-to-bar",
+   "name": "Kipping Toes-to-Bar",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Core",
+   "secondary": [
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar in the arch position",
+    "both toes touching the bar, hips piked"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-toes-to-bar"
+  },
+  {
+   "slug": "strict-toes-to-bar",
+   "name": "Strict Toes-to-Bar",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Core",
+   "secondary": [
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging still from the bar, straight arms",
+    "legs raised straight up to touch the bar, no swing"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-toes-to-bar"
+  },
+  {
+   "slug": "strict-knees-to-elbows",
+   "name": "Strict Knees-to-Elbows",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Core",
+   "secondary": [
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging still from the bar",
+    "knees pulled up to touch the elbows"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-knees-to-elbow"
+  },
+  {
+   "slug": "hanging-l-sit",
+   "name": "Hanging L-Sit",
+   "type": "duration",
+   "equipment": "Pull-up Bar",
+   "primary": "Core",
+   "secondary": [
+    "Hip Flexors"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar, legs straight down",
+    "legs held straight out parallel to the floor in an L"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-hanging-l-sit"
+  },
+  {
+   "slug": "windshield-wiper",
+   "name": "Windshield Wiper",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Core",
+   "secondary": [
+    "Obliques"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging with legs raised to the bar, toes pointing up",
+    "legs swept to one side, hips rotated, still near the bar"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-windshield-wiper"
+  },
+  {
+   "slug": "strict-muscle-up",
+   "name": "Strict Muscle-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Back",
+   "secondary": [
+    "Chest",
+    "Triceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from rings with a false grip",
+    "supported above the rings with straight arms"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-muscle-up"
+  },
+  {
+   "slug": "kipping-muscle-up",
+   "name": "Kipping Muscle-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Full Body",
+   "secondary": [
+    "Chest",
+    "Triceps",
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "swinging under the rings in the hollow position",
+    "locked out on top of the rings with straight arms"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-muscle-up"
+  },
+  {
+   "slug": "bar-muscle-up",
+   "name": "Bar Muscle-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Pull-up Bar",
+   "primary": "Full Body",
+   "secondary": [
+    "Chest",
+    "Triceps",
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from the bar in the arch swing",
+    "supported above the bar with straight arms, hips against the bar"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-bar-muscle-up"
+  },
+  {
+   "slug": "rope-climb",
+   "name": "Rope Climb",
+   "type": "bodyweight_reps",
+   "equipment": "Rope",
+   "primary": "Back",
+   "secondary": [
+    "Biceps",
+    "Grip",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing holding the rope overhead, feet ready to wrap",
+    "high on the rope with feet locked around it, arms reaching up"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-rope-climb-wrapping"
+  },
+  {
+   "slug": "modified-rope-climb",
+   "name": "Modified Rope Climb",
+   "type": "bodyweight_reps",
+   "equipment": "Rope",
+   "primary": "Back",
+   "secondary": [
+    "Biceps",
+    "Grip"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying on the floor holding the rope above the chest",
+    "standing up under the rope, hand over hand on it"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-modified-rope-climb"
+  },
+  {
+   "slug": "legless-rope-climb",
+   "name": "Legless Rope Climb",
+   "type": "bodyweight_reps",
+   "equipment": "Rope",
+   "primary": "Back",
+   "secondary": [
+    "Biceps",
+    "Grip"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "sitting holding the rope with the arms, legs off the floor",
+    "high on the rope pulled with arms only, legs in an L"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-legless-rope-climb"
+  },
+  {
+   "slug": "skin-the-cat",
+   "name": "Skin the Cat",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Shoulders",
+   "secondary": [
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "hanging from rings with straight arms",
+    "rotated backwards through the arms, hanging inverted with feet toward the floor behind"
+   ],
+   "video": "https://www.crossfit.com/essentials/skin-the-cat"
+  },
+  {
+   "slug": "ring-dip",
+   "name": "Ring Dip",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Triceps",
+   "secondary": [
+    "Chest",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "supported on the rings with straight arms, rings turned out",
+    "bottom of the dip, shoulders below the elbows"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-ring-dip"
+  },
+  {
+   "slug": "ring-push-up",
+   "name": "Ring Push-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Rings",
+   "primary": "Chest",
+   "secondary": [
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "plank on rings near the floor, arms straight",
+    "chest lowered between the rings"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-ring-push-up"
+  },
+  {
+   "slug": "strict-handstand-push-up",
+   "name": "Strict Handstand Push-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Wall",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "handstand against a wall with straight arms",
+    "head lowered to a mat on the floor, elbows bent"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-strict-handstand-push-up"
+  },
+  {
+   "slug": "kipping-handstand-push-up",
+   "name": "Kipping Handstand Push-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Wall",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "inverted against the wall, head on the mat, knees tucked to the chest",
+    "legs kicked up straight, arms locked out"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-kipping-handstand-push-up"
+  },
+  {
+   "slug": "chest-to-wall-handstand-push-up",
+   "name": "Chest-to-Wall Handstand Push-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Wall",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "handstand facing the wall, chest close to it",
+    "head lowered toward the floor, body still facing the wall"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-chest-to-wall-handstand-push-up"
+  },
+  {
+   "slug": "handstand-hold",
+   "name": "Handstand Hold",
+   "type": "duration",
+   "equipment": "Wall",
+   "primary": "Shoulders",
+   "secondary": [
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "kicking up toward the wall, one leg up",
+    "handstand with heels against the wall, arms locked, body straight"
+   ],
+   "video": "https://www.crossfit.com/essentials/freestanding-handstand"
+  },
+  {
+   "slug": "handstand-walk",
+   "name": "Handstand Walk",
+   "type": "distance_duration",
+   "equipment": "Bodyweight",
+   "primary": "Shoulders",
+   "secondary": [
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "freestanding handstand on the floor, body straight and vertical, legs together pointing up",
+    "upside down walking on the hands, legs up in the air, one hand lifted off the floor mid-step, body inverted"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-handstand-walk"
+  },
+  {
+   "slug": "box-pike-push-up",
+   "name": "Box Pike Push-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Box",
+   "primary": "Shoulders",
+   "secondary": [
+    "Triceps"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "feet on a box, hands on the floor, hips piked high",
+    "head lowered toward the floor between the hands"
+   ]
+  },
+  {
+   "slug": "burpee-box-jump-over",
+   "name": "Burpee Box Jump Over",
+   "type": "bodyweight_reps",
+   "equipment": "Box",
+   "primary": "Full Body",
+   "secondary": [
+    "Legs"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "chest on the floor next to a plyo box at the bottom of a burpee",
+    "jumping over the box in the air"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-burpee-box-jump-over"
+  },
+  {
+   "slug": "burpee-over-the-bar",
+   "name": "Burpee Over the Bar",
+   "type": "bodyweight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Legs"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "chest on the floor beside a barbell on the floor",
+    "jumping sideways over the barbell with both feet"
+   ]
+  },
+  {
+   "slug": "bar-facing-burpee",
+   "name": "Bar-Facing Burpee",
+   "type": "bodyweight_reps",
+   "equipment": "Barbell",
+   "primary": "Full Body",
+   "secondary": [
+    "Legs"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "chest on the floor facing a barbell",
+    "jumping forward over the barbell with both feet"
+   ]
+  },
+  {
+   "slug": "lateral-burpee",
+   "name": "Lateral Burpee",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Full Body",
+   "secondary": [
+    "Legs"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "chest on the floor at the bottom of a burpee",
+    "jumping sideways in the air, knees tucked"
+   ]
+  },
+  {
+   "slug": "abmat-sit-up",
+   "name": "AbMat Sit-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Core",
+   "secondary": [
+    "Hip Flexors"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying back over an abmat, soles of the feet together, arms overhead touching the floor",
+    "sitting up, hands touching the feet"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-abmat-sit-up"
+  },
+  {
+   "slug": "ghd-sit-up",
+   "name": "GHD Sit-Up",
+   "type": "bodyweight_reps",
+   "equipment": "GHD",
+   "primary": "Core",
+   "secondary": [
+    "Hip Flexors"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "seated on a glute-ham developer, feet locked, torso upright",
+    "leaning back with the torso below parallel, arms overhead"
+   ]
+  },
+  {
+   "slug": "ghd-hip-extension",
+   "name": "GHD Hip Extension",
+   "type": "bodyweight_reps",
+   "equipment": "GHD",
+   "primary": "Glutes",
+   "secondary": [
+    "Hamstrings",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "on the GHD with hips on the pad, torso hanging down toward the floor",
+    "body in a straight horizontal line"
+   ]
+  },
+  {
+   "slug": "ghd-back-extension",
+   "name": "GHD Back Extension",
+   "type": "bodyweight_reps",
+   "equipment": "GHD",
+   "primary": "Back",
+   "secondary": [
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "on the GHD, back rounded, torso hanging down",
+    "torso lifted to horizontal, spine extended"
+   ]
+  },
+  {
+   "slug": "l-sit",
+   "name": "L-Sit",
+   "type": "duration",
+   "equipment": "Parallettes",
+   "primary": "Core",
+   "secondary": [
+    "Triceps",
+    "Hip Flexors"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "seated between two parallettes, hands on the bars",
+    "body lifted off the floor on straight arms, legs straight out in an L"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-l-sit"
+  },
+  {
+   "slug": "arch-rock",
+   "name": "Arch Rock",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Back",
+   "secondary": [
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying face down in a superman arch, arms and legs lifted",
+    "rocking forward on the chest in the arch, legs higher"
+   ]
+  },
+  {
+   "slug": "tuck-up",
+   "name": "Tuck-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Core",
+   "secondary": [
+    "Hip Flexors"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "lying on the back with arms overhead and legs straight",
+    "balanced on the seat, knees hugged to the chest"
+   ]
+  },
+  {
+   "slug": "box-jump",
+   "name": "Box Jump",
+   "type": "bodyweight_reps",
+   "equipment": "Box",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Calves"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing in front of a plyo box, arms back, hips loaded",
+    "landing softly on top of the box in a squat"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-box-jump"
+  },
+  {
+   "slug": "box-jump-over",
+   "name": "Box Jump Over",
+   "type": "bodyweight_reps",
+   "equipment": "Box",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Calves"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing in front of a plyo box, loaded to jump",
+    "in the air jumping across the top of the box"
+   ]
+  },
+  {
+   "slug": "box-step-up",
+   "name": "Box Step-Up",
+   "type": "bodyweight_reps",
+   "equipment": "Box",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "one foot on a plyo box, standing next to it",
+    "standing tall on top of the box"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-box-step-up"
+  },
+  {
+   "slug": "broad-jump",
+   "name": "Broad Jump",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Quads",
+   "secondary": [
+    "Glutes",
+    "Calves"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "crouched with arms swung back, ready to jump forward",
+    "in mid air flying forward horizontally, arms reaching forward, knees tucked, clearly off the ground"
+   ]
+  },
+  {
+   "slug": "tuck-jump",
+   "name": "Tuck Jump",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Quads",
+   "secondary": [
+    "Calves",
+    "Core"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "quarter squat with arms back",
+    "in the air with knees pulled to the chest"
+   ]
+  },
+  {
+   "slug": "double-under",
+   "name": "Double Under",
+   "type": "bodyweight_reps",
+   "equipment": "Jump Rope",
+   "primary": "Calves",
+   "secondary": [
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall holding a jump rope behind the heels",
+    "in the air on the toes with the rope passing under the feet twice, blurred rope"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-double-under"
+  },
+  {
+   "slug": "single-under",
+   "name": "Single Under",
+   "type": "bodyweight_reps",
+   "equipment": "Jump Rope",
+   "primary": "Calves",
+   "secondary": [
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing holding a jump rope behind the heels",
+    "small hop with the rope under the feet"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-single-under"
+  },
+  {
+   "slug": "wall-ball-shot",
+   "name": "Wall Ball Shot",
+   "type": "bodyweight_reps",
+   "equipment": "Medicine Ball",
+   "primary": "Full Body",
+   "secondary": [
+    "Quads",
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "bottom of a squat holding a medicine ball at the chest, facing a wall",
+    "standing on the toes, arms extended, ball thrown up toward a high target on the wall"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-wall-ball"
+  },
+  {
+   "slug": "medicine-ball-clean",
+   "name": "Medicine Ball Clean",
+   "type": "bodyweight_reps",
+   "equipment": "Medicine Ball",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "squatting with hands on a medicine ball on the floor, back flat",
+    "bottom of a squat with the ball caught at the chest"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-medicine-ball-clean"
+  },
+  {
+   "slug": "slam-ball",
+   "name": "Slam Ball",
+   "type": "bodyweight_reps",
+   "equipment": "Medicine Ball",
+   "primary": "Full Body",
+   "secondary": [
+    "Core",
+    "Lats"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing on the toes with a slam ball lifted overhead",
+    "hinged forward, ball slammed into the floor"
+   ],
+   "video": "https://www.crossfit.com/essentials/the-slam-ball"
+  },
+  {
+   "slug": "rower",
+   "name": "Row (Concept2)",
+   "type": "distance_duration",
+   "equipment": "Cardio",
+   "primary": "Full Body",
+   "secondary": [
+    "Legs",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "at the catch on a rowing machine, shins vertical, arms straight",
+    "at the finish, legs straight, handle pulled to the ribs, leaning back slightly"
+   ],
+   "video": "https://www.crossfit.com/essentials/rowing"
+  },
+  {
+   "slug": "echo-bike",
+   "name": "Bike Erg",
+   "type": "distance_duration",
+   "equipment": "Cardio",
+   "primary": "Legs",
+   "secondary": [
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "seated on a stationary bike, one pedal down",
+    "mid pedal stroke, the other leg pushing"
+   ]
+  },
+  {
+   "slug": "shuttle-run",
+   "name": "Shuttle Run",
+   "type": "distance_duration",
+   "equipment": "Bodyweight",
+   "primary": "Legs",
+   "secondary": [
+    "Full Body"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "low athletic stance touching a line on the floor",
+    "sprinting back the other way, mid-stride"
+   ]
+  },
+  {
+   "slug": "sled-push",
+   "name": "Sled Push",
+   "type": "distance_duration",
+   "equipment": "Sled",
+   "primary": "Legs",
+   "secondary": [
+    "Full Body"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "leaning into a weighted sled, hands on the poles",
+    "driving forward mid-stride, body at 45 degrees"
+   ]
+  },
+  {
+   "slug": "sandbag-clean",
+   "name": "Sandbag Clean",
+   "type": "weight_reps",
+   "equipment": "Sandbag",
+   "primary": "Full Body",
+   "secondary": [
+    "Glutes",
+    "Back"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "squatting over a sandbag, arms wrapped under it",
+    "standing tall with the sandbag on one shoulder"
+   ]
+  },
+  {
+   "slug": "pvc-pass-through",
+   "name": "PVC Pass-Through",
+   "type": "bodyweight_reps",
+   "equipment": "PVC",
+   "primary": "Shoulders",
+   "secondary": [
+    "Chest"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "holding a PVC pipe in front of the hips on a wide grip",
+    "PVC pipe passed overhead and behind the back, arms straight"
+   ]
+  },
+  {
+   "slug": "burgener-warm-up",
+   "name": "Burgener Warm-Up (Down and Up)",
+   "type": "bodyweight_reps",
+   "equipment": "PVC",
+   "primary": "Full Body",
+   "secondary": [
+    "Shoulders"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing with a PVC pipe at the hips on a snatch grip, slight dip",
+    "full extension on the toes, shoulders shrugged, PVC at the hips"
+   ]
+  },
+  {
+   "slug": "samson-stretch",
+   "name": "Samson Stretch",
+   "type": "duration",
+   "equipment": "Bodyweight",
+   "primary": "Hip Flexors",
+   "secondary": [
+    "Quads"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "standing tall, arms down",
+    "deep lunge with back knee down, arms reaching overhead, hips forward"
+   ]
+  },
+  {
+   "slug": "spiderman-lunge",
+   "name": "Spiderman Lunge",
+   "type": "bodyweight_reps",
+   "equipment": "Bodyweight",
+   "primary": "Hips",
+   "secondary": [
+    "Groin"
+   ],
+   "stretch": false,
+   "source": "crossfit",
+   "frames": [
+    "high plank",
+    "one foot planted outside the hand, hips low, elbow toward the floor"
+   ]
   }
- ]
+ ],
+ "_source_crossfit": "voci con source=crossfit: vocabolario CrossFit e funzionale (crossfit.com Essentials + kettlebell, manubri, ginnastica, pliometria); figure generate con Nano Banana Pro (scripts/esercizio_img.py), descrizione delle due pose in frames"
 }

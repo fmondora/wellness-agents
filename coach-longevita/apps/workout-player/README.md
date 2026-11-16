@@ -39,7 +39,8 @@ Esercizio: `name` (**nome inglese standard CrossFit**: Deadlift, Goblet Squat, S
 Row, Bike, Plank, Cat-Cow, World's Greatest Stretch, Walk in Place…: così compare a schermo, nella Scheda,
 nel «Prossimo» e nella voce «Next: Deadlift»; note e dettagli restano in italiano), `reps` (numero o testo: `"8 cal"`, `"3 per lato"`), `time_s`, `kg`, `note`,
 `img` (slug del catalogo del coach, es. `deadlift`, `goblet-squat`, `push-up`: il player alterna
-`img/<slug>-frame-1.svg` e `-frame-2.svg` ogni secondo; se lo slug manca o il file non c'è, niente riquadro).
+`img/<slug>-frame-1.svg` e `-frame-2.svg` ogni secondo; se la .svg non c'è prova la .webp, le figure del vocabolario
+CrossFit generate da `scripts/esercizio_img.py`; se non c'è nessuna delle due, niente riquadro).
 Le SVG vengono dal bundle del plugin (`assets/img/`) più le SVG generiche scaricate dal coach in
 `data/coach-longevita/daily/img/`: le copia `deploy.sh`.
 

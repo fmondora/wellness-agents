@@ -21,8 +21,10 @@ EV="$(shasum "$HERE/engine.js" | cut -c1-10)"
 sed -i '' "s|<script src=\"engine.js\"></script>|<script src=\"engine.js?v=$EV\"></script>|" "$DIST/index.html"
 grep -q "engine.js?v=$EV" "$DIST/index.html" || { echo "deploy: versione del motore non applicata" >&2; exit 1; }
 cp "$PLUGIN"/assets/img/*.svg "$DIST/img/"
+WEBPS=("$PLUGIN"/assets/img/*.webp(N))   # figure generate del vocabolario CrossFit (esercizio_img.py)
+(( ${#WEBPS} )) && cp "${WEBPS[@]}" "$DIST/img/"
 if [[ -n "$DATA" && -d "$DATA/data/coach-longevita/daily/img" ]]; then
-  for f in "$DATA"/data/coach-longevita/daily/img/*.svg(N); do
+  for f in "$DATA"/data/coach-longevita/daily/img/*.{svg,webp}(N); do
     [[ -e "$DIST/img/${f:t}" ]] || cp "$f" "$DIST/img/"
   done
 fi
@@ -35,6 +37,7 @@ fi
 cat > "$DIST/img/CREDITS.txt" <<'C'
 Illustrazioni: Bryl Lim, github.com/bryllim/workout-guide, CC BY-SA 4.0 (ricolorate).
 hsw-*: coach-longevita, CC BY-SA 4.0.
+*.webp: figure del vocabolario CrossFit generate per coach-longevita (Gemini 3 Pro Image).
 C
 cat > "$DIST/_headers" <<'H'
 /*

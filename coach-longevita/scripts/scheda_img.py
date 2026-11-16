@@ -4,8 +4,9 @@
     python3 ${CLAUDE_PLUGIN_ROOT}/scripts/scheda_img.py SLUG [SLUG ...] \
         [--dest data/coach-longevita/daily/img] [--png]
 
-Per ogni slug del catalogo mette in --dest i frame SVG (frame-1 = partenza,
-frame-2 = fine, a volte frame-3). Ordine delle fonti:
+Per ogni slug del catalogo mette in --dest i frame (frame-1 = partenza,
+frame-2 = fine, a volte frame-3): SVG bryllim, oppure .webp generati da esercizio_img.py per il
+vocabolario CrossFit (voci con `frames`). Ordine delle fonti:
   1. già presenti in --dest → non li tocca (possono essere stati ritoccati)
   2. bundle del plugin (assets/img/, già ricolorati per fondo chiaro)
   3. download da `_svg_url` del catalogo, ricolorati: gli originali sono
@@ -42,7 +43,8 @@ def recolor(svg: str) -> str:
 
 
 def known_slugs(catalog: dict) -> set[str]:
-    bundled = {f.name.split("-frame-")[0].removesuffix(".svg") for f in BUNDLE.glob("*.svg")}
+    bundled = {f.name.split("-frame-")[0].removesuffix(f.suffix) for f in BUNDLE.glob("*.*")
+               if f.suffix in (".svg", ".webp")}
     return {e["slug"] for e in catalog["exercises"]} | bundled
 
 
@@ -76,23 +78,34 @@ def download(slug: str, url_tpl: str, dest: Path) -> list[Path]:
     return got
 
 
-def frames(slug: str, dest: Path, url_tpl: str) -> list[Path]:
-    pattern = f"{slug}-frame-*.svg"
-    have = sorted(dest.glob(pattern)) or sorted(dest.glob(f"{slug}.svg"))
-    if have:
-        return have
-    bundled = sorted(BUNDLE.glob(pattern)) or sorted(BUNDLE.glob(f"{slug}.svg"))
-    if bundled:
-        for f in bundled:
-            shutil.copy2(f, dest / f.name)
-        return [dest / f.name for f in bundled]
-    return download(slug, url_tpl, dest)
+def frames(slug: str, dest: Path, url_tpl: str, generated: bool = False) -> list[Path]:
+    """generated = voce col vocabolario CrossFit (pose in `frames`): figure .webp di esercizio_img.py, mai bryllim."""
+    for ext in ("svg", "webp"):
+        have = sorted(dest.glob(f"{slug}-frame-*.{ext}")) or sorted(dest.glob(f"{slug}.{ext}"))
+        if have:
+            return have
+    for ext in ("svg", "webp"):
+        bundled = sorted(BUNDLE.glob(f"{slug}-frame-*.{ext}")) or sorted(BUNDLE.glob(f"{slug}.{ext}"))
+        if bundled:
+            for f in bundled:
+                shutil.copy2(f, dest / f.name)
+            return [dest / f.name for f in bundled]
+    return [] if generated else download(slug, url_tpl, dest)
 
 
 def to_png(svg: Path, png_dir: Path) -> Path | None:
     out = png_dir / f"{svg.name}.png"
     if out.exists() and out.stat().st_mtime >= svg.stat().st_mtime:
         return out
+    if svg.suffix == ".webp":          # figura generata: raster, basta convertirla
+        try:
+            from PIL import Image
+            Image.open(svg).convert("RGB").save(out, "PNG")
+        except Exception:  # noqa: BLE001 — senza PIL prova sips (macOS)
+            if shutil.which("sips"):
+                subprocess.run(["sips", "-s", "format", "png", str(svg), "--out", str(out)],
+                               check=False, capture_output=True)
+        return out if out.exists() else None
     if shutil.which("qlmanage"):
         subprocess.run(["qlmanage", "-t", "-s", "900", "-o", str(png_dir), str(svg)],
                        check=False, capture_output=True)
@@ -122,6 +135,7 @@ def main() -> int:
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     url_tpl = catalog["_svg_url"]
     allowed = known_slugs(catalog)
+    generated = {e["slug"] for e in catalog["exercises"] if e.get("frames")}
     base = dest.parent
 
     missing = 0
@@ -130,9 +144,10 @@ def main() -> int:
             print(f"# {slug}: slug sconosciuto (non nel catalogo né nel bundle)", file=sys.stderr)
             missing += 1
             continue
-        found = frames(slug, dest, url_tpl)
+        found = frames(slug, dest, url_tpl, slug in generated)
         if not found:
-            print(f"# {slug}: nessuna immagine (né in bundle né scaricabile)", file=sys.stderr)
+            hint = f" — si genera con esercizio_img.py {slug}" if slug in generated else ""
+            print(f"# {slug}: nessuna immagine (né in bundle né scaricabile){hint}", file=sys.stderr)
             missing += 1
             continue
         for svg in found:
