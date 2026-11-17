@@ -1,6 +1,6 @@
 ---
 name: dna
-description: Query genomica del genetista — interroga il DNA dell'utente (genotipi + annotazioni ClinVar/PharmGKB/GWAS/pannelli), rigenera kb e report. Usa per "gene", "DNA", "SNP", "variante", "come metabolizzo", "rigenera il profilo genomico".
+description: Query genomica del genetista — interroga il DNA dell'utente (genotipi + annotazioni ClinVar/PharmGKB/GWAS/pannelli e grafo PrimeKG di farmaci, geni e malattie), rigenera kb e report. Usa per "gene", "DNA", "SNP", "variante", "come metabolizzo", "il mio farmaco e i miei geni", "interazioni", "rigenera il profilo genomico".
 ---
 
 # /dna — il genetista al lavoro
@@ -22,6 +22,8 @@ MCP dell'AGENT.md).
 | Rigenerare kb + report | `python3.12 .../dna_report.py` |
 | Genotipo/annotazioni puntuali | `python3.12 .../dna_query.py rs4680 [--web]` o `--gene COMT` |
 | Domande SQL fuori schema | server MCP sqlite su `data/dna/genotypes.db` |
+| Farmaci e geni nel grafo PrimeKG | `python3.12 .../dna_graph.py load` (una volta), `annotate`, poi `dna_report.py --layer graph` |
+| Nomi per `config/genomics.json` | `python3.12 .../dna_graph.py drug <testo>` · `condition <testo>` |
 
 ## Flusso di risposta
 
@@ -29,7 +31,9 @@ MCP dell'AGENT.md).
 1. Domanda puntuale → `dna_query` (o SQL) + interpretazione dai pannelli e dalla tua conoscenza; cita genotipo E fonte/versione.
 2. Domanda di pathway → leggi `kb/genomica.md` (se stantio: rigenera).
 3. Hit clinica (ClinVar) → SEMPRE col disclaimer del report; mai annunci.
-4. Farmaci → "da discutere con il medico che prescrive", sempre.
+4. Farmaci → "da discutere con il medico che prescrive", sempre. Domanda su un farmaco in uso → prima
+   `data/dna/reports/grafo.md` (farmaco → gene → variante; se il farmaco non è nel config, aggiungilo e
+   rilancia `annotate`), poi PharmGKB.
 5. Scoperte nuove → skill `propagate` del core.
 
 Mai JSON a schermo. Mai determinismo genetico: predisposizione ≠ destino.

@@ -139,8 +139,109 @@ def report_gwas() -> Path:
     return dest
 
 
+RUOLO = {"target": "bersaglio", "enzyme": "enzima", "transporter": "trasportatore",
+         "carrier": "carrier (DrugBank)"}
+FRASE_FARMACO = {
+    "contraindication": "DrugCentral elenca «{o}» tra le controindicazioni generali di {s}",
+    "indication": "DrugCentral elenca «{o}» tra le indicazioni di {s}",
+    "off-label use": "DrugCentral elenca «{o}» tra gli usi off-label di {s}",
+    "drug_effect": "SIDER riporta «{o}» tra gli effetti segnalati di {s}",
+}
+TIPO = {"disease": "malattia", "effect/phenotype": "fenotipo"}
+
+
+def report_graph() -> Path:
+    import dna_graph
+    con = dna_common.connect()
+    rows = con.execute("SELECT kind, subject, relation, object, variants, n FROM annotations_graph "
+                       "ORDER BY kind, subject, relation, object").fetchall()
+    by = {}
+    for r in rows:
+        by.setdefault(r[0], []).append(r[1:])
+    out = ["# I tuoi farmaci e i tuoi geni nel grafo (PrimeKG)", ""]
+    if dna_common.get_meta(con, "graph_inputs") != dna_graph.inputs_fingerprint():
+        out += ["> ⚠️ **Report non aggiornato:** il config o le annotazioni sono cambiati dall'ultimo incrocio. "
+                "Rilancia `dna_graph.py annotate`, poi questo report.", ""]
+    out += ["> Ogni riga è un'associazione da database e letteratura (DrugBank, DrugCentral, SIDER, MONDO, HPO, "
+            "Reactome), non un rischio personale né una spiegazione di un sintomo. Le righe servono a fare domande "
+            "migliori al medico che prescrive o al farmacista; nessuna decisione su farmaci nasce da qui.", ""]
+    if by.get("config_missing"):
+        out += [f"*Farmaci e condizioni non configurati ({by['config_missing'][0][0]}, chiave \"graph\"): "
+                "il report mostra solo i geni e le vie. Nessuna riga sui farmaci non vuol dire nessuna "
+                "interazione.*", ""]
+    if by.get("drug_missing"):
+        out += ["*Non trovati nel grafo, controlla il nome DrugBank in `config/genomics.json`: "
+                + ", ".join(s for s, *_ in by["drug_missing"]) + ".*", ""]
+    if by.get("condition_missing"):
+        out += ["*Condizioni non trovate nel grafo, controlla il nome con `dna_graph.py condition`: "
+                + ", ".join(s for s, *_ in by["condition_missing"]) + ".*", ""]
+    if by.get("drug_nolinks"):
+        out += ["*Trovati nel grafo, ma senza bersagli, interazioni con gli altri farmaci in uso o legami col "
+                "quadro: " + ", ".join(s for s, *_ in by["drug_nolinks"]) + ".*", ""]
+    drug_gene = by.get("drug_gene", [])
+    if drug_gene:
+        out += ["## I tuoi farmaci: bersagli ed enzimi", "",
+                "Nella tabella, i geni del farmaco su cui le annotazioni segnalano una tua variante (pannelli a "
+                "rilevanza alta o media, ClinVar, PharmGKB). Sotto, gli altri geni del farmaco.", ""]
+        with_var = sorted(r for r in drug_gene if r[3])
+        if with_var:
+            out += ["| Farmaco | Ruolo | Gene | Le tue varianti sul gene |", "|---|---|---|---|"]
+            out += [f"| {_md(s)} | {RUOLO.get(rel, rel)} | {_md(o)} | {_md(v)} |" for s, rel, o, v, _ in with_var]
+        else:
+            out.append("Nessuna tua variante segnalata sui geni dei tuoi farmaci.")
+        rest: dict[str, set[str]] = {}
+        for s, rel, o, v, _ in drug_gene:
+            if not v:
+                rest.setdefault(s, set()).add(o)
+        out.append("")
+        out += [f"- *{_md(s)}, altri geni:* {', '.join(sorted(g))}" for s, g in sorted(rest.items())]
+        out.append("")
+    if by.get("drug_drug"):
+        out += ["## Interazioni tra i tuoi farmaci", "",
+                "DrugBank segnala un'interazione, senza dettaglio di gravità: da chiedere al farmacista.", ""]
+        out += [f"- {_md(s)} ↔ {_md(o)}" for s, _, o, *_ in by["drug_drug"]] + [""]
+    if by.get("drug_condition"):
+        out += ["## Cosa dicono le basi dati dei tuoi farmaci sulle condizioni del tuo quadro", "",
+                "Sono etichette generali del principio attivo, senza via, forma né dose: non dicono che il tuo "
+                "farmaco ti sia controindicato o ti dia quell'effetto. Ogni riga è una domanda per il medico che "
+                "lo prescrive.", ""]
+        out += [f"- {FRASE_FARMACO.get(rel, '{s} → {o}').format(s=_md(s), o=_md(o))}."
+                for s, rel, o, *_ in by["drug_condition"]]
+        out.append("")
+    if by.get("gene_condition"):
+        out += ["## I tuoi geni e il tuo quadro", "",
+                "Il collegamento è tra il gene e la condizione, non tra la tua variante e la condizione: "
+                "l'ultima colonna dice per che cosa è annotata la variante, che può essere tutt'altro.", "",
+                "| Gene | Il gene è associato a | Tipo | La tua variante, annotata per |", "|---|---|---|---|"]
+        out += [f"| {_md(s)} | {_md(o)} | {TIPO.get(rel, rel)} | {_md(v)} |"
+                for s, rel, o, v, _ in by["gene_condition"]]
+        out.append("")
+    if by.get("genes_missing"):
+        out += ["*Nessun gene segnalato dalle annotazioni (pannelli alta/media, ClinVar portate, PharmGKB): "
+                "la parte dei geni resta vuota.*", ""]
+    if by.get("clinvar_unresolved"):
+        genes = sorted({s for s, *_ in by["clinvar_unresolved"]})
+        out += [f"*{len(by['clinvar_unresolved'])} annotazioni ClinVar notevoli senza allele alternativo nel "
+                "database, quindi non valutabili come portate e fuori dall'incrocio. Geni: "
+                + ", ".join(genes) + ". Da guardare una per una con `dna_query.py --gene`.*", ""]
+    if by.get("pathway"):
+        allp = sorted(by["pathway"], key=lambda r: (-r[4], r[0]))
+        top = allp[:25]
+        out += ["## Vie dove compaiono più tuoi geni", "",
+                f"Le prime {len(top)} di {len(allp)} vie Reactome con almeno due geni segnalati. I pannelli sono "
+                "costruiti per via, quindi una parte della convergenza viene da come sono scelti i geni: è un "
+                "indice dove guardare, non una misura.", "",
+                "| Via (Reactome) | Geni | Quanti |", "|---|---|---|"]
+        out += [f"| {_md(s)} | {_md(o)} | {n} |" for s, _, o, _, n in top]
+        out.append("")
+    out.append(_fonti())
+    dest = _reports_dir() / "grafo.md"
+    dest.write_text("\n".join(out))
+    return dest
+
+
 REPORTS = {"panels": report_panels, "clinvar": report_clinvar,
-           "pharmgkb": report_pharmgkb, "gwas": report_gwas}
+           "pharmgkb": report_pharmgkb, "gwas": report_gwas, "graph": report_graph}
 
 
 def main() -> None:
@@ -152,7 +253,8 @@ def main() -> None:
         "SELECT name FROM sqlite_master WHERE name LIKE 'annotations_%'")}
     for layer in (args.layer or sorted(present)):
         if layer not in present:
-            print(f"{layer}: nessuna annotazione (esegui prima dna_annotate) — salto")
+            cmd = "dna_graph.py annotate" if layer == "graph" else "dna_annotate.py"
+            print(f"{layer}: nessuna annotazione (esegui prima {cmd}) — salto")
             continue
         print(f"scritto: {REPORTS[layer]()}")
 

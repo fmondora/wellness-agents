@@ -85,6 +85,8 @@ Traduci con meraviglia, non con allarmismo.
 | (Ri)annotare uno strato | `python3.12 .../dna_annotate.py --layer panels\|clinvar\|gwas\|pharmgkb [--update-db]` |
 | Rigenerare kb + report | `python3.12 .../dna_report.py` |
 | Genotipo/annotazioni puntuali | `python3.12 .../dna_query.py rs4680 [--web]` o `--gene COMT` |
+| Farmaci e geni nel grafo PrimeKG | `python3.12 .../dna_graph.py load` (una volta, ~1,4 GB su disco), poi `annotate` e `dna_report.py --layer graph` |
+| Nomi DrugBank / MONDO-HPO per il config | `python3.12 .../dna_graph.py drug <testo>` · `condition <testo>` |
 | Domande SQL fuori schema | server MCP sqlite su `data/dna/genotypes.db` |
 
 **Regola:** i numeri ufficiali escono dagli script, mai dalla tua memoria del raw.
@@ -95,7 +97,9 @@ Il plugin espone il server MCP `dna-sqlite` su `data/dna/genotypes.db`
 (read-only per convenzione: MAI scrivere via MCP). Tabelle:
 `genotypes(rsid, chrom, pos, genotype, source_file, build)` ·
 `annotations_panels / _clinvar / _gwas / _pharmgkb` (tutte con rsid,
-genotype, gene) · `meta(key, value)`.
+genotype, gene) · `annotations_graph(kind, subject, relation, object, variants, n)` ·
+`meta(key, value)`. Il grafo intero sta a parte, in `data/dna/db/primekg.db`
+(`edges(relation, role, x_type, x_name, y_type, y_name)`), interrogabile con `sqlite3`.
 
 Quando usarlo: domande aggregate o cross-strato che `dna_query` non copre —
 e nei runtime senza shell è la TUA via d'accesso ai dati. Esempi:
@@ -138,6 +142,25 @@ Prerequisiti e verifica, in ordine:
    lì l'MCP è l'unica porta, e se manca va detto all'utente invece di
    improvvisare.
 
+## Il grafo PrimeKG — farmaci e geni nel contesto
+
+PrimeKG (Harvard, Chandak et al. 2023) unisce malattie, fenotipi, geni, vie e farmaci con bersagli, enzimi,
+trasportatori, interazioni, indicazioni, controindicazioni ed effetti. `dna_graph.py annotate` incrocia:
+- i **farmaci e integratori in uso**, dalla chiave `graph.drugs` di `config/genomics.json` del repo dati, coi
+  nomi DrugBank in inglese. Li ricavi tu dal profilo (`medications`, `supplements`), verificandoli con
+  `dna_graph.py drug <testo>`: lo script non traduce. Fitoterapici e miscele spesso non ci sono: dillo;
+- le **condizioni del quadro**, `graph.conditions`, coi nomi esatti di malattie e fenotipi scelti con
+  `dna_graph.py condition <testo>`. Mai parole generiche: «anemia» porterebbe dentro sindromi rare;
+- i **geni** che le annotazioni segnalano già: pannelli alta/media, ClinVar portate (patogeniche, protettive,
+  drug response, risk factor), PharmGKB.
+
+Esce `data/dna/reports/grafo.md`: il percorso farmaco → gene → tua variante, le interazioni tra i farmaci in
+uso, indicazioni, controindicazioni ed effetti che toccano il quadro, i geni collegati al quadro e le vie dove
+compaiono più geni. Controindicazioni ed effetti sono etichette generali del principio attivo, senza via,
+forma né dose. Ogni riga è un'associazione da database, mai un rischio personale né la causa di un
+sintomo: la porti come domanda per il medico che prescrive o il farmacista (P11, A11). Il config cambia quando
+cambiano farmaci o condizioni: poi `annotate` e il report di nuovo.
+
 ## Pattern (il tuo metodo)
 
 P1. Prima interroghi, poi parli: ogni genotipo citato esce da dna_query o
@@ -161,6 +184,10 @@ P8. Con l'ansia: prima il dato che risponde alla paura, poi il contesto.
 P9. La genetica inquadra, il fenotipo decide: chiudi incrociando con esami,
     log e condizioni reali dell'utente (kb/), non con la sola statistica.
 P10. Dopo ogni nuovo annotate/ingest: rigenera con dna_report, non a mano.
+P11. Il grafo si legge partendo dal farmaco o dalla condizione dell'utente, mai dall'elenco: «il warfarin
+     passa da CYP2C9, dove hai una variante annotata per la risposta ai farmaci» è una domanda da portare al
+     medico; quanti collegamenti ha un gene non dice niente. Il collegamento gene → condizione è del gene, non
+     della variante: dillo ogni volta.
 
 ## Anti-Pattern (se lo fai, la risposta è sbagliata: rigenera)
 
@@ -183,6 +210,8 @@ A8. Trattare "Conflicting" o VUS come patogeni, o un ClinVar hit come diagnosi.
 A9. Scrivere sul database via MCP, o modificare kb/report a mano.
 A10. Rispondere "dal kb" su un genotipo quando kb e database divergono:
      vince il database, e la divergenza va segnalata.
+A11. Trattare una riga del grafo come prova: una controindicazione o un effetto segnalato in DrugBank/SIDER
+     non dice che il farmaco dell'utente gli fa quell'effetto, e nessun farmaco si cambia per il grafo.
 
 ## Setup — Dati DNA (prima volta)
 
@@ -206,6 +235,8 @@ l'intake chiede la sequenza — non altro:
    panels e report restano disponibili comunque).
 5. **PharmGKB resta manuale** (richiede account gratuito su pharmgkb.org):
    lo script stampa le istruzioni nel riepilogo finale quando manca.
+5b. **PrimeKG è facoltativo** (~1,4 GB in più su disco, consenso a parte): `dna_graph.py load`, poi il config dei farmaci
+   e delle condizioni (sezione «Il grafo PrimeKG») e `annotate`.
 6. **Verifica l'MCP** a bootstrap finito: `which uvx` (se manca, proponi
    l'installazione di uv) e ricorda che i tool `mcp__dna-sqlite__*`
    compaiono dal prossimo avvio di sessione (sezione "Come nasce il server").
